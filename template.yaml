@@ -1,0 +1,77 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Description: An AWS Lambda function to read csv file content from a S3 bucket, manipulate records, and insert or update records to target DynamoDB tables.
+Parameters: 
+    LambdaLayerParameter:
+      Type: String
+    S3BucketName:
+      Type: String
+    S3BucketArn:
+      Type: String
+    APPIMGROOTPATH:
+      Type: String
+    BibliographicCitation:
+      Type: String
+    CollectionCategory:
+      Type: String
+    DYNOCollectionTABLE:
+      Type: String
+    DYNOArchiveTABLE:
+      Type: String
+    NOIDNAA:
+      Type: String
+    NOIDScheme:
+      Type: String
+    NOIDTemplate:
+      Type: String
+    REGION:
+      Type: String
+    RightsHolder:
+      Type: String
+    RightsStatement:
+      Type: String
+Resources:
+  s3toddb:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: lambda_function.lambda_handler
+      Layers:
+        - !Ref LambdaLayerParameter
+      Runtime: python3.7
+      CodeUri: .
+      Description: An AWS Lambda function to read csv file content from a S3 bucket, manipulate records, and insert or update records to target DynamoDB tables.
+      MemorySize: 2048
+      Timeout: 300
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref DYNOCollectionTABLE
+        - DynamoDBCrudPolicy:
+            TableName: !Ref DYNOArchiveTABLE
+        - S3ReadPolicy:
+            BucketName: !Ref S3BucketName
+      Events:
+        BucketEvent1:
+          Type: S3
+          Properties:
+            Bucket:
+              Ref: SourceS3Bucket
+            Events:
+              - 's3:ObjectCreated:*'
+      Environment:
+        Variables:
+          DEBUG: 1
+          APPImgRootPath: !Ref APPIMGROOTPATH
+          Bibliographic_Citation: !Ref BibliographicCitation
+          Collection_Category: !Ref CollectionCategory
+          DYNO_Collection_TABLE: !Ref DYNOCollectionTABLE
+          DYNO_Archive_TABLE: !Ref DYNOArchiveTABLE
+          NOID_NAA: !Ref NOIDNAA
+          NOID_Scheme: !Ref NOIDScheme
+          NOID_Template: !Ref NOIDTemplate
+          REGION: !Ref REGION
+          Rights_Holder: !Ref RightsHolder
+          Rights_Statement: !Ref RightsStatement
+  SourceS3Bucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: !Ref S3BucketName
