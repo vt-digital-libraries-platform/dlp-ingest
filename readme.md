@@ -6,7 +6,7 @@ CSV file upload to a S3 bucket and store the data into DynamoDB
 
 # Installation
 * Runtime: Python 3.7
-* Layers: arn:aws:lambda:us-east-1:xxxxxxxxx:layer:iawa-layer:1 See [Create a Lambda layer](https://github.com/VTUL/S3toDDB#create-a-lambda-layer)
+* Layers: arn:aws:lambda:us-east-1:xxxxxxxxx:layer:iawa-layer:1 See [IAWA layer](https://github.com/vt-digital-libraries-platform/lambda_layers)
 
 # Environment variables
 | Key | Value |
@@ -31,30 +31,6 @@ CSV file upload to a S3 bucket and store the data into DynamoDB
 
 ```
 {"APP_IMG_ROOT_PATH":"https://img.cloud.lib.vt.edu/iawa/","Bibliographic_Citation":"Researchers wishing to cite this collection should include the following information: - Special Collections, Virginia Polytechnic Institute and State University, Blacksburg, Va.","Collection_Category":"IAWA","DYNO_Collection_TABLE":"Collection-xxxxxx","DYNO_Archive_TABLE":"Archive-yyyyyy","NOID_NAA":"53696","NOID_Scheme":"ark:/","NOID_Template":"eeddeede","REGION":"us-east-1","Rights_Holder":"Special Collections, University Libraries, Virginia Tech","Rights_Statement":"Permission to publish material from the must be obtained from University Libraries Special Collections, Virginia Tech.","S3BucketName":"iawa-s3csv","LambdaLayerParameter":"arn:aws:lambda:us-east-1:xxxxxxxxx:layer:iawa-layer:1"}
-```
-
-# Create a Lambda layer
-* Create a Lambda layer using CLI
-```
-aws lambda publish-layer-version --layer-name iawa-layer --description "IAWA layer" --zip-file fileb://iawa-layer.zip --compatible-runtimes python3.7
-```
-Output
-```
-{
-    "Content": {
-        "Location": "....",
-        "CodeSha256": "xxxxxxxx+LyoETfaKSxxxxxxx",
-        "CodeSize": 31585176
-    },
-    "LayerArn": "arn:aws:lambda:us-east-1:xxxx:layer:iawa-layer",
-    "LayerVersionArn": "arn:aws:lambda:us-east-1:xxxx:layer:iawa-layer:1",
-    "Description": "IAWA layer",
-    "CreatedDate": "2020-02-12T03:32:10.694+0000",
-    "Version": 1,
-    "CompatibleRuntimes": [
-        "python3.7"
-    ]
-}
 ```
 
 # Redeploy
