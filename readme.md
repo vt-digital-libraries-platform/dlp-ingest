@@ -30,11 +30,11 @@ CSV file upload to a S3 bucket and store the data into DynamoDB
 * example
 
 ```
-{"APP_IMG_ROOT_PATH":"https://img.cloud.lib.vt.edu/iawa/","Bibliographic_Citation":"Researchers wishing to cite this collection should include the following information: - Special Collections, Virginia Polytechnic Institute and State University, Blacksburg, Va.","Collection_Category":"IAWA","DYNO_Collection_TABLE":"Collection-xxxxxx","DYNO_Archive_TABLE":"Archive-yyyyyy","NOID_NAA":"53696","NOID_Scheme":"ark:/","NOID_Template":"eeddeede","REGION":"us-east-1","Rights_Holder":"Special Collections, University Libraries, Virginia Tech","Rights_Statement":"Permission to publish material from the must be obtained from University Libraries Special Collections, Virginia Tech.","S3BucketName":"iawa-s3csv","LambdaLayerParameter":"arn:aws:lambda:us-east-1:xxxxxxxxx:layer:iawa-layer:1"}
+{"APPIMGROOTPATH":"https://img.cloud.lib.vt.edu/iawa/","BibliographicCitation":"Researchers wishing to cite this collection should include the following information: - Special Collections, Virginia Polytechnic Institute and State University, Blacksburg, Va.","CollectionCategory":"IAWA","DYNOCollectionTABLE":"Collection-xxxxxx","DYNOArchiveTABLE":"Archive-yyyyyy","NOIDNAA":"53696","NOIDScheme":"ark:/","NOID_Template":"eeddeede","REGION":"us-east-1","RightsHolder":"Special Collections, University Libraries, Virginia Tech","RightsStatement":"Permission to publish material from the must be obtained from University Libraries Special Collections, Virginia Tech.","S3BucketName":"iawa-s3csv","LambdaLayerParameter":"arn:aws:lambda:us-east-1:xxxxxxxxx:layer:iawa-layer:1"}
 ```
 
 # Redeploy
-* Empty files in the source S3 bucket
+* Empty and delete the S3 bucket storing the CSV files
 * Delete cloudformation stack
 ```
 aws cloudformation delete-stack --stack-name iawa-metadata

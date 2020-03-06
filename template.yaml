@@ -6,8 +6,6 @@ Parameters:
       Type: String
     S3BucketName:
       Type: String
-    S3BucketArn:
-      Type: String
     APPIMGROOTPATH:
       Type: String
     BibliographicCitation:
@@ -60,7 +58,7 @@ Resources:
       Environment:
         Variables:
           DEBUG: 1
-          APPImgRootPath: !Ref APPIMGROOTPATH
+          APP_IMG_ROOT_PATH: !Ref APPIMGROOTPATH
           Bibliographic_Citation: !Ref BibliographicCitation
           Collection_Category: !Ref CollectionCategory
           DYNO_Collection_TABLE: !Ref DYNOCollectionTABLE

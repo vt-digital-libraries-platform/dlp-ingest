@@ -20,7 +20,7 @@ rights_holder = os.getenv('Rights_Holder')
 region_name = os.getenv('REGION')
 collection_table_name = os.getenv('DYNO_Collection_TABLE')
 archive_table_name = os.getenv('DYNO_Archive_TABLE')
-app_img_root_path = os.getenv('APPImgRootPath')
+app_img_root_path = os.getenv('APP_IMG_ROOT_PATH')
 noid_template = os.getenv('NOID_Template')
 noid_scheme = os.getenv('NOID_Scheme')
 noid_naa = os.getenv('NOID_NAA')
@@ -150,15 +150,25 @@ def update_remove_attr_from_table(item_table, item_dict, id_val):
     update_names = {}
     for i in range(key_list_len):
         update_expression += update_attr_dict(item_dict, update_dict, old_key_list[i], new_key_list[i], update_names)
-    response = item_table.update_item(
-        Key={
-            'id': id_val
-        },
-        UpdateExpression=update_expression.rstrip(','),
-        ExpressionAttributeNames=update_names,
-        ExpressionAttributeValues=update_dict,
-        ReturnValues="UPDATED_NEW"
-    )
+    if bool(update_names):
+        response = item_table.update_item(
+            Key={
+                'id': id_val
+            },
+            UpdateExpression=update_expression.rstrip(','),
+            ExpressionAttributeNames=update_names,
+            ExpressionAttributeValues=update_dict,
+            ReturnValues="UPDATED_NEW"
+        )
+    else:
+        response = item_table.update_item(
+            Key={
+                'id': id_val
+            },
+            UpdateExpression=update_expression.rstrip(','),
+            ExpressionAttributeValues=update_dict,
+            ReturnValues="UPDATED_NEW"
+        )
     print("UpdateItem succeeded:")
     remove_names = {}
     remove_expression = remove_attr_dict(item_dict, remove_names)
@@ -201,11 +211,13 @@ def set_attributes_from_env(attr_dict, item_type):
     attr_dict['rights_holder'] = rights_holder
     if item_type == 'Collection':
         attr_dict['collection_category'] = collection_category
+        if 'visibility' not in attr_dict.keys():
+            attr_dict['visibility'] = False
     elif item_type == 'Archive':
         attr_dict['item_category'] = collection_category
         attr_dict['visibility'] = True
 
-    now = datetime.datetime.now().isoformat()
+    now = datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S")
     attr_dict['create_date'] = now
     attr_dict['modified_date'] = now
     attr_dict['id'] = str(uuid.uuid4())
@@ -247,6 +259,7 @@ def set_attribute(attr_dict, attr, value):
 def print_invalid_date(attr_dict, attr):
     try:
         parsed_date = parse(attr_dict[attr])
+        # dates in Elasticsearch are formatted, e.g. "2015-01-01" or "2015/01/01 12:10:30"
         attr_dict[attr] = parsed_date.strftime("%Y/%m/%d")
         print(f"Valid date format: {attr_dict[attr]} for {attr}")
     except ValueError:
@@ -278,7 +291,7 @@ def query_by_index(table, index_name, value):
 def update_attr_dict(attr_dict, update_attr_dict, old_attr, new_attr, attr_names):
     update_exp = ""
     if old_attr in attr_dict.keys():
-        if attr_dict[old_attr]:
+        if attr_dict[old_attr] or old_attr == "visibility":
             update_attr_dict[new_attr] = attr_dict[old_attr]
             if old_attr in reversed_attribute_names:
                 new_key = reversed_attribute_names[old_attr]
