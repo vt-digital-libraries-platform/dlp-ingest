@@ -29,7 +29,7 @@ dyndb = boto3.resource('dynamodb', region_name=region_name)
 archive_table = dyndb.Table(archive_table_name)
 collection_table = dyndb.Table(collection_table_name)
 
-single_value_headers = ['Identifier', 'Title', 'Description', 'Circa', 'Start Date', 'End Date', 'Visibility']
+single_value_headers = ['Identifier', 'Title', 'Description', 'Circa', 'Start Date', 'End Date', 'Visibility', 'Rights']
 multi_value_headers = ['Creator', 'Source', 'Subject', 'Coverage', 'Language', 'Type', 'Is Part Of', 'Medium',
                        'Format', 'Related URL', 'Contributor', 'Tags']
 old_key_list = ['title', 'description', 'creator', 'source', 'circa', 'start_date', 'end_date', 'subject',
@@ -66,7 +66,7 @@ def lambda_handler(event, context):
 
 def batch_import_collections(response):
 
-    df = pd.read_csv(io.BytesIO(response['Body'].read()), na_values='NaN', keep_default_na=False, dtype={'Start Date': str, 'End Date': str})
+    df = pd.read_csv(io.BytesIO(response['Body'].read()), na_values='NaN', keep_default_na=False, encoding='utf-8', dtype={'Start Date': str, 'End Date': str})
 
     for idx, row in df.iterrows():
         collection_dict = process_csv_metadata(row, 'Collection')
@@ -78,7 +78,7 @@ def batch_import_collections(response):
             print(f"Error: Duplicated Collection ({identifier}) has been found.")
             break
         elif result == 'Unique':
-            for key in ['id', 'custom_key', 'identifier', 'rights_holder', 'collection_category', 'create_date']:
+            for key in ['id', 'custom_key', 'identifier', 'collection_category', 'create_date']:
                 del collection_dict[key]
             response = update_remove_attr_from_table(collection_table, collection_dict, id_val)
         else:
@@ -102,7 +102,7 @@ def batch_import_archives(response):
         archive_identifiers = [i.strip() for i in csv_row[1:]]
 
         # process archive metadata csv
-        df = pd.read_csv(csv_path, na_values='NaN', keep_default_na=False, encoding='utf-8')
+        df = pd.read_csv(csv_path, na_values='NaN', keep_default_na=False, encoding='utf-8', dtype={'Start Date': str, 'End Date': str})
         for idx, row in df.iterrows():
             archive_dict = process_csv_metadata(row, 'Archive')
             if ('identifier' not in archive_dict.keys()) and ('title' not in archive_dict.keys()):
@@ -115,11 +115,11 @@ def batch_import_archives(response):
                 parent_collections = matching_parent_paths[0].split('/')
                 parent_collections.pop()
                 if len(parent_collections) > 0:
-                    parent_collection_ids, parent_collection_title = create_sub_collections(parent_collections)
+                    parent_collection_ids = create_sub_collections(parent_collections)
             else:
                 print(f"Wrong archive path invloving {identifier} occurred processing {csv_path}")
                 continue
-            archive_dict['manifest_url'] = app_img_root_path + parent_collection_title.strip().replace(' || ', '/') + '/' + identifier + '/manifest.json'
+            archive_dict['manifest_url'] = app_img_root_path +  matching_parent_paths[0].strip() + '/manifest.json'
             json_url = urllib.request.urlopen(archive_dict['manifest_url'])
             archive_dict['thumbnail_path'] = json.loads(json_url.read())["thumbnail"]["@id"]
             archive_dict['parent_collection'] = parent_collection_ids
@@ -131,7 +131,7 @@ def batch_import_archives(response):
                 print(f"Error: Duplicated Archive ({identifier}) has been found.")
                 break
             elif result == 'Unique':
-                for key in ['id', 'custom_key', 'identifier', 'rights_holder', 'item_category', 'visibility', 'create_date']:
+                for key in ['id', 'custom_key', 'identifier', 'item_category', 'visibility', 'create_date']:
                     del archive_dict[key]
                 response = update_remove_attr_from_table(archive_table, archive_dict, id_val)
             else:
@@ -206,9 +206,10 @@ def process_csv_metadata(data_row, item_type):
     return attr_dict
 
 def set_attributes_from_env(attr_dict, item_type):
-    attr_dict['rights_statement'] = rights_statement_with_title(attr_dict['title'])
-    attr_dict['bibliographic_citation'] = biblio_citation_with_title(attr_dict['title'])
-    attr_dict['rights_holder'] = rights_holder
+    if collection_category == 'IAWA':
+        attr_dict['rights_statement'] = rights_statement_with_title(attr_dict['title'])
+        attr_dict['bibliographic_citation'] = biblio_citation_with_title(attr_dict['title'])
+        attr_dict['rights_holder'] = rights_holder
     if item_type == 'Collection':
         attr_dict['collection_category'] = collection_category
         if 'visibility' not in attr_dict.keys():
@@ -249,6 +250,17 @@ def set_attribute(attr_dict, attr, value):
     elif attr == 'End Date':
         attr_dict[lower_attr] = value.strip()
         print_invalid_date(attr_dict, lower_attr)
+    elif attr == 'Rights':
+        attr_dict['rights_statement'] = value
+    elif attr == 'Parent Collection':
+        parent_collection_ids = []
+        parent_identifiers = value.split('~')
+        for identifier in parent_identifiers:
+            (result, id_val) = query_by_index(collection_table, 'Identifier', identifier)
+            if result == 'Unique':
+                parent_collection_ids.append(id_val)
+        if parent_collection_ids:
+            attr_dict[lower_attr] = parent_collection_ids
     else:
         if attr in csv_columns_to_attributes:
             lower_attr = csv_columns_to_attributes[attr]
@@ -365,5 +377,5 @@ def create_sub_collections(parent_collections):
             print(response)
             print(f"collection {identifier} has been created.")
             parent_collection_ids = [collection_dict['id']]
-    return (parent_collection_ids, title)
+    return parent_collection_ids
 
