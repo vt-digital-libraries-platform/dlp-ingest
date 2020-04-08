@@ -29,17 +29,18 @@ dyndb = boto3.resource('dynamodb', region_name=region_name)
 archive_table = dyndb.Table(archive_table_name)
 collection_table = dyndb.Table(collection_table_name)
 
-single_value_headers = ['Identifier', 'Title', 'Description', 'Circa', 'Start Date', 'End Date', 'Visibility', 'Rights']
+single_value_headers = ['Identifier', 'Title', 'Description']
 multi_value_headers = ['Creator', 'Source', 'Subject', 'Coverage', 'Language', 'Type', 'Is Part Of', 'Medium',
                        'Format', 'Related URL', 'Contributor', 'Tags']
 old_key_list = ['title', 'description', 'creator', 'source', 'circa', 'start_date', 'end_date', 'subject',
                 'belongs_to', 'resource_type', 'location', 'language', 'rights_statement', 'medium',
-                'bibliographic_citation', 'format', 'related_url', 'contributor', 'tags', 'parent_collection',
-                'collection', 'manifest_url', 'thumbnail_path', 'visibility', 'modified_date']
+                'bibliographic_citation', 'rights_holder', 'format', 'related_url', 'contributor', 'tags', 'parent_collection',
+                'collection_category', 'item_category', 'collection', 'manifest_url', 'thumbnail_path', 'visibility', 'modified_date']
 removable_key_list = ['description', 'creator', 'source', 'circa', 'start_date', 'end_date', 'subject',
-                'belongs_to', 'resource_type', 'location', 'language', 'medium', 'format', 'related_url', 'contributor', 'tags']
-new_key_list = [':t', ':d', ':c', ':s', ':ci', ':st', ':e', ':su', ':bt', ':rt', ':l', ':la', ':rs', ':me', ':bc', ':f',
-                ':ru', ':ct', ':tg', ':pc', ':co', ':mu', ':tp', ':v', ':m']
+                      'belongs_to', 'resource_type', 'location', 'language', 'medium', 'format', 'related_url',
+                      'contributor', 'tags', 'rights_statement', 'rights_holder', 'bibliographic_citation']
+new_key_list = [':t', ':d', ':c', ':s', ':ci', ':st', ':e', ':su', ':bt', ':rt', ':l', ':la', ':rs', ':me', ':bc', ':rh', ':f',
+                ':ru', ':ct', ':tg', ':pc', ':cc', ':ic', ':co', ':mu', ':tp', ':v', ':m']
 key_list_len = len(old_key_list)
 csv_columns_to_attributes = {'Type': 'resource_type', 'Is Part Of': 'belongs_to', 'Related URL': 'related_url', 'Coverage': 'location'}
 reversed_attribute_names = {'source': '#s', 'location': '#l', 'language':'#la', 'format':'#f', 'collection': '#c'}
@@ -78,7 +79,7 @@ def batch_import_collections(response):
             print(f"Error: Duplicated Collection ({identifier}) has been found.")
             break
         elif result == 'Unique':
-            for key in ['id', 'custom_key', 'identifier', 'collection_category', 'create_date']:
+            for key in ['id', 'custom_key', 'identifier', 'create_date']:
                 del collection_dict[key]
             response = update_remove_attr_from_table(collection_table, collection_dict, id_val)
         else:
@@ -131,7 +132,7 @@ def batch_import_archives(response):
                 print(f"Error: Duplicated Archive ({identifier}) has been found.")
                 break
             elif result == 'Unique':
-                for key in ['id', 'custom_key', 'identifier', 'item_category', 'visibility', 'create_date']:
+                for key in ['id', 'custom_key', 'identifier', 'create_date']:
                     del archive_dict[key]
                 response = update_remove_attr_from_table(archive_table, archive_dict, id_val)
             else:
