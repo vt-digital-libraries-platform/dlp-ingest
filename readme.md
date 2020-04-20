@@ -30,7 +30,7 @@ CSV file upload to a S3 bucket and store the data into DynamoDB
 * example
 
 ```
-{"APPIMGROOTPATH":"https://img.cloud.lib.vt.edu/iawa/","BibliographicCitation":"Researchers wishing to cite this collection should include the following information: - Special Collections, Virginia Polytechnic Institute and State University, Blacksburg, Va.","CollectionCategory":"IAWA","DYNOCollectionTABLE":"Collection-xxxxxx","DYNOArchiveTABLE":"Archive-yyyyyy","NOIDNAA":"53696","NOIDScheme":"ark:/","NOID_Template":"eeddeede","REGION":"us-east-1","RightsHolder":"Special Collections, University Libraries, Virginia Tech","RightsStatement":"Permission to publish material from the must be obtained from University Libraries Special Collections, Virginia Tech.","S3BucketName":"iawa-s3csv","LambdaLayerParameter":"arn:aws:lambda:us-east-1:xxxxxxxxx:layer:iawa-layer:1"}
+{"APPIMGROOTPATH":"https://img.cloud.lib.vt.edu/iawa/","BibliographicCitation":"Researchers wishing to cite this collection should include the following information: - Special Collections, Virginia Polytechnic Institute and State University, Blacksburg, Va.","CollectionCategory":"IAWA","DYNOCollectionTABLE":"Collection-xxxxxx","DYNOArchiveTABLE":"Archive-yyyyyy","NOIDNAA":"53696","NOIDScheme":"ark:/","NOIDTemplate":"eeddeede","REGION":"us-east-1","RightsHolder":"Special Collections, University Libraries, Virginia Tech","RightsStatement":"Permission to publish material from the must be obtained from University Libraries Special Collections, Virginia Tech.","S3BucketName":"iawa-s3csv","LambdaLayerParameter":"arn:aws:lambda:us-east-1:xxxxxxxxx:layer:iawa-layer:1"}
 ```
 
 # Redeploy
