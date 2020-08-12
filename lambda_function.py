@@ -32,22 +32,22 @@ dyndb = boto3.resource('dynamodb', region_name=region_name)
 archive_table = dyndb.Table(archive_table_name)
 collection_table = dyndb.Table(collection_table_name)
 
-single_value_headers = ['Identifier', 'Title', 'Description', 'Rights']
+single_value_headers = ['Identifier', 'Title', 'Description', 'Rights', 'Thumbnail Path', 'Display_Date']
 multi_value_headers = ['Creator', 'Source', 'Subject', 'Coverage', 'Language', 'Type', 'Is Part Of', 'Medium',
-                       'Format', 'Related URL', 'Contributor', 'Tags', 'Provenance', 'Identifier2']
+                       'Format', 'Related URL', 'Contributor', 'Tags', 'Provenance', 'Identifier2', 'Reference']
 old_key_list = ['title', 'description', 'creator', 'source', 'circa', 'start_date', 'end_date', 'subject',
                 'belongs_to', 'resource_type', 'location', 'language', 'rights_statement', 'medium',
                 'bibliographic_citation', 'rights_holder', 'format', 'related_url', 'contributor', 'tags', 'parent_collection',
                 'collection_category', 'item_category', 'collection', 'manifest_url', 'thumbnail_path', 'visibility',
-                'create_date', 'modified_date', 'provenance', 'reference', 'repository', 'createdAt', 'updatedAt']
+                'create_date', 'modified_date', 'provenance', 'reference', 'repository', 'createdAt', 'updatedAt', 'display_date']
 removable_key_list = ['description', 'creator', 'source', 'circa', 'start_date', 'end_date', 'subject',
                       'belongs_to', 'resource_type', 'location', 'language', 'medium', 'format', 'related_url',
                       'contributor', 'tags', 'rights_statement', 'rights_holder', 'bibliographic_citation',
-                      'provenance', 'reference', 'repository']
+                      'provenance', 'reference', 'repository', 'create_date', 'modified_date']
 new_key_list = [':t', ':d', ':c', ':s', ':ci', ':st', ':e', ':su', ':bt', ':rt', ':l', ':la', ':rs', ':me', ':bc', ':rh', ':f',
-                ':ru', ':ct', ':tg', ':pc', ':cc', ':ic', ':co', ':mu', ':tp', ':v', ':cd', ':m', ':pv', ':rf', ':rp', ':ca', ':ua']
+                ':ru', ':ct', ':tg', ':pc', ':cc', ':ic', ':co', ':mu', ':tp', ':v', ':cd', ':m', ':pv', ':rf', ':rp', ':ca', ':ua', ':dd']
 key_list_len = len(old_key_list)
-csv_columns_to_attributes = {'Type': 'resource_type', 'Is Part Of': 'belongs_to', 'Related URL': 'related_url', 'Coverage': 'location', 
+csv_columns_to_attributes = {'Type': 'resource_type', 'Is Part Of': 'belongs_to', 'Coverage': 'location',
                              'Rights': 'rights_statement', 'Identifier2': 'repository'}
 reversed_attribute_names = {'source': '#s', 'location': '#l', 'language':'#la', 'format':'#f', 'collection': '#c', 'reference': '#rf'}
 
@@ -145,8 +145,6 @@ def create_item_in_table(table, attr_dict, item_type):
     if short_id:
         attr_dict['custom_key'] = noid_scheme + noid_naa + "/" + short_id
     now = datetime.now().strftime("%Y/%m/%d %H:%M:%S")
-    attr_dict['create_date'] = now
-    attr_dict['modified_date'] = now
     utc_now = utcformat(datetime.now())
     attr_dict['createdAt'] = utc_now
     attr_dict['updatedAt'] = utc_now
@@ -163,8 +161,8 @@ def create_item_in_table(table, attr_dict, item_type):
 
 def update_item_in_table(table, attr_dict, key_val):
     del attr_dict['identifier']
-    now = datetime.now().strftime("%Y/%m/%d %H:%M:%S")
-    attr_dict['modified_date'] = now
+    attr_dict['create_date'] = None
+    attr_dict['modified_date'] = None
     utc_now = utcformat(datetime.now())
     attr_dict['updatedAt'] = utc_now
     response = update_remove_attr_from_table(table, attr_dict, key_val)
