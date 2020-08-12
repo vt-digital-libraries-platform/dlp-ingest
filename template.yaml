@@ -41,7 +41,6 @@ Parameters:
       Type: String
     APIEndpoint:
       Type: String
-
 Resources:
   s3toddb:
     Type: 'AWS::Serverless::Function'
@@ -79,7 +78,6 @@ Resources:
           DYNO_Archive_TABLE: !Ref DYNOArchiveTABLE
           NOID_NAA: !Ref NOIDNAA
           NOID_Scheme: !Ref NOIDScheme
-          NOID_Template: !Ref NOIDTemplate
           REGION: !Ref REGION
           Rights_Holder: !Ref RightsHolder
           Rights_Statement: !Ref RightsStatement
@@ -87,7 +85,6 @@ Resources:
           SHORT_URL_PATH: !Ref ShortURLPath
           API_KEY: !Ref APIKey
           API_ENDPOINT: !Ref APIEndpoint
-
   SourceS3Bucket:
     Type: 'AWS::S3::Bucket'
     Properties:
