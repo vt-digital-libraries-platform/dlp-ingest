@@ -26,6 +26,10 @@ Click *Next* to continue
 | REGION | us-east-1 |
 | Rights_Holder | Special Collections, VTL |
 | Rights_Statement | Permission ...... |
+| LONG_URL_PATH | https://iawa.lib.vt.edu/ |
+| SHORT_URL_PATH | http://idn.lib.vt.edu/ |
+| API_KEY | APIKEY |
+| API_ENDPOINT | https://xxxx.execute-api.us-east-1.amazonaws.com/Prod/ |
 
 #### Step 3: Configure stack options
 Leave it as is and click **Next**

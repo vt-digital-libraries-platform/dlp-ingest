@@ -1,6 +1,7 @@
 import json
 import urllib.parse
 import urllib.request
+import requests
 import boto3
 import io
 import re
@@ -9,7 +10,6 @@ import datetime
 from dateutil.parser import parse
 import uuid
 import os
-from noid.pynoid import mint
 from boto3.dynamodb.conditions import Key
 
 # Environment variables
@@ -21,9 +21,12 @@ region_name = os.getenv('REGION')
 collection_table_name = os.getenv('DYNO_Collection_TABLE')
 archive_table_name = os.getenv('DYNO_Archive_TABLE')
 app_img_root_path = os.getenv('APP_IMG_ROOT_PATH')
-noid_template = os.getenv('NOID_Template')
 noid_scheme = os.getenv('NOID_Scheme')
 noid_naa = os.getenv('NOID_NAA')
+long_url_path = os.getenv('LONG_URL_PATH')
+short_url_path = os.getenv('SHORT_URL_PATH')
+api_key = os.getenv('API_KEY')
+api_endpoint = os.getenv('API_ENDPOINT')
  
 dyndb = boto3.resource('dynamodb', region_name=region_name)
 archive_table = dyndb.Table(archive_table_name)
@@ -79,16 +82,10 @@ def batch_import_collections(response):
             print(f"Error: Duplicated Collection ({identifier}) has been found.")
             break
         elif result == 'Unique':
-            for key in ['id', 'custom_key', 'identifier', 'create_date']:
-                del collection_dict[key]
-            response = update_remove_attr_from_table(collection_table, collection_dict, id_val)
+            update_item_in_table(collection_table, collection_dict, id_val)
         else:
             collection_dict['thumbnail_path'] = app_img_root_path + identifier + "/representative.jpg"
-            response = collection_table.put_item(
-                Item=collection_dict
-            )
-            print('PutItem succeeded:')
-        print(response)
+            create_item_in_table(collection_table, collection_dict, "collection")
         print(f"Collection {idx+1} ({identifier}) has been imported.")
 
 def batch_import_archives(response):
@@ -132,18 +129,36 @@ def batch_import_archives(response):
                 print(f"Error: Duplicated Archive ({identifier}) has been found.")
                 break
             elif result == 'Unique':
-                for key in ['id', 'custom_key', 'identifier', 'create_date']:
-                    del archive_dict[key]
-                response = update_remove_attr_from_table(archive_table, archive_dict, id_val)
+                update_item_in_table(archive_table, archive_dict, id_val)
             else:
-                response = archive_table.put_item(
-                    Item=archive_dict
-                )
-                print('PutItem succeeded:')
-            print(response)
+                create_item_in_table(archive_table, archive_dict, "archive")
             print(f"Archive {idx+1} ({identifier}) has been imported.")
         line_count += 1
         print(f"{line_count}: Archive Metadata ({csv_path}) has been processed.")
+
+def create_item_in_table(table, attr_dict, item_type):
+    attr_dict['id'] = str(uuid.uuid4())
+    short_id = mint_NOID()
+    attr_dict['custom_key'] = noid_scheme + noid_naa + "/" + short_id
+    now = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+    attr_dict['create_date'] = now
+    attr_dict['modified_date'] = now
+    response = table.put_item(
+        Item=attr_dict
+    )
+    print('PutItem succeeded:')
+    print(response)
+    # after NOID is created and item is inserted, update long_url and short_url through API
+    long_url = long_url_path + item_type + "/" + short_id
+    short_url = short_url_path + noid_scheme + noid_naa + "/" + item_type + "/" + short_id
+    update_NOID(long_url, short_url, short_id, now)
+
+def update_item_in_table(table, attr_dict, key_val):
+    del attr_dict['identifier']
+    now = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+    attr_dict['modified_date'] = now
+    response = update_remove_attr_from_table(table, attr_dict, key_val)
+    print(response)
 
 def update_remove_attr_from_table(item_table, item_dict, id_val):
     update_expression = 'SET'
@@ -219,12 +234,6 @@ def set_attributes_from_env(attr_dict, item_type):
         attr_dict['item_category'] = collection_category
         attr_dict['visibility'] = True
 
-    now = datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S")
-    attr_dict['create_date'] = now
-    attr_dict['modified_date'] = now
-    attr_dict['id'] = str(uuid.uuid4())
-    attr_dict['custom_key'] = mint(template=noid_template, n=None, scheme=noid_scheme, naa=noid_naa)
-
 def set_attribute(attr_dict, attr, value):
     lower_attr = attr.lower().replace(' ', '_')
     if attr == 'Circa':
@@ -262,6 +271,8 @@ def set_attribute(attr_dict, attr, value):
                 parent_collection_ids.append(id_val)
         if parent_collection_ids:
             attr_dict[lower_attr] = parent_collection_ids
+    elif attr == 'Thumbnail Path':
+        attr_dict[lower_attr] = app_img_root_path + value.strip() + "/representative.jpg"
     else:
         if attr in csv_columns_to_attributes:
             lower_attr = csv_columns_to_attributes[attr]
@@ -380,3 +391,22 @@ def create_sub_collections(parent_collections):
             parent_collection_ids = [collection_dict['id']]
     return parent_collection_ids
 
+def mint_NOID():
+    headers = { 'x-api-key': api_key }
+    url = api_endpoint + 'mint'
+    response = requests.get(url, headers=headers)
+    print(f"mint_NOID {response.text}")
+    if response.status_code == 200:
+        res_message = (response.json())['message']
+        start_idx = res_message.find('New NOID: ') + len('New NOID: ')
+        end_idx = res_message.find(' is created.', start_idx)
+        return res_message[start_idx:end_idx]
+    else:
+        return None
+
+def update_NOID(long_url, short_url, noid, create_date):
+    headers = { 'x-api-key': api_key }
+    body = "long_url=" + long_url + "&short_url=" + short_url + "&noid=" + noid + "&create_date=" + create_date
+    url = api_endpoint + 'update'
+    response = requests.post(url, data=body, headers=headers)
+    print(f"update_NOID: {response.text}")
