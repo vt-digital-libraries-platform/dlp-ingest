@@ -1,16 +1,20 @@
 # S3toDDB
-CSV file upload to a S3 bucket and store the data into DynamoDB
+CSV file upload to a S3 bucket and store the data into target Collection and Archive DynamoDB tables
 
-# Lambda function
+### Lambda function
 * [lambda_function.py](lambda_function.py)
 
-# Installation
-* Runtime: Python 3.7
-* Layers: arn:aws:lambda:us-east-1:xxxxxxxxx:layer:iawa-layer:1 See [IAWA layer](https://github.com/vt-digital-libraries-platform/lambda_layers)
+### Deploy VTDLP 3toDDB Lambda function using CloudFormation stack
+#### Step 1: Launch CloudFormation stack
+[![Launch Stack](https://cdn.rawgit.com/buildkite/cloudformation-launch-stack-button-svg/master/launch-stack.svg)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?&templateURL=https://vtdlp-dev-cf.s3.amazonaws.com/6baabe22b0a79b1c8849d8afe50eeb51.template)
 
-# Environment variables
-| Key | Value |
+Click *Next* to continue
+
+#### Step 2: Specify stack details
+
+| Name | Description |
 |----------|:-------------:|
+| Stack name | any valid name |
 | APP_IMG_ROOT_PATH | https://img.cloud.lib.vt.edu/iawa/ |
 | Bibliographic_Citation | Researchers ...... |
 | Collection_Category | IAWA |
@@ -23,25 +27,51 @@ CSV file upload to a S3 bucket and store the data into DynamoDB
 | Rights_Holder | Special Collections, VTL |
 | Rights_Statement | Permission ...... |
 
-# CodeBuild 
-* buildspec.yml: Update [BUCKET](buildspec.yml#L11)
+#### Step 3: Configure stack options
+Leave it as is and click **Next**
 
-# CodeDeploy Parameter Override
-* example
+#### Step 4: Review
+Make sure all checkboxes under Capabilities section are **CHECKED**
 
-```
-{"APPIMGROOTPATH":"https://img.cloud.lib.vt.edu/iawa/","BibliographicCitation":"Researchers wishing to cite this collection should include the following information: - Special Collections, Virginia Polytechnic Institute and State University, Blacksburg, Va.","CollectionCategory":"IAWA","DYNOCollectionTABLE":"Collection-xxxxxx","DYNOArchiveTABLE":"Archive-yyyyyy","NOIDNAA":"53696","NOIDScheme":"ark:/","NOIDTemplate":"eeddeede","REGION":"us-east-1","RightsHolder":"Special Collections, University Libraries, Virginia Tech","RightsStatement":"Permission to publish material from the must be obtained from University Libraries Special Collections, Virginia Tech.","S3BucketName":"iawa-s3csv","LambdaLayerParameter":"arn:aws:lambda:us-east-1:xxxxxxxxx:layer:iawa-layer:1"}
+Click *Create stack*
+
+### Deploy VTDLP 3toDDB Lambda function using SAM CLI
+
+To use the SAM CLI, you need the following tools.
+
+* SAM CLI - [Install the SAM CLI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-install.html)
+* [Python 3 installed](https://www.python.org/downloads/)
+* Docker - [Install Docker community edition](https://hub.docker.com/search/?type=edition&offering=community)
+
+To build and deploy your application for the first time, run the following in your shell:
+
+```bash
+sam build --use-container
 ```
 
-# Redeploy
-* Empty and delete the S3 bucket storing the CSV files
-* Delete cloudformation stack
+Above command will build the source of the application. The SAM CLI installs dependencies defined in `requirements.txt`, creates a deployment package, and saves it in the `.aws-sam/build` folder.
+
+To package the application, run the following in your shell:
+```bash
+sam package --output-template-file packaged.yaml --s3-bucket BUCKETNAME
 ```
-aws cloudformation delete-stack --stack-name iawa-metadata
-aws cloudformation describe-stacks --stack-name iawa-metadata
+Above command will package the application and upload it to the S3 bucket you specified.
+
+Run the following in your shell to deploy the application to AWS:
+```bash
+sam deploy --template-file packaged.yaml --stack-name STACKNAME --s3-bucket BUCKETNAME --parameter-overrides 'APPIMGROOTPATH=https://yourURL/ BibliographicCitation="Your sentance" CollectionCategory=collection type DYNOCollectionTABLE=CollectionTableName DYNOArchiveTABLE=ArchiveTableName NOIDNAA=53696 NOIDScheme=ark:/ NOIDTemplate=eeddeede REGION=us-east-1 RightsHolder="Your sentance" RightsStatement="Your sentance" S3BucketName=S3BucketName' --capabilities CAPABILITY_IAM --region us-east-1
 ```
 
-# Test
-* Create a S3 bucket to store "collection_metadata.csv" and "index.csv" for Collection and Item ingestion, respectively.
+### Usage
+* Prepare "collection_metadata.csv" and "index.csv" for Collection and Item ingestion, respectively.
+* Put "collection_metadata.csv" and "index.csv" to the target S3 bucket created after deployment.
 * Create a test event in Lambda function. Set the S3 bucket name as in the previous step. For Collection ingestion, set the object key as "collection_metadata.csv"; for Item ingestion, set the object key as "index.csv."
-* Go to DynamoDB to see the end results in Collection and Archive tables
+* Go to DynamoDB to see the end results in Collection and Archive tables.
+
+### Cleanup
+
+To delete the sample application that you created, use the AWS CLI. Assuming you used your project name for the stack name, you can run the following:
+
+```bash
+aws cloudformation delete-stack --stack-name stackname
+```
