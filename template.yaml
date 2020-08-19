@@ -1,9 +1,7 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: 'AWS::Serverless-2016-10-31'
 Description: An AWS Lambda function to read csv file content from a S3 bucket, manipulate records, and insert or update records to target DynamoDB tables.
-Parameters: 
-    LambdaLayerParameter:
-      Type: String
+Parameters:
     S3BucketName:
       Type: String
     APPIMGROOTPATH:
@@ -18,12 +16,16 @@ Parameters:
       Type: String
     NOIDNAA:
       Type: String
+      Default: "53696"
     NOIDScheme:
       Type: String
+      Default: "ark:/"
     NOIDTemplate:
       Type: String
+      Default: "eeddeede"
     REGION:
       Type: String
+      Default: "us-east-1"
     RightsHolder:
       Type: String
     RightsStatement:
@@ -34,8 +36,8 @@ Resources:
     Properties:
       Handler: lambda_function.lambda_handler
       Layers:
-        - !Ref LambdaLayerParameter
-      Runtime: python3.7
+        - !Ref SharedUtils
+      Runtime: python3.8
       CodeUri: .
       Description: An AWS Lambda function to read csv file content from a S3 bucket, manipulate records, and insert or update records to target DynamoDB tables.
       MemorySize: 2048
@@ -69,7 +71,32 @@ Resources:
           REGION: !Ref REGION
           Rights_Holder: !Ref RightsHolder
           Rights_Statement: !Ref RightsStatement
+
+  SharedUtils:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      Description: Sharedutils functions
+      ContentUri: 'sharedutils/'
+      CompatibleRuntimes:
+        - python3.8
+    Metadata:
+      BuildMethod: python3.8
+
   SourceS3Bucket:
     Type: 'AWS::S3::Bucket'
     Properties:
       BucketName: !Ref S3BucketName
+
+Outputs:
+  s3toddbFunction:
+    Description: "s3toddb Lambda Function ARN"
+    Value: !GetAtt s3toddb.Arn
+  s3toddbFunctionName:
+    Description: "s3toddb Lambda Function name"
+    Value: !Ref s3toddb
+  s3toddbIamRole:
+    Description: "Implicit IAM Role created for Noid function"
+    Value: !GetAtt s3toddbRole.Arn
+  s3toddbBucket:
+    Description: "s3toddbBucket Bucket name"
+    Value: !Ref S3BucketName
