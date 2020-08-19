@@ -30,6 +30,15 @@ Parameters:
       Type: String
     RightsStatement:
       Type: String
+    LongURLPath:
+      Type: String
+    ShortURLPath:
+      Type: String
+    APIKey:
+      Type: String
+    APIEndpoint:
+      Type: String
+
 Resources:
   s3toddb:
     Type: 'AWS::Serverless::Function'
@@ -71,6 +80,10 @@ Resources:
           REGION: !Ref REGION
           Rights_Holder: !Ref RightsHolder
           Rights_Statement: !Ref RightsStatement
+          LONG_URL_PATH: !Ref LongURLPath
+          SHORT_URL_PATH: !Ref ShortURLPath
+          API_KEY: !Ref APIKey
+          API_ENDPOINT: !Ref APIEndpoint
 
   SharedUtils:
     Type: AWS::Serverless::LayerVersion
