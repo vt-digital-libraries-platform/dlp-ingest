@@ -6,7 +6,7 @@ CSV file upload to a S3 bucket and store the data into target Collection and Arc
 
 ### Deploy VTDLP 3toDDB Lambda function using CloudFormation stack
 #### Step 1: Launch CloudFormation stack
-[![Launch Stack](https://cdn.rawgit.com/buildkite/cloudformation-launch-stack-button-svg/master/launch-stack.svg)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?&templateURL=https://vtdlp-dev-cf.s3.amazonaws.com/6baabe22b0a79b1c8849d8afe50eeb51.template)
+[![Launch Stack](https://cdn.rawgit.com/buildkite/cloudformation-launch-stack-button-svg/master/launch-stack.svg)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?&templateURL=https://vtdlp-dev-cf.s3.amazonaws.com/6beeabb8d583f54dc5fdea80c8054e77.template)
 
 Click *Next* to continue
 
