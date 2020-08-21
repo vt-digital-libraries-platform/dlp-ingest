@@ -1,9 +1,10 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: 'AWS::Serverless-2016-10-31'
 Description: An AWS Lambda function to read csv file content from a S3 bucket, manipulate records, and insert or update records to target DynamoDB tables.
-Parameters: 
+Parameters:
     LambdaLayerParameter:
       Type: String
+      Default: "arn:aws:lambda:us-east-1:909117335741:layer:iawa-layer:2"
     S3BucketName:
       Type: String
     APPIMGROOTPATH:
@@ -18,16 +19,29 @@ Parameters:
       Type: String
     NOIDNAA:
       Type: String
+      Default: "53696"
     NOIDScheme:
       Type: String
+      Default: "ark:/"
     NOIDTemplate:
       Type: String
+      Default: "eeddeede"
     REGION:
       Type: String
+      Default: "us-east-1"
     RightsHolder:
       Type: String
     RightsStatement:
       Type: String
+    LongURLPath:
+      Type: String
+    ShortURLPath:
+      Type: String
+    APIKey:
+      Type: String
+    APIEndpoint:
+      Type: String
+
 Resources:
   s3toddb:
     Type: 'AWS::Serverless::Function'
@@ -69,7 +83,26 @@ Resources:
           REGION: !Ref REGION
           Rights_Holder: !Ref RightsHolder
           Rights_Statement: !Ref RightsStatement
+          LONG_URL_PATH: !Ref LongURLPath
+          SHORT_URL_PATH: !Ref ShortURLPath
+          API_KEY: !Ref APIKey
+          API_ENDPOINT: !Ref APIEndpoint
+
   SourceS3Bucket:
     Type: 'AWS::S3::Bucket'
     Properties:
       BucketName: !Ref S3BucketName
+
+Outputs:
+  s3toddbFunction:
+    Description: "s3toddb Lambda Function ARN"
+    Value: !GetAtt s3toddb.Arn
+  s3toddbFunctionName:
+    Description: "s3toddb Lambda Function name"
+    Value: !Ref s3toddb
+  s3toddbIamRole:
+    Description: "Implicit IAM Role created for Noid function"
+    Value: !GetAtt s3toddbRole.Arn
+  s3toddbBucket:
+    Description: "s3toddbBucket Bucket name"
+    Value: !Ref S3BucketName
