@@ -139,7 +139,8 @@ def batch_import_archives(response):
 def create_item_in_table(table, attr_dict, item_type):
     attr_dict['id'] = str(uuid.uuid4())
     short_id = mint_NOID()
-    attr_dict['custom_key'] = noid_scheme + noid_naa + "/" + short_id
+    if short_id:
+        attr_dict['custom_key'] = noid_scheme + noid_naa + "/" + short_id
     now = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
     attr_dict['create_date'] = now
     attr_dict['modified_date'] = now
@@ -148,10 +149,11 @@ def create_item_in_table(table, attr_dict, item_type):
     )
     print('PutItem succeeded:')
     print(response)
-    # after NOID is created and item is inserted, update long_url and short_url through API
-    long_url = long_url_path + item_type + "/" + short_id
-    short_url = short_url_path + noid_scheme + noid_naa + "/" + item_type + "/" + short_id
-    update_NOID(long_url, short_url, short_id, now)
+    if short_id:
+        # after NOID is created and item is inserted, update long_url and short_url through API
+        long_url = long_url_path + item_type + "/" + short_id
+        short_url = short_url_path + noid_scheme + noid_naa + "/" + item_type + "/" + short_id
+        update_NOID(long_url, short_url, short_id, now)
 
 def update_item_in_table(table, attr_dict, key_val):
     del attr_dict['identifier']
