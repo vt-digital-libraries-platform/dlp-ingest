@@ -22,10 +22,13 @@ Click *Next* to continue
 | DYNO_Archive_TABLE | archivetablename |
 | NOID_NAA | 53696 |
 | NOID_Scheme | ark:/ |
-| NOID_Template | eeddeede |
 | REGION | us-east-1 |
 | Rights_Holder | Special Collections, VTL |
 | Rights_Statement | Permission ...... |
+| LONG_URL_PATH | https://iawa.lib.vt.edu/ |
+| SHORT_URL_PATH | http://idn.lib.vt.edu/ |
+| API_KEY | APIKEY |
+| API_ENDPOINT | https://xxxx.execute-api.us-east-1.amazonaws.com/Prod/ |
 
 #### Step 3: Configure stack options
 Leave it as is and click **Next**
@@ -59,7 +62,7 @@ Above command will package the application and upload it to the S3 bucket you sp
 
 Run the following in your shell to deploy the application to AWS:
 ```bash
-sam deploy --template-file packaged.yaml --stack-name STACKNAME --s3-bucket BUCKETNAME --parameter-overrides 'APPIMGROOTPATH=https://yourURL/ BibliographicCitation="Your sentance" CollectionCategory=collection type DYNOCollectionTABLE=CollectionTableName DYNOArchiveTABLE=ArchiveTableName NOIDNAA=53696 NOIDScheme=ark:/ NOIDTemplate=eeddeede REGION=us-east-1 RightsHolder="Your sentance" RightsStatement="Your sentance" S3BucketName=S3BucketName LongURLPath=LongURLPath ShortURLPath=ShortURLPath APIKey=APIKey APIEndpoint=APIEndpoint' --capabilities CAPABILITY_IAM --region us-east-1
+sam deploy --template-file packaged.yaml --stack-name STACKNAME --s3-bucket BUCKETNAME --parameter-overrides 'APPIMGROOTPATH=https://yourURL/ BibliographicCitation="Your sentance" CollectionCategory=collection type DYNOCollectionTABLE=CollectionTableName DYNOArchiveTABLE=ArchiveTableName NOIDNAA=53696 NOIDScheme=ark:/ REGION=us-east-1 RightsHolder="Your sentance" RightsStatement="Your sentance" S3BucketName=S3BucketName LongURLPath=LongURLPath ShortURLPath=ShortURLPath APIKey=APIKey APIEndpoint=APIEndpoint' --capabilities CAPABILITY_IAM --region us-east-1
 ```
 
 ### Usage
