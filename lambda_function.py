@@ -152,7 +152,7 @@ def create_item_in_table(table, attr_dict, item_type):
     if short_id:
         # after NOID is created and item is inserted, update long_url and short_url through API
         long_url = long_url_path + item_type + "/" + short_id
-        short_url = short_url_path + noid_scheme + noid_naa + "/" + item_type + "/" + short_id
+        short_url = short_url_path + noid_scheme + noid_naa + "/" + short_id
         update_NOID(long_url, short_url, short_id, now)
 
 def update_item_in_table(table, attr_dict, key_val):
