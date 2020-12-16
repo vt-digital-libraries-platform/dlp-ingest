@@ -6,7 +6,7 @@ import boto3
 import io
 import re
 import pandas as pd
-import datetime
+from datetime import datetime, timezone
 from dateutil.parser import parse
 import uuid
 import os
@@ -32,21 +32,24 @@ dyndb = boto3.resource('dynamodb', region_name=region_name)
 archive_table = dyndb.Table(archive_table_name)
 collection_table = dyndb.Table(collection_table_name)
 
-single_value_headers = ['Identifier', 'Title', 'Description']
+single_value_headers = ['Identifier', 'Title', 'Description', 'Rights']
 multi_value_headers = ['Creator', 'Source', 'Subject', 'Coverage', 'Language', 'Type', 'Is Part Of', 'Medium',
-                       'Format', 'Related URL', 'Contributor', 'Tags']
+                       'Format', 'Related URL', 'Contributor', 'Tags', 'Provenance', 'Identifier2']
 old_key_list = ['title', 'description', 'creator', 'source', 'circa', 'start_date', 'end_date', 'subject',
                 'belongs_to', 'resource_type', 'location', 'language', 'rights_statement', 'medium',
                 'bibliographic_citation', 'rights_holder', 'format', 'related_url', 'contributor', 'tags', 'parent_collection',
-                'collection_category', 'item_category', 'collection', 'manifest_url', 'thumbnail_path', 'visibility', 'modified_date']
+                'collection_category', 'item_category', 'collection', 'manifest_url', 'thumbnail_path', 'visibility',
+                'create_date', 'modified_date', 'provenance', 'reference', 'repository', 'createdAt', 'updatedAt']
 removable_key_list = ['description', 'creator', 'source', 'circa', 'start_date', 'end_date', 'subject',
                       'belongs_to', 'resource_type', 'location', 'language', 'medium', 'format', 'related_url',
-                      'contributor', 'tags', 'rights_statement', 'rights_holder', 'bibliographic_citation']
+                      'contributor', 'tags', 'rights_statement', 'rights_holder', 'bibliographic_citation',
+                      'provenance', 'reference', 'repository']
 new_key_list = [':t', ':d', ':c', ':s', ':ci', ':st', ':e', ':su', ':bt', ':rt', ':l', ':la', ':rs', ':me', ':bc', ':rh', ':f',
-                ':ru', ':ct', ':tg', ':pc', ':cc', ':ic', ':co', ':mu', ':tp', ':v', ':m']
+                ':ru', ':ct', ':tg', ':pc', ':cc', ':ic', ':co', ':mu', ':tp', ':v', ':cd', ':m', ':pv', ':rf', ':rp', ':ca', ':ua']
 key_list_len = len(old_key_list)
-csv_columns_to_attributes = {'Type': 'resource_type', 'Is Part Of': 'belongs_to', 'Related URL': 'related_url', 'Coverage': 'location'}
-reversed_attribute_names = {'source': '#s', 'location': '#l', 'language':'#la', 'format':'#f', 'collection': '#c'}
+csv_columns_to_attributes = {'Type': 'resource_type', 'Is Part Of': 'belongs_to', 'Related URL': 'related_url', 'Coverage': 'location', 
+                             'Rights': 'rights_statement', 'Identifier2': 'repository'}
+reversed_attribute_names = {'source': '#s', 'location': '#l', 'language':'#la', 'format':'#f', 'collection': '#c', 'reference': '#rf'}
 
 def lambda_handler(event, context):
 
@@ -141,9 +144,12 @@ def create_item_in_table(table, attr_dict, item_type):
     short_id = mint_NOID()
     if short_id:
         attr_dict['custom_key'] = noid_scheme + noid_naa + "/" + short_id
-    now = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+    now = datetime.now().strftime("%Y/%m/%d %H:%M:%S")
     attr_dict['create_date'] = now
     attr_dict['modified_date'] = now
+    utc_now = utcformat(datetime.now())
+    attr_dict['createdAt'] = utc_now
+    attr_dict['updatedAt'] = utc_now
     response = table.put_item(
         Item=attr_dict
     )
@@ -157,10 +163,17 @@ def create_item_in_table(table, attr_dict, item_type):
 
 def update_item_in_table(table, attr_dict, key_val):
     del attr_dict['identifier']
-    now = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+    now = datetime.now().strftime("%Y/%m/%d %H:%M:%S")
     attr_dict['modified_date'] = now
+    utc_now = utcformat(datetime.now())
+    attr_dict['updatedAt'] = utc_now
     response = update_remove_attr_from_table(table, attr_dict, key_val)
     print(response)
+
+def utcformat(dt, timespec='milliseconds'):
+    # convert datetime to string in UTC format (YYYY-mm-ddTHH:MM:SS.mmmZ)
+    iso_str = dt.astimezone(timezone.utc).isoformat('T', timespec)
+    return iso_str.replace('+00:00', 'Z')
 
 def update_remove_attr_from_table(item_table, item_dict, id_val):
     update_expression = 'SET'
@@ -247,23 +260,9 @@ def set_attribute(attr_dict, attr, value):
         else:
             attr_dict[lower_attr] = False
     elif attr == 'Start Date':
-        value = value.strip()
-        # e.g., c. 1940s
-        if re.search(r'^(c\. )[0-9]{4}s$', value):
-            attr_dict['circa'] = 'Circa '
-            start_date = value[3:7]
-            attr_dict[lower_attr] = start_date
-        elif re.search(r'^(c\. )', value):
-            attr_dict['circa'] = 'Circa '
-            attr_dict[lower_attr] = value[3:]
-        else:
-            attr_dict[lower_attr] = value
-        print_invalid_date(attr_dict, lower_attr)
+        attr_dict[lower_attr] = value.strip()
     elif attr == 'End Date':
         attr_dict[lower_attr] = value.strip()
-        print_invalid_date(attr_dict, lower_attr)
-    elif attr == 'Rights':
-        attr_dict['rights_statement'] = value
     elif attr == 'Parent Collection':
         parent_collection_ids = []
         parent_identifiers = value.split('~')
@@ -361,11 +360,8 @@ def create_sub_collections(parent_collections):
         if idx == 0:
             title = parent_collections[idx]
             identifier = parent_collections[idx]
-        elif idx == 1:
-            title = identifier + " || " + parent_collections[idx]
-            identifier += "_" + parent_collections[idx]
         else:
-            title += " || " + parent_collections[idx]
+            title = parent_collections[idx]
             identifier += "_" + parent_collections[idx]
 
         collection_dict = {}
@@ -384,11 +380,8 @@ def create_sub_collections(parent_collections):
             print(f"Collection {identifier} exists!")
             parent_collection_ids = [id_val]
         else:
-            response = collection_table.put_item(
-                Item=collection_dict
-            )
+            create_item_in_table(collection_table, collection_dict, "collection")
             print('PutItem succeeded:')
-            print(response)
             print(f"collection {identifier} has been created.")
             parent_collection_ids = [collection_dict['id']]
     return parent_collection_ids
