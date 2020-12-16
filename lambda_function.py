@@ -260,22 +260,9 @@ def set_attribute(attr_dict, attr, value):
         else:
             attr_dict[lower_attr] = False
     elif attr == 'Start Date':
-        # value = value.strip()
-        # # e.g., c. 1940s
-        # if re.search(r'^(c\. )[0-9]{4}s$', value):
-        #     attr_dict['circa'] = 'Circa '
-        #     start_date = value[3:7]
-        #     attr_dict[lower_attr] = start_date
-        # elif re.search(r'^(c\. )', value):
-        #     attr_dict['circa'] = 'Circa '
-        #     attr_dict[lower_attr] = value[3:]
-        # else:
-        #     attr_dict[lower_attr] = value
-        # print_invalid_date(attr_dict, lower_attr)
         attr_dict[lower_attr] = value.strip()
     elif attr == 'End Date':
         attr_dict[lower_attr] = value.strip()
-        # print_invalid_date(attr_dict, lower_attr)
     elif attr == 'Parent Collection':
         parent_collection_ids = []
         parent_identifiers = value.split('~')
