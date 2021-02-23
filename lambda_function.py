@@ -32,7 +32,7 @@ dyndb = boto3.resource('dynamodb', region_name=region_name)
 archive_table = dyndb.Table(archive_table_name)
 collection_table = dyndb.Table(collection_table_name)
 
-single_value_headers = ['Identifier', 'Title', 'Description', 'Rights', 'Thumbnail Path', 'Display_Date']
+single_value_headers = ['Identifier', 'Title', 'Description', 'Rights', 'Thumbnail Path', 'Display_Date', 'Bibliographic Citation', 'Rights Holder']
 multi_value_headers = ['Creator', 'Source', 'Subject', 'Coverage', 'Language', 'Type', 'Is Part Of', 'Medium',
                        'Format', 'Related URL', 'Contributor', 'Tags', 'Provenance', 'Identifier2', 'Reference']
 old_key_list = ['title', 'description', 'creator', 'source', 'circa', 'start_date', 'end_date', 'subject',
@@ -148,11 +148,10 @@ def create_item_in_table(table, attr_dict, item_type):
     utc_now = utcformat(datetime.now())
     attr_dict['createdAt'] = utc_now
     attr_dict['updatedAt'] = utc_now
-    response = table.put_item(
+    table.put_item(
         Item=attr_dict
     )
     print('PutItem succeeded:')
-    print(response)
     if short_id:
         # after NOID is created and item is inserted, update long_url and short_url through API
         long_url = long_url_path + item_type + "/" + short_id
@@ -165,8 +164,7 @@ def update_item_in_table(table, attr_dict, key_val):
     attr_dict['modified_date'] = None
     utc_now = utcformat(datetime.now())
     attr_dict['updatedAt'] = utc_now
-    response = update_remove_attr_from_table(table, attr_dict, key_val)
-    print(response)
+    return update_remove_attr_from_table(table, attr_dict, key_val)
 
 def utcformat(dt, timespec='milliseconds'):
     # convert datetime to string in UTC format (YYYY-mm-ddTHH:MM:SS.mmmZ)
@@ -227,7 +225,7 @@ def process_csv_metadata(data_row, item_type):
     attr_dict = {}
     for items in data_row.iteritems():
         if items[0] and items[1]:
-            set_attribute(attr_dict, items[0], items[1])
+            set_attribute(attr_dict, items[0].strip(), items[1])
     if ('identifier' not in attr_dict.keys()) or ('title' not in attr_dict.keys()):
         print(f"Missing required attribute in this row!")
     else:
@@ -236,9 +234,12 @@ def process_csv_metadata(data_row, item_type):
 
 def set_attributes_from_env(attr_dict, item_type):
     if collection_category == 'IAWA':
-        attr_dict['rights_statement'] = rights_statement_with_title(attr_dict['title'])
-        attr_dict['bibliographic_citation'] = biblio_citation_with_title(attr_dict['title'])
-        attr_dict['rights_holder'] = rights_holder
+        if ('rights_statement' not in attr_dict.keys()):
+            attr_dict['rights_statement'] = rights_statement_with_title(attr_dict['title'])
+        if ('bibliographic_citation' not in attr_dict.keys()):
+            attr_dict['bibliographic_citation'] = biblio_citation_with_title(attr_dict['title'])
+        if ('rights_holder' not in attr_dict.keys()):
+            attr_dict['rights_holder'] = rights_holder
     if item_type == 'Collection':
         attr_dict['collection_category'] = collection_category
         if 'visibility' not in attr_dict.keys():
@@ -250,7 +251,7 @@ def set_attributes_from_env(attr_dict, item_type):
 def set_attribute(attr_dict, attr, value):
     lower_attr = attr.lower().replace(' ', '_')
     if attr == 'Circa':
-        if value == 'Yes':
+        if str(value).lower() == 'yes':
             attr_dict[lower_attr] = 'Circa '
     elif attr == 'Visibility':
         if str(value).lower() == 'true':
@@ -350,7 +351,7 @@ def extract_attribute(header, value):
     if header in single_value_headers:
         return value
     elif header in multi_value_headers:
-        return value.split('~')
+        return value.split('||')
 
 def create_sub_collections(parent_collections):
     parent_collection_ids = None
