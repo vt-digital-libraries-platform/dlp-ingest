@@ -20,6 +20,7 @@ Click *Next* to continue
 | Collection_Category | IAWA |
 | DYNO_Collection_TABLE | collectiontablename |
 | DYNO_Archive_TABLE | archivetablename |
+| DYNO_COLLECTIONMAPTABLE_NAME | collectionmaptablename |
 | NOID_NAA | 53696 |
 | NOID_Scheme | ark:/ |
 | REGION | us-east-1 |
@@ -62,14 +63,14 @@ Above command will package the application and upload it to the S3 bucket you sp
 
 Run the following in your shell to deploy the application to AWS:
 ```bash
-sam deploy --template-file packaged.yaml --stack-name STACKNAME --s3-bucket BUCKETNAME --parameter-overrides 'APPIMGROOTPATH=https://yourURL/ BibliographicCitation="Your sentance" CollectionCategory=collection type DYNOCollectionTABLE=CollectionTableName DYNOArchiveTABLE=ArchiveTableName NOIDNAA=53696 NOIDScheme=ark:/ REGION=us-east-1 RightsHolder="Your sentance" RightsStatement="Your sentance" S3BucketName=S3BucketName LongURLPath=LongURLPath ShortURLPath=ShortURLPath APIKey=APIKey APIEndpoint=APIEndpoint' --capabilities CAPABILITY_IAM --region us-east-1
+sam deploy --template-file packaged.yaml --stack-name STACKNAME --s3-bucket BUCKETNAME --parameter-overrides 'APPIMGROOTPATH=https://yourURL/ BibliographicCitation="Your sentance" CollectionCategory=collection type DYNOCollectionTABLE=CollectionTableName DYNOArchiveTABLE=ArchiveTableName DYNOCollectionmapTABLE=CollectionmapTableName NOIDNAA=53696 NOIDScheme=ark:/ REGION=us-east-1 RightsHolder="Your sentance" RightsStatement="Your sentance" S3BucketName=S3BucketName LongURLPath=LongURLPath ShortURLPath=ShortURLPath APIKey=APIKey APIEndpoint=APIEndpoint' --capabilities CAPABILITY_IAM --region us-east-1
 ```
 
 ### Usage
 * Prepare "collection_metadata.csv" and "index.csv" for Collection and Item ingestion, respectively.
 * Put "collection_metadata.csv" and "index.csv" to the target S3 bucket created after deployment.
 * Create a test event in Lambda function. Set the S3 bucket name as in the previous step. For Collection ingestion, set the object key as "collection_metadata.csv"; for Item ingestion, set the object key as "index.csv."
-* Go to DynamoDB to see the end results in Collection and Archive tables.
+* Go to DynamoDB to see the end results in Collection, Archive and Collectionmap tables.
 
 ### Cleanup
 
