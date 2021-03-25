@@ -14,6 +14,8 @@ Parameters:
       Type: String
     DYNOArchiveTABLE:
       Type: String
+    DYNOCollectionmapTABLE:
+      Type: String
     NOIDNAA:
       Type: String
       Default: "53696"
@@ -50,6 +52,8 @@ Resources:
             TableName: !Ref DYNOCollectionTABLE
         - DynamoDBCrudPolicy:
             TableName: !Ref DYNOArchiveTABLE
+        - DynamoDBCrudPolicy:
+            TableName: !Ref DYNOCollectionmapTABLE
         - S3ReadPolicy:
             BucketName: !Ref S3BucketName
       Events:
@@ -68,6 +72,7 @@ Resources:
           Collection_Category: !Ref CollectionCategory
           DYNO_Collection_TABLE: !Ref DYNOCollectionTABLE
           DYNO_Archive_TABLE: !Ref DYNOArchiveTABLE
+          DYNO_Collectionmap_TABLE: !Ref DYNOCollectionmapTABLE
           NOID_NAA: !Ref NOIDNAA
           NOID_Scheme: !Ref NOIDScheme
           REGION: !Ref REGION
