@@ -90,7 +90,8 @@ def batch_import_collections(response):
     for idx, row in df.iterrows():
         collection_dict = process_csv_metadata(row, 'Collection')
         if not collection_dict:
-            continue
+            print(f"Error: Collection {idx+1} has failed to be imported.")
+            break
         identifier = collection_dict['identifier']
         items = query_by_index(collection_table, 'Identifier', identifier)
         if len(items) > 1:
@@ -114,7 +115,8 @@ def batch_import_archives(response):
     for idx, row in df.iterrows():
         archive_dict = process_csv_metadata(row, 'Archive')
         if not archive_dict:
-            continue
+            print(f"Error: Archive {idx+1} has failed to be imported.")
+            break
         find_and_update(archive_table, archive_dict, 'Archive', idx)
 
 def batch_import_archives_with_path(response):
@@ -132,10 +134,9 @@ def batch_import_archives_with_path(response):
         df = pd.read_csv(csv_path, na_values='NaN', keep_default_na=False, encoding='utf-8', dtype={'Start Date': str, 'End Date': str})
         for idx, row in df.iterrows():
             archive_dict = process_csv_metadata(row, 'Archive')
-            if ('identifier' not in archive_dict.keys()) and ('title' not in archive_dict.keys()):
+            if not archive_dict:
+                print(f"Error: Archive {idx+1} has failed to be imported.")
                 break
-            elif ('identifier' not in archive_dict.keys()) or ('title' not in archive_dict.keys()):
-                continue
             identifier = archive_dict['identifier']
             matching_parent_paths = [path for path in archive_identifiers if path.endswith(identifier)]
             if len(matching_parent_paths) == 1:
@@ -201,6 +202,7 @@ def update_item_in_table(table, attr_dict, key_val):
     del attr_dict['identifier']
     attr_dict['create_date'] = None
     attr_dict['modified_date'] = None
+    attr_dict['circa'] = None
     utc_now = utcformat(datetime.now())
     attr_dict['updatedAt'] = utc_now
     return update_remove_attr_from_table(table, attr_dict, key_val)
@@ -266,6 +268,7 @@ def process_csv_metadata(data_row, item_type):
         if items[0].strip() and str(items[1]).strip():
             set_attribute(attr_dict, items[0].strip(), str(items[1]).strip())
     if ('identifier' not in attr_dict.keys()) or ('title' not in attr_dict.keys()):
+        attr_dict = None
         print(f"Missing required attribute in this row!")
     else:
         set_attributes_from_env(attr_dict, item_type)
