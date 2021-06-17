@@ -15,21 +15,21 @@ Click *Next* to continue
 | Name | Description |
 |----------|:-------------:|
 | Stack name | any valid name |
-| APP_IMG_ROOT_PATH | https://img.cloud.lib.vt.edu/iawa/ |
-| Bibliographic_Citation | Researchers ...... |
-| Collection_Category | IAWA |
-| DYNO_Collection_TABLE | collectiontablename |
-| DYNO_Archive_TABLE | archivetablename |
-| DYNO_COLLECTIONMAPTABLE_NAME | collectionmaptablename |
-| NOID_NAA | 53696 |
-| NOID_Scheme | ark:/ |
+| APPIMGROOTPATH | https://img.cloud.lib.vt.edu/iawa/ |
+| BibliographicCitation | Researchers ...... |
+| CollectionCategory | IAWA |
+| DYNOCollectionTABLE | collectiontablename |
+| DYNOArchiveTABLE | archivetablename |
+| DYNOCollectionmapTABLE | collectionmaptablename |
+| NOIDNAA | 53696 |
+| NOIDScheme | ark:/ |
 | REGION | us-east-1 |
-| Rights_Holder | Special Collections, VTL |
-| Rights_Statement | Permission ...... |
-| LONG_URL_PATH | https://iawa.lib.vt.edu/ |
-| SHORT_URL_PATH | http://idn.lib.vt.edu/ |
-| API_KEY | APIKEY |
-| API_ENDPOINT | https://xxxx.execute-api.us-east-1.amazonaws.com/Prod/ |
+| RightsHolder | Special Collections, VTL |
+| RightsStatement | Permission ...... |
+| LongURLPath | https://iawa.lib.vt.edu/ |
+| ShortURLPath | http://idn.lib.vt.edu/ |
+| APIKey | APIKEY |
+| APIEndpoint | https://xxxx.execute-api.us-east-1.amazonaws.com/Prod/ |
 
 #### Step 3: Configure stack options
 Leave it as is and click **Next**
