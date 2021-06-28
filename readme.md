@@ -15,8 +15,9 @@ Before you deploy this Lambda function, you should already have [VTDLP Access We
 
 * The `APPIMGROOTPATH` is a URL point to your Cloudfront URL which serves the static images. E.g. https://img.cloud.lib.vt.edu/iawa/. Note: The URL should end with a slash `/`.
 
+You can use two different methods to deploy VTDLP Services. The first method is using CloudFormation stack and the second method is using SAM CLI.
 
-### Deploy VTDLP 3toDDB Lambda function using CloudFormation stack
+### Deploy VTDLP S3toDDB Lambda function using CloudFormation stack
 #### Step 1: Launch CloudFormation stack
 [![Launch Stack](https://cdn.rawgit.com/buildkite/cloudformation-launch-stack-button-svg/master/launch-stack.svg)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?&templateURL=https://vtdlp-dev-cf.s3.amazonaws.com/b0465228d07da4f60d576e14bce8ba52.template)
 
@@ -45,7 +46,7 @@ Click *Next* to continue
     | ShortURLPath | http://idn.lib.vt.edu/ | **Required** |
     | APIKey | APIKEY | **Required** |
     | APIEndpoint | https://xxxx.execute-api.us-east-1.amazonaws.com/Prod/ | **Required** |
-    | S3BucketName | An Amazon S3 bucket name for you to upload the metadata CSV file. This S3 bucket is not the same as `BUCKETNAME` | **Required** |
+    | S3BucketName | An Amazon S3 bucket name for you to upload the metadata CSV file. This S3 bucket is not the same as `BUCKETNAME` and can not be an existing S3 bucket. | **Required** |
     | NoidLayerArn | A Lambda layer Arn. The value must be `arn:aws:lambda:us-east-1:909117335741:layer:noid-layer:6`. It is also the default value. | **Required** |
 
 #### Step 3: Configure stack options
@@ -56,7 +57,7 @@ Make sure all checkboxes under Capabilities section are **CHECKED**
 
 Click *Create stack*
 
-### Deploy VTDLP 3toDDB Lambda function using SAM CLI (For advanced users)
+### Deploy VTDLP S3toDDB Lambda function using SAM CLI (For advanced users)
 
 To use the SAM CLI, you need the following tools.
 
@@ -95,7 +96,7 @@ The above command will package and deploy your application to AWS, with a series
     |----------|:-------------:|:-------------:|
     | APPIMGROOTPATH | Cloudfront URL which serves the static images. E.g. https://img.cloud.lib.vt.edu/iawa/ | **Required** |
     | BibliographicCitation | A bibliographic citation provides relevant information about the author and publication as well as a short summary of the text, usually known as the abstract. It is usually a sentence. | **Required** |
-    | CollectionCategory | The `VTDLP Access Website` site ID. e.g. `IAWA` | **Required** |
+    | CollectionCategory | The `VTDLP Access Website` site ID and it is case sensitive. e.g. `IAWA` | **Required** |
     | DYNOCollectionTABLE | collectiontablename | **Required** |
     | DYNOArchiveTABLE | archivetablename | **Required** |
     | DYNOCollectionmapTABLE | collectionmaptablename | **Required** |
@@ -108,7 +109,7 @@ The above command will package and deploy your application to AWS, with a series
     | ShortURLPath | http://idn.lib.vt.edu/ | **Required** |
     | APIKey | APIKEY | **Required** |
     | APIEndpoint | https://xxxx.execute-api.us-east-1.amazonaws.com/Prod/ | **Required** |
-    | S3BucketName | An Amazon S3 bucket name for you to upload the metadata CSV file. This S3 bucket is not the same as `BUCKETNAME` | **Required** |
+    | S3BucketName | An Amazon S3 bucket name for you to upload the metadata CSV file. This S3 bucket is not the same as `BUCKETNAME` and can not be an existing S3 bucket. | **Required** |
     | NoidLayerArn | A Lambda layer Arn. The value must be `arn:aws:lambda:us-east-1:909117335741:layer:noid-layer:6`.It is also the default value. | **Required** |
 
 - **Allow SAM CLI IAM role creation**: Many AWS SAM templates, including this example, create AWS IAM roles required for the AWS Lambda function(s) included to access AWS services. By default, these are scoped down to minimum required permissions. To deploy an AWS CloudFormation stack which creates or modified IAM roles, the `CAPABILITY_IAM` value for `capabilities` must be provided. If permission isn't provided through this prompt, to deploy this example you must explicitly pass `--capabilities CAPABILITY_IAM` to the `sam deploy` command. [Learn more](https://docs.amazonaws.cn/en_us/serverlessrepo/latest/devguide/acknowledging-application-capabilities.html).
