@@ -28,8 +28,8 @@ long_url_path = os.getenv('LONG_URL_PATH')
 short_url_path = os.getenv('SHORT_URL_PATH')
 api_key = os.getenv('API_KEY')
 api_endpoint = os.getenv('API_ENDPOINT')
- 
-try: 
+
+try:
     dyndb = boto3.resource('dynamodb', region_name=region_name)
     archive_table = dyndb.Table(archive_table_name)
     collection_table = dyndb.Table(collection_table_name)
@@ -39,32 +39,154 @@ except Exception as e:
     print(f"An error occurred: {str(e)}")
     raise e
 
-single_value_headers = ['Identifier', 'Title', 'Description', 'Rights', 'Bibliographic Citation',
-                        'Rights Holder', 'Extent']
-multi_value_headers = ['Creator', 'Source', 'Subject', 'Coverage', 'Language', 'Type', 'Is Part Of', 'Medium',
-                       'Format', 'Related URL', 'Contributor', 'Tags', 'Provenance', 'Identifier2', 'Reference']
-old_key_list = ['title', 'description', 'creator', 'source', 'circa', 'start_date', 'end_date', 'subject',
-                'belongs_to', 'resource_type', 'location', 'language', 'rights_statement', 'medium',
-                'bibliographic_citation', 'rights_holder', 'format', 'related_url', 'contributor', 'tags', 'parent_collection',
-                'collection_category', 'item_category', 'collection', 'manifest_url', 'thumbnail_path', 'visibility',
-                'create_date', 'modified_date', 'provenance', 'reference', 'repository', 'createdAt', 'updatedAt',
-                'display_date', 'extent', 'heirarchy_path']
-removable_key_list = ['description', 'creator', 'source', 'circa', 'start_date', 'end_date', 'subject',
-                      'belongs_to', 'resource_type', 'location', 'language', 'medium', 'format', 'related_url',
-                      'contributor', 'tags', 'rights_statement', 'rights_holder', 'bibliographic_citation',
-                      'provenance', 'reference', 'repository', 'create_date', 'modified_date', 'extent']
-new_key_list = [':t', ':d', ':c', ':s', ':ci', ':st', ':e', ':su', ':bt', ':rt', ':l', ':la', ':rs', ':me', ':bc', ':rh', ':f',
-                ':ru', ':ct', ':tg', ':pc', ':cc', ':ic', ':co', ':mu', ':tp', ':v', ':cd', ':m', ':pv', ':rf', ':rp', ':ca',
-                ':ua', ':dd', ':et', ':hp']
+single_value_headers = [
+    'Identifier',
+    'Title',
+    'Description',
+    'Rights',
+    'Bibliographic Citation',
+    'Rights Holder',
+    'Extent']
+multi_value_headers = [
+    'Creator',
+    'Source',
+    'Subject',
+    'Coverage',
+    'Language',
+    'Type',
+    'Is Part Of',
+    'Medium',
+    'Format',
+    'Related URL',
+    'Contributor',
+    'Tags',
+    'Provenance',
+    'Identifier2',
+    'Reference']
+old_key_list = [
+    'title',
+    'description',
+    'creator',
+    'source',
+    'circa',
+    'start_date',
+    'end_date',
+    'subject',
+    'belongs_to',
+    'resource_type',
+    'location',
+    'language',
+    'rights_statement',
+    'medium',
+    'bibliographic_citation',
+    'rights_holder',
+    'format',
+    'related_url',
+    'contributor',
+    'tags',
+    'parent_collection',
+    'collection_category',
+    'item_category',
+    'collection',
+    'manifest_url',
+    'thumbnail_path',
+    'visibility',
+    'create_date',
+    'modified_date',
+    'provenance',
+    'reference',
+    'repository',
+    'createdAt',
+    'updatedAt',
+    'display_date',
+    'extent',
+    'heirarchy_path']
+removable_key_list = [
+    'description',
+    'creator',
+    'source',
+    'circa',
+    'start_date',
+    'end_date',
+    'subject',
+    'belongs_to',
+    'resource_type',
+    'location',
+    'language',
+    'medium',
+    'format',
+    'related_url',
+    'contributor',
+    'tags',
+    'rights_statement',
+    'rights_holder',
+    'bibliographic_citation',
+    'provenance',
+    'reference',
+    'repository',
+    'create_date',
+    'modified_date',
+    'extent']
+new_key_list = [
+    ':t',
+    ':d',
+    ':c',
+    ':s',
+    ':ci',
+    ':st',
+    ':e',
+    ':su',
+    ':bt',
+    ':rt',
+    ':l',
+    ':la',
+    ':rs',
+    ':me',
+    ':bc',
+    ':rh',
+    ':f',
+    ':ru',
+    ':ct',
+    ':tg',
+    ':pc',
+    ':cc',
+    ':ic',
+    ':co',
+    ':mu',
+    ':tp',
+    ':v',
+    ':cd',
+    ':m',
+    ':pv',
+    ':rf',
+    ':rp',
+    ':ca',
+    ':ua',
+    ':dd',
+    ':et',
+    ':hp']
 key_list_len = len(old_key_list)
-csv_columns_to_attributes = {'Type': 'resource_type', 'Is Part Of': 'belongs_to', 'Coverage': 'location',
-                             'Rights': 'rights_statement', 'Identifier2': 'repository'}
-reversed_attribute_names = {'source': '#s', 'location': '#l', 'language':'#la', 'format':'#f', 'collection': '#c', 'reference': '#rf'}
+csv_columns_to_attributes = {
+    'Type': 'resource_type',
+    'Is Part Of': 'belongs_to',
+    'Coverage': 'location',
+    'Rights': 'rights_statement',
+    'Identifier2': 'repository'}
+reversed_attribute_names = {
+    'source': '#s',
+    'location': '#l',
+    'language': '#la',
+    'format': '#f',
+    'collection': '#c',
+    'reference': '#rf'}
+
 
 def lambda_handler(event, context):
 
     bucket = event['Records'][0]['s3']['bucket']['name']
-    key = urllib.parse.unquote_plus(event['Records'][0]['s3']['object']['key'], encoding='utf-8')
+    key = urllib.parse.unquote_plus(
+        event['Records'][0]['s3']['object']['key'],
+        encoding='utf-8')
     try:
         s3 = boto3.client('s3')
         response = s3.get_object(Bucket=bucket, Key=key)
@@ -75,7 +197,8 @@ def lambda_handler(event, context):
         elif 'archive_metadata.csv' in key:
             batch_import_archives(response)
     except Exception as e:
-        print(f"An error occurred importing {key} from bucket {bucket}: {str(e)}")
+        print(
+            f"An error occurred importing {key} from bucket {bucket}: {str(e)}")
         raise e
     else:
         return {
@@ -83,9 +206,25 @@ def lambda_handler(event, context):
             'body': json.dumps('Finish metadata import.')
         }
 
+
+def csv_to_dataframe(csv_path):
+    df = pd.read_csv(
+        csv_path,
+        na_values='NaN',
+        keep_default_na=False,
+        encoding='utf-8',
+        dtype={
+            'Start Date': str,
+            'End Date': str})
+
+    df = header_update(df)
+
+    return df
+
+
 def batch_import_collections(response):
 
-    df = pd.read_csv(io.BytesIO(response['Body'].read()), na_values='NaN', keep_default_na=False, encoding='utf-8', dtype={'Start Date': str, 'End Date': str})
+    df = csv_to_dataframe(io.BytesIO(response['Body'].read()))
 
     for idx, row in df.iterrows():
         collection_dict = process_csv_metadata(row, 'Collection')
@@ -95,22 +234,31 @@ def batch_import_collections(response):
         identifier = collection_dict['identifier']
         items = query_by_index(collection_table, 'Identifier', identifier)
         if len(items) > 1:
-            print(f"Error: Duplicated Identifier ({identifier}) found in {collection_table}.")
+            print(
+                f"Error: Duplicated Identifier ({identifier}) found in {collection_table}.")
             break
         elif len(items) == 1:
             if 'heirarchy_path' in collection_dict:
                 collection_dict['heirarchy_path'].append(items[0]['id'])
-            update_item_in_table(collection_table, collection_dict, items[0]['id'])
+            update_item_in_table(
+                collection_table,
+                collection_dict,
+                items[0]['id'])
         else:
-            collection_dict['thumbnail_path'] = app_img_root_path + identifier + "/representative.jpg"
-            create_item_in_table(collection_table, collection_dict, 'Collection')
+            collection_dict['thumbnail_path'] = app_img_root_path + \
+                identifier + "/representative.jpg"
+            create_item_in_table(
+                collection_table,
+                collection_dict,
+                'Collection')
         if 'heirarchy_path' in collection_dict:
             update_collection_map(collection_dict['heirarchy_path'][0])
         print(f"Collection {idx+1} ({identifier}) has been imported.")
 
+
 def batch_import_archives(response):
 
-    df = pd.read_csv(io.BytesIO(response['Body'].read()), na_values='NaN', keep_default_na=False, encoding='utf-8', dtype={'Start Date': str, 'End Date': str})
+    df = csv_to_dataframe(io.BytesIO(response['Body'].read()))
 
     for idx, row in df.iterrows():
         archive_dict = process_csv_metadata(row, 'Archive')
@@ -119,7 +267,9 @@ def batch_import_archives(response):
             break
         find_and_update(archive_table, archive_dict, 'Archive', idx)
 
+
 def batch_import_archives_with_path(response):
+
     csv_lines = response['Body'].read().decode('utf-8').split()
     line_count = 0
     for line in csv_lines:
@@ -131,25 +281,31 @@ def batch_import_archives_with_path(response):
         archive_identifiers = [i.strip() for i in csv_row[1:]]
 
         # process archive metadata csv
-        df = pd.read_csv(csv_path, na_values='NaN', keep_default_na=False, encoding='utf-8', dtype={'Start Date': str, 'End Date': str})
+        df = csv_to_dataframe(csv_path)
+
         for idx, row in df.iterrows():
             archive_dict = process_csv_metadata(row, 'Archive')
             if not archive_dict:
                 print(f"Error: Archive {idx+1} has failed to be imported.")
                 break
             identifier = archive_dict['identifier']
-            matching_parent_paths = [path for path in archive_identifiers if path.endswith(identifier)]
+            matching_parent_paths = [
+                path for path in archive_identifiers if path.endswith(identifier)]
             if len(matching_parent_paths) == 1:
                 parent_collections = matching_parent_paths[0].split('/')
                 parent_collections.pop()
                 if len(parent_collections) > 0:
-                    parent_collection_ids = create_sub_collections(parent_collections)
+                    parent_collection_ids = create_sub_collections(
+                        parent_collections)
             else:
-                print(f"Wrong archive path invloving {identifier} occurred processing {csv_path}")
+                print(
+                    f"Wrong archive path invloving {identifier} occurred processing {csv_path}")
                 continue
-            archive_dict['manifest_url'] = app_img_root_path +  matching_parent_paths[0].strip() + '/manifest.json'
+            archive_dict['manifest_url'] = app_img_root_path + \
+                matching_parent_paths[0].strip() + '/manifest.json'
             json_url = urllib.request.urlopen(archive_dict['manifest_url'])
-            archive_dict['thumbnail_path'] = json.loads(json_url.read())["thumbnail"]["@id"]
+            archive_dict['thumbnail_path'] = json.loads(json_url.read())[
+                "thumbnail"]["@id"]
             archive_dict['parent_collection'] = parent_collection_ids
             if len(parent_collection_ids) > 0:
                 archive_dict['collection'] = parent_collection_ids[0]
@@ -160,16 +316,47 @@ def batch_import_archives_with_path(response):
         line_count += 1
         print(f"{line_count}: Archive Metadata ({csv_path}) has been processed.")
 
+
+def header_update(records):
+
+    df = records.rename(columns={
+        'dcterms.bibliographicCitation': 'Bibliographic Citation',
+        'dcterms.contributor': 'Contributor',
+        'dcterms.coverage': 'Coverage',
+        'dcterms.created': 'Start Date',
+        'dcterms.creator': 'Creator',
+        'dcterms.date': 'End Date',
+        'dcterms.description': 'Description',
+        'dcterms.format': 'Format',
+        'dcterms.extent': 'Extent',
+        'dcterms.identifier': 'Identifier',
+        'dcterms.isPartOf': 'Is Part Of',
+        'dcterms.language': 'Language',
+        'dcterms.medium': 'Medium',
+        'dcterms.provenance': 'Provenance',
+        'dcterms.references': 'Reference',
+        'dcterms.relation': 'Related URL',
+        'dcterms.rights': 'Rights',
+        'dcterms.source': 'Source',
+        'dcterms.subject': 'Subject',
+        'dcterms.rightsHolder': 'Rights Holder',
+        'dcterms.title': 'Title',
+        'dcterms.type': 'Type'})
+
+    return df
+
+
 def find_and_update(table, attr_dict, item_type, index):
     identifier = attr_dict['identifier']
     items = query_by_index(table, 'Identifier', identifier)
     if len(items) > 1:
         print(f"Error: Duplicated Identifier ({identifier}) found in {table}.")
-    elif len(items)== 1:
+    elif len(items) == 1:
         update_item_in_table(table, attr_dict, items[0]['id'])
     else:
         create_item_in_table(table, attr_dict, item_type)
     print(f"Archive {index+1} ({identifier}) has been imported.")
+
 
 def create_item_in_table(table, attr_dict, item_type):
     attr_id = str(uuid.uuid4())
@@ -192,11 +379,13 @@ def create_item_in_table(table, attr_dict, item_type):
     )
     print(f"PutItem succeeded: {attr_dict['identifier']}")
     if short_id:
-        # after NOID is created and item is inserted, update long_url and short_url through API
+        # after NOID is created and item is inserted, update long_url and
+        # short_url through API
         long_url = long_url_path + item_type.lower() + "/" + short_id
         short_url = short_url_path + noid_scheme + noid_naa + "/" + short_id
         update_NOID(long_url, short_url, short_id, now)
     return attr_id
+
 
 def update_item_in_table(table, attr_dict, key_val):
     del attr_dict['identifier']
@@ -207,17 +396,23 @@ def update_item_in_table(table, attr_dict, key_val):
     attr_dict['updatedAt'] = utc_now
     return update_remove_attr_from_table(table, attr_dict, key_val)
 
+
 def utcformat(dt, timespec='milliseconds'):
     # convert datetime to string in UTC format (YYYY-mm-ddTHH:MM:SS.mmmZ)
     iso_str = dt.astimezone(timezone.utc).isoformat('T', timespec)
     return iso_str.replace('+00:00', 'Z')
+
 
 def update_remove_attr_from_table(item_table, item_dict, id_val):
     update_expression = 'SET'
     update_dict = {}
     update_names = {}
     for i in range(key_list_len):
-        update_expression += update_attr_dict(item_dict, update_dict, old_key_list[i], new_key_list[i], update_names)
+        update_expression += update_attr_dict(item_dict,
+                                              update_dict,
+                                              old_key_list[i],
+                                              new_key_list[i],
+                                              update_names)
     if bool(update_names):
         response = item_table.update_item(
             Key={
@@ -261,25 +456,30 @@ def update_remove_attr_from_table(item_table, item_dict, id_val):
     print("Remove Attributes succeeded:")
     return response
 
+
 def process_csv_metadata(data_row, item_type):
 
     attr_dict = {}
     for items in data_row.iteritems():
         if items[0].strip() and str(items[1]).strip():
             set_attribute(attr_dict, items[0].strip(), str(items[1]).strip())
-    if ('identifier' not in attr_dict.keys()) or ('title' not in attr_dict.keys()):
+    if ('identifier' not in attr_dict.keys()) or (
+            'title' not in attr_dict.keys()):
         attr_dict = None
         print(f"Missing required attribute in this row!")
     else:
         set_attributes_from_env(attr_dict, item_type)
     return attr_dict
 
+
 def set_attributes_from_env(attr_dict, item_type):
     if collection_category == 'IAWA':
         if ('rights_statement' not in attr_dict.keys()):
-            attr_dict['rights_statement'] = rights_statement_with_title(attr_dict['title'])
+            attr_dict['rights_statement'] = rights_statement_with_title(
+                attr_dict['title'])
         if ('bibliographic_citation' not in attr_dict.keys()):
-            attr_dict['bibliographic_citation'] = biblio_citation_with_title(attr_dict['title'])
+            attr_dict['bibliographic_citation'] = biblio_citation_with_title(
+                attr_dict['title'])
         if ('rights_holder' not in attr_dict.keys()):
             attr_dict['rights_holder'] = rights_holder
     if item_type == 'Collection':
@@ -289,6 +489,7 @@ def set_attributes_from_env(attr_dict, item_type):
     elif item_type == 'Archive':
         attr_dict['item_category'] = collection_category
         attr_dict['visibility'] = True
+
 
 def set_attribute(attr_dict, attr, value):
     lower_attr = attr.lower().replace(' ', '_')
@@ -310,16 +511,19 @@ def set_attribute(attr_dict, attr, value):
         if len(items) == 1:
             parent_collection_id = items[0]['id']
             attr_dict['heirarchy_path'] = items[0]['heirarchy_path']
-            attr_dict[lower_attr] = [parent_collection_id]     
+            attr_dict[lower_attr] = [parent_collection_id]
     elif attr == 'Thumbnail Path':
-        attr_dict[lower_attr] = app_img_root_path + value + '/representative.jpg'
+        attr_dict[lower_attr] = app_img_root_path + \
+            value + '/representative.jpg'
     elif attr == 'Filename':
         if value.endswith('.pdf') or value.endswith('.jpg'):
-            attr_dict['thumbnail_path'] = app_img_root_path + 'thumbnail/' + value.replace('.pdf', '.jpg')
+            attr_dict['thumbnail_path'] = app_img_root_path + \
+                'thumbnail/' + value.replace('.pdf', '.jpg')
             attr_dict['manifest_url'] = app_img_root_path + 'pdf/' + value
         elif 'video.vt.edu/media' in value:
             thumbnail = value.split('_')[1]
-            attr_dict['thumbnail_path'] = app_img_root_path + 'thumbnail/' + thumbnail + '.png'
+            attr_dict['thumbnail_path'] = app_img_root_path + \
+                'thumbnail/' + thumbnail + '.png'
             attr_dict['manifest_url'] = value
     else:
         if attr in csv_columns_to_attributes:
@@ -328,17 +532,20 @@ def set_attribute(attr_dict, attr, value):
         if extracted_value:
             attr_dict[lower_attr] = extracted_value
 
+
 def print_index_date(attr_dict, value, attr):
     try:
         parsed_date = parse(value)
-        # dates in Elasticsearch are formatted, e.g. "2015/01/01" or "2015/01/01 12:10:30"
+        # dates in Elasticsearch are formatted, e.g. "2015/01/01" or
+        # "2015/01/01 12:10:30"
         attr_dict[attr] = parsed_date.strftime("%Y/%m/%d")
     except ValueError:
         print(f"Error - Unknown date format: {value} for {attr}")
     except OverflowError:
         print(f"Error - Invalid date range: {value} for {attr}")
-    except:
+    except BaseException:
         print(f"Error - Unexpect error: {value} for {attr}")
+
 
 def print_display_date(attr_dict, value, attr):
     try:
@@ -348,8 +555,9 @@ def print_display_date(attr_dict, value, attr):
         print(f"Unknown date format: {value} for {attr}")
     except OverflowError:
         print(f"Error - Invalid date range: {value} for {attr}")
-    except:
+    except BaseException:
         print(f"Error - Unexpect error: {value} for {attr}")
+
 
 def query_by_index(table, index_name, value):
     index_key = index_name.lower()
@@ -359,6 +567,7 @@ def query_by_index(table, index_name, value):
     )
     return attributes['Items']
 
+
 def get_collection(collection_id):
     ret_val = None
     try:
@@ -366,14 +575,20 @@ def get_collection(collection_id):
             KeyConditionExpression=Key('id').eq(collection_id),
             Limit=1
         )
-        
+
         ret_val = response['Items'][0]
     except Exception as e:
         print(f"An error occurred: {str(e)}")
         raise e
     return ret_val
 
-def update_attr_dict(attr_dict, update_attr_dict, old_attr, new_attr, attr_names):
+
+def update_attr_dict(
+        attr_dict,
+        update_attr_dict,
+        old_attr,
+        new_attr,
+        attr_names):
     update_exp = ""
     if old_attr in attr_dict.keys():
         if attr_dict[old_attr] or old_attr == "visibility":
@@ -388,6 +603,7 @@ def update_attr_dict(attr_dict, update_attr_dict, old_attr, new_attr, attr_names
             del attr_dict[old_attr]
     return update_exp
 
+
 def remove_attr_dict(attr_dict, attr_names):
     remove_exp = "REMOVE"
     for old_attr in removable_key_list:
@@ -400,19 +616,25 @@ def remove_attr_dict(attr_dict, attr_names):
                 remove_exp += " " + old_attr + ","
     return remove_exp
 
+
 def rights_statement_with_title(title):
     index_r_s = rights_statement.find('must')
-    return rights_statement[:index_r_s] + title + ' ' + rights_statement[index_r_s:]
+    return rights_statement[:index_r_s] + \
+        title + ' ' + rights_statement[index_r_s:]
+
 
 def biblio_citation_with_title(title):
     index_b_c = biblio_citation.find('- Special')
-    return biblio_citation[:index_b_c] + title + ' ' + biblio_citation[index_b_c:]
+    return biblio_citation[:index_b_c] + \
+        title + ' ' + biblio_citation[index_b_c:]
+
 
 def extract_attribute(header, value):
     if header in single_value_headers:
         return value
     elif header in multi_value_headers:
         return value.split('||')
+
 
 def create_sub_collections(parent_collections):
     parent_id = None
@@ -434,19 +656,22 @@ def create_sub_collections(parent_collections):
 
         items = query_by_index(collection_table, 'Identifier', identifier)
         if len(items) > 1:
-            print(f"Error: Duplicated Identifier ({identifier}) found in {collection_table}.")
+            print(
+                f"Error: Duplicated Identifier ({identifier}) found in {collection_table}.")
             break
         elif len(items) == 1:
             print(f"Collection {identifier} exists!")
             parent_id = items[0]['id']
             heirarchy_list = items[0]['heirarchy_path']
         else:
-            parent_id = create_item_in_table(collection_table, collection_dict, 'Collection')
+            parent_id = create_item_in_table(
+                collection_table, collection_dict, 'Collection')
             print(f"Collection PutItem succeeded: {identifier}")
-    
+
     if len(heirarchy_list) > 0:
         update_collection_map(heirarchy_list[0])
     return [parent_id]
+
 
 def update_collection_map(top_parent_id):
     parent = get_collection(top_parent_id)
@@ -455,10 +680,10 @@ def update_collection_map(top_parent_id):
         utc_now = utcformat(datetime.now())
         if 'collectionmap_id' in parent:
             collectionmap_table.update_item(
-                Key = {
+                Key={
                     "id": parent["collectionmap_id"]
                 },
-                AttributeUpdates = {
+                AttributeUpdates={
                     "map_object": {
                         "Value": json.dumps(map_obj),
                         "Action": "PUT"
@@ -472,7 +697,7 @@ def update_collection_map(top_parent_id):
         else:
             map_id = str(uuid.uuid4())
             collectionmap_table.put_item(
-                Item = {
+                Item={
                     "id": map_id,
                     "map_object": json.dumps(map_obj),
                     "collection_id": parent["id"],
@@ -482,10 +707,10 @@ def update_collection_map(top_parent_id):
             )
 
             collection_table.update_item(
-                Key = {
+                Key={
                     "id": parent["id"]
                 },
-                AttributeUpdates = {
+                AttributeUpdates={
                     "collectionmap_id": {
                         "Value": map_id,
                         "Action": "PUT"
@@ -494,6 +719,7 @@ def update_collection_map(top_parent_id):
             )
     else:
         print(f"Error: {parent['identifier']} is not a top level collection")
+
 
 def get_collection_children(parent_id):
     scan_kwargs = {
@@ -518,19 +744,24 @@ def get_collection_children(parent_id):
         raise e
     return source_table_items
 
+
 def walk_collection(parent):
     custom_key = parent['custom_key'].replace('ark:/53696/', '')
-    map_location = {'id': parent['id'], 'name': parent['title'], 'custom_key': custom_key}
+    map_location = {
+        'id': parent['id'],
+        'name': parent['title'],
+        'custom_key': custom_key}
     children = get_collection_children(parent['id'])
     if len(children) > 0:
         map_location['children'] = []
         for child in children:
             map_location['children'].append(walk_collection(child))
-    
+
     return map_location
 
+
 def mint_NOID():
-    headers = { 'x-api-key': api_key }
+    headers = {'x-api-key': api_key}
     url = api_endpoint + 'mint'
     response = requests.get(url, headers=headers)
     print(f"mint_NOID {response.text}")
@@ -542,9 +773,11 @@ def mint_NOID():
     else:
         return None
 
+
 def update_NOID(long_url, short_url, noid, create_date):
-    headers = { 'x-api-key': api_key }
-    body = "long_url=" + long_url + "&short_url=" + short_url + "&noid=" + noid + "&create_date=" + create_date
+    headers = {'x-api-key': api_key}
+    body = "long_url=" + long_url + "&short_url=" + short_url + \
+        "&noid=" + noid + "&create_date=" + create_date
     url = api_endpoint + 'update'
     response = requests.post(url, data=body, headers=headers)
     print(f"update_NOID: {response.text}")
