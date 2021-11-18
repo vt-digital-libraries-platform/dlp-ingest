@@ -688,6 +688,10 @@ def update_collection_map(top_parent_id):
                         "Value": json.dumps(map_obj),
                         "Action": "PUT"
                     },
+                    "collectionmap_category": {
+                        "Value": parent["collection_category"],
+                        "Action": "PUT"
+                    },
                     "updatedAt": {
                         "Value": utc_now,
                         "Action": "PUT"
@@ -701,6 +705,7 @@ def update_collection_map(top_parent_id):
                     "id": map_id,
                     "map_object": json.dumps(map_obj),
                     "collection_id": parent["id"],
+                    "collectionmap_category": parent["collection_category"],
                     "createdAt": utc_now,
                     "updatedAt": utc_now
                 }
