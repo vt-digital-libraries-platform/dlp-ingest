@@ -180,6 +180,7 @@ reversed_attribute_names = {
     'collection': '#c',
     'reference': '#rf'}
 
+DUPLICATED = "Duplicated"
 
 def lambda_handler(event, context):
 
@@ -351,10 +352,12 @@ def find_and_update(table, attr_dict, item_type, index):
     items = query_by_index(table, 'Identifier', identifier)
     if len(items) > 1:
         print(f"Error: Duplicated Identifier ({identifier}) found in {table}.")
+        return DUPLICATED
     elif len(items) == 1:
         update_item_in_table(table, attr_dict, items[0]['id'])
     else:
         create_item_in_table(table, attr_dict, item_type)
+
     print(f"Archive {index+1} ({identifier}) has been imported.")
 
 

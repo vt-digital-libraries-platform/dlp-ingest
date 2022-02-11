@@ -240,6 +240,8 @@ packaged.yaml
 # Windows shortcuts
 *.lnk
 
+custom_pytest.ini
+
 # Build folder
 
 */build/*
