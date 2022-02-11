@@ -1,2 +1,9 @@
-requests
 boto3
+moto[dynamodb2,s3,apigateway]
+noid-mint
+pandas
+pytest
+pytest-cov
+pytest-env
+pytest-mock
+requests
