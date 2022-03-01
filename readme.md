@@ -122,6 +122,31 @@ The above command will package and deploy your application to AWS, with a series
     * For Item ingestion: Set the filename as "index.csv." and upload it to `S3BucketName`.
 * Go to DynamoDB to see the end results in Collection, Archive and Collectionmap tables.
 
+## Tests
+
+Tests are defined in the `tests` folder in this project. Use PIP to install the test dependencies and run tests. You 
+must have a env file: [custom_pytest.ini.example](custom_pytest.ini.example)
+
+```
+python -m pytest --cov=. tests/unit -v -c custom_pytest.ini
+```
+
+These DynamoDB tables are used for testing:
+```
+archive_test
+collection_test
+collectionmap_test
+```
+
+These files are used for testing and stored in S3 bucket: vtdlp-dev-test
+```
+new_collection_metadata.csv
+single_archive_metadata.csv
+SFD_index.csv
+```
+
+Other test files are located in [tests/unit/test_data/](tests/unit/test_data/) folder
+
 ### Cleanup
 
 To delete the sample application that you created, use the AWS CLI. Assuming you used your project name for the stack name, you can run the following:
