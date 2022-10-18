@@ -42,13 +42,13 @@ except Exception as e:
 single_value_headers = [
     'Identifier',
     'Title',
-    'Description',
     'Rights',
     'Bibliographic Citation',
     'Rights Holder',
     'Extent']
 multi_value_headers = [
     'Creator',
+    'Description',
     'Source',
     'Subject',
     'Coverage',
