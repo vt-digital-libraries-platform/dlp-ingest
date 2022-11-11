@@ -13,7 +13,7 @@ from boto3.dynamodb.conditions import Key, Attr
 from botocore.response import StreamingBody
 from datetime import datetime
 from dateutil.parser import parse
-from moto import mock_dynamodb2
+from moto import mock_dynamodb
 from moto import mock_apigateway
 from requests.models import Response
 from unittest import mock
@@ -23,13 +23,14 @@ from unittest.mock import patch
 single_value_headers = [
     'Identifier',
     'Title',
-    'Description',
     'Rights',
     'Bibliographic Citation',
     'Rights Holder',
-    'Extent']
+    'Extent',
+    'Display_Date']
 multi_value_headers = [
     'Creator',
+    'Description',
     'Source',
     'Subject',
     'Coverage',
@@ -50,7 +51,8 @@ csv_columns_to_attributes = {
     'Is Part Of': 'belongs_to',
     'Coverage': 'location',
     'Rights': 'rights_statement',
-    'Identifier2': 'repository'}
+    'Identifier2': 'repository',
+    'Display_Date': 'display_date'}
 
 test_file = 'test.csv'
 rows = [
@@ -207,19 +209,6 @@ class TestLambda(unittest.TestCase):
         input_value = "January 1st, 9999999999"
         lambda_function.print_index_date(attr_dict, input_value, lower_attr)
 
-    def test_print_display_date(self):
-
-        lower_attr = "Display_Date".lower().replace(' ', '_')
-        input_value = "2022-01-20T15:41:32.945Z"
-        attr_dict = {}
-        attr_dict[lower_attr] = '2022-01-20T15:41:32'
-        lambda_function.print_display_date(attr_dict, input_value, lower_attr)
-        assert attr_dict[lower_attr] == "2022-01-20"
-        input_value = "unknown_format"
-        lambda_function.print_display_date(attr_dict, input_value, lower_attr)
-        input_value = "January 1st, 9999999999"
-        lambda_function.print_display_date(attr_dict, input_value, lower_attr)
-
     def test_rights_statement_with_title(self):
 
         test_value = "Cannery Row, July 28, 1961. Elevation (Ms2008-089)"
@@ -318,7 +307,7 @@ class TestLambda(unittest.TestCase):
         assert attr_dict['end_date'] == "2022/01/20"
 
         lambda_function.set_attribute(
-            attr_dict, 'Display_Date', '2022-01-20T15:41:32.945Z')
+            attr_dict, 'Display_Date', '2022-01-20')
         assert attr_dict['display_date'] == "2022-01-20"
 
         lambda_function.set_attribute(
