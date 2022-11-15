@@ -45,7 +45,8 @@ single_value_headers = [
     'Rights',
     'Bibliographic Citation',
     'Rights Holder',
-    'Extent']
+    'Extent',
+    'Display_Date']
 multi_value_headers = [
     'Creator',
     'Description',
@@ -171,7 +172,8 @@ csv_columns_to_attributes = {
     'Is Part Of': 'belongs_to',
     'Coverage': 'location',
     'Rights': 'rights_statement',
-    'Identifier2': 'repository'}
+    'Identifier2': 'repository',
+    'Display_Date': 'display_date'}
 reversed_attribute_names = {
     'source': '#s',
     'location': '#l',
@@ -506,9 +508,6 @@ def set_attribute(attr_dict, attr, value):
             attr_dict[lower_attr] = False
     elif attr == 'Start Date' or attr == 'End Date':
         print_index_date(attr_dict, value, lower_attr)
-    elif attr == 'Display_Date':
-        attr_dict[lower_attr] = value
-        print_display_date(attr_dict, value, lower_attr)
     elif attr == 'Parent Collection':
         items = query_by_index(collection_table, 'Identifier', value)
         if len(items) == 1:
@@ -544,18 +543,6 @@ def print_index_date(attr_dict, value, attr):
         attr_dict[attr] = parsed_date.strftime("%Y/%m/%d")
     except ValueError:
         print(f"Error - Unknown date format: {value} for {attr}")
-    except OverflowError:
-        print(f"Error - Invalid date range: {value} for {attr}")
-    except BaseException:
-        print(f"Error - Unexpect error: {value} for {attr}")
-
-
-def print_display_date(attr_dict, value, attr):
-    try:
-        parsed_date = parse(value)
-        attr_dict[attr] = parsed_date.strftime("%Y-%m-%d")
-    except ValueError:
-        print(f"Unknown date format: {value} for {attr}")
     except OverflowError:
         print(f"Error - Invalid date range: {value} for {attr}")
     except BaseException:

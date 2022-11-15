@@ -1,5 +1,5 @@
 boto3
-moto[dynamodb2,s3,apigateway]
+moto[dynamodb,s3,apigateway]
 noid-mint
 pandas
 pytest
