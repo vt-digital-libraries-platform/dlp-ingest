@@ -1,4 +1,5 @@
 boto3
+botocore
 moto[dynamodb,s3,apigateway]
 noid-mint
 pandas
