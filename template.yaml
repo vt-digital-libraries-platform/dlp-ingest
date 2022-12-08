@@ -6,8 +6,6 @@ Parameters:
       Type: String
     APPIMGROOTPATH:
       Type: String
-    BibliographicCitation:
-      Type: String
     CollectionCategory:
       Type: String
     DYNOCollectionTABLE:
@@ -25,10 +23,6 @@ Parameters:
     REGION:
       Type: String
       Default: "us-east-1"
-    RightsHolder:
-      Type: String
-    RightsStatement:
-      Type: String
     LongURLPath:
       Type: String
     ShortURLPath:
@@ -73,7 +67,6 @@ Resources:
         Variables:
           DEBUG: 1
           APP_IMG_ROOT_PATH: !Ref APPIMGROOTPATH
-          Bibliographic_Citation: !Ref BibliographicCitation
           Collection_Category: !Ref CollectionCategory
           DYNO_Collection_TABLE: !Ref DYNOCollectionTABLE
           DYNO_Archive_TABLE: !Ref DYNOArchiveTABLE
@@ -81,8 +74,6 @@ Resources:
           NOID_NAA: !Ref NOIDNAA
           NOID_Scheme: !Ref NOIDScheme
           REGION: !Ref REGION
-          Rights_Holder: !Ref RightsHolder
-          Rights_Statement: !Ref RightsStatement
           LONG_URL_PATH: !Ref LongURLPath
           SHORT_URL_PATH: !Ref ShortURLPath
           API_KEY: !Ref APIKey
