@@ -19,7 +19,7 @@ You can use two different methods to deploy VTDLP Services. The first method is 
 
 ### Deploy VTDLP S3toDDB Lambda function using CloudFormation stack
 #### Step 1: Launch CloudFormation stack
-[![Launch Stack](https://cdn.rawgit.com/buildkite/cloudformation-launch-stack-button-svg/master/launch-stack.svg)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?&templateURL=https://vtdlp-dev-cf.s3.amazonaws.com/aa8c533018f80ee7112103d2eda30649.template)
+[![Launch Stack](https://cdn.rawgit.com/buildkite/cloudformation-launch-stack-button-svg/master/launch-stack.svg)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?&templateURL=https://vtdlp-dev-cf.s3.amazonaws.com/4c74971d1de14418866262ab360cca9b.template)
 
 Click *Next* to continue
 
