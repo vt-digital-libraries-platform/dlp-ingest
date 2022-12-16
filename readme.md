@@ -32,7 +32,6 @@ Click *Next* to continue
     | Name | Description | Note |
     |----------|:-------------:|:-------------:|
     | APPIMGROOTPATH | Cloudfront URL which serves the static images. E.g. https://img.cloud.lib.vt.edu/iawa/ | **Required** |
-    | BibliographicCitation | A bibliographic citation provides relevant information about the author and publication as well as a short summary of the text, usually known as the abstract. It is usually a sentence. | **Required** |
     | CollectionCategory | The `VTDLP Access Website` site ID. e.g. `IAWA` | **Required** |
     | DYNOCollectionTABLE | collectiontablename | **Required** |
     | DYNOArchiveTABLE | archivetablename | **Required** |
@@ -40,8 +39,6 @@ Click *Next* to continue
     | NOIDNAA | The character string equivalent for the NAAN; for example, 13960 corresponds to the NAA, "archive.org" | **Required** |
     | NOIDScheme | ARK (Archival Resource Key) identifier scheme that the noid utility was partly created to support. E.g. `ark:/` | **Required** |
     | REGION | a valid AWS region. e.g. us-east-1 | **Required** |
-    | RightsHolder | A sentence about rights holder. E.g. Special Collections, VTL | **Required** |
-    | RightsStatement | A sentence about rights permission statement. | **Required** |
     | LongURLPath | https://iawa.lib.vt.edu/ | **Required** |
     | ShortURLPath | http://idn.lib.vt.edu/ | **Required** |
     | APIKey | APIKEY | **Required** |
@@ -81,7 +78,7 @@ Above command will package the application and upload it to the S3 bucket you sp
 
 Run the following in your shell to deploy the application to AWS:
 ```bash
-sam deploy --template-file packaged.yaml --stack-name STACKNAME --s3-bucket BUCKETNAME --parameter-overrides 'APPIMGROOTPATH=https://yourURL/ BibliographicCitation="Your sentance" CollectionCategory=collection type DYNOCollectionTABLE=CollectionTableName DYNOArchiveTABLE=ArchiveTableName DYNOCollectionmapTABLE=CollectionmapTableName NOIDNAA=53696 NOIDScheme=ark:/ REGION=us-east-1 RightsHolder="Your sentance" RightsStatement="Your sentance" S3BucketName=S3BucketName LongURLPath=LongURLPath ShortURLPath=ShortURLPath APIKey=APIKey APIEndpoint=APIEndpoint' --capabilities CAPABILITY_IAM --region us-east-1
+sam deploy --template-file packaged.yaml --stack-name STACKNAME --s3-bucket BUCKETNAME --parameter-overrides 'APPIMGROOTPATH=https://yourURL/ CollectionCategory=collection type DYNOCollectionTABLE=CollectionTableName DYNOArchiveTABLE=ArchiveTableName DYNOCollectionmapTABLE=CollectionmapTableName NOIDNAA=53696 NOIDScheme=ark:/ REGION=us-east-1 S3BucketName=S3BucketName LongURLPath=LongURLPath ShortURLPath=ShortURLPath APIKey=APIKey APIEndpoint=APIEndpoint' --capabilities CAPABILITY_IAM --region us-east-1
 ```
 
 The above command will package and deploy your application to AWS, with a series of prompts:
@@ -95,7 +92,6 @@ The above command will package and deploy your application to AWS, with a series
     | Name | Description | Note |
     |----------|:-------------:|:-------------:|
     | APPIMGROOTPATH | Cloudfront URL which serves the static images. E.g. https://img.cloud.lib.vt.edu/iawa/ | **Required** |
-    | BibliographicCitation | A bibliographic citation provides relevant information about the author and publication as well as a short summary of the text, usually known as the abstract. It is usually a sentence. | **Required** |
     | CollectionCategory | The `VTDLP Access Website` site ID and it is case sensitive. e.g. `IAWA` | **Required** |
     | DYNOCollectionTABLE | collectiontablename | **Required** |
     | DYNOArchiveTABLE | archivetablename | **Required** |
@@ -103,8 +99,6 @@ The above command will package and deploy your application to AWS, with a series
     | NOIDNAA | The character string equivalent for the NAAN; for example, 13960 corresponds to the NAA, "archive.org" | **Required** |
     | NOIDScheme | ARK (Archival Resource Key) identifier scheme that the noid utility was partly created to support. E.g. `ark:/` | **Required** |
     | REGION | a valid AWS region. e.g. us-east-1 | **Required** |
-    | RightsHolder | A sentence about rights holder. E.g. Special Collections, VTL | **Required** |
-    | RightsStatement | A sentence about rights permission statement. | **Required** |
     | LongURLPath | https://iawa.lib.vt.edu/ | **Required** |
     | ShortURLPath | http://idn.lib.vt.edu/ | **Required** |
     | APIKey | APIKEY | **Required** |
