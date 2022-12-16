@@ -14,9 +14,6 @@ from boto3.dynamodb.conditions import Key, Attr
 
 # Environment variables
 collection_category = os.getenv('Collection_Category')
-rights_statement = os.getenv('Rights_Statement')
-biblio_citation = os.getenv('Bibliographic_Citation')
-rights_holder = os.getenv('Rights_Holder')
 region_name = os.getenv('REGION')
 collection_table_name = os.getenv('DYNO_Collection_TABLE')
 archive_table_name = os.getenv('DYNO_Archive_TABLE')
@@ -40,30 +37,36 @@ except Exception as e:
     raise e
 
 single_value_headers = [
-    'Identifier',
-    'Title',
-    'Rights',
-    'Bibliographic Citation',
-    'Rights Holder',
-    'Extent',
-    'Display_Date']
+    'bibliographic_citation',
+    'circa',
+    'display_date',
+    'end_date',
+    'explicit',
+    'explicit_content',
+    'extent',
+    'identifier',
+    'rights_holder',
+    'rights_statement',
+    'start_date',
+    'title']
 multi_value_headers = [
-    'Creator',
-    'Description',
-    'Source',
-    'Subject',
-    'Coverage',
-    'Language',
-    'Type',
-    'Is Part Of',
-    'Medium',
-    'Format',
-    'Related URL',
-    'Contributor',
-    'Tags',
-    'Provenance',
-    'Identifier2',
-    'Reference']
+    'belongs_to',
+    'contributor',
+    'creator',
+    'description',
+    'format',
+    'language',
+    'location',
+    'medium',
+    'provenance',
+    'reference',
+    'related_url',
+    'repository',
+    'repository_type',
+    'resource_type',
+    'source',
+    'subject',
+    'tags']
 old_key_list = [
     'title',
     'description',
@@ -167,13 +170,6 @@ new_key_list = [
     ':et',
     ':hp']
 key_list_len = len(old_key_list)
-csv_columns_to_attributes = {
-    'Type': 'resource_type',
-    'Is Part Of': 'belongs_to',
-    'Coverage': 'location',
-    'Rights': 'rights_statement',
-    'Identifier2': 'repository',
-    'Display_Date': 'display_date'}
 reversed_attribute_names = {
     'source': '#s',
     'location': '#l',
@@ -323,28 +319,28 @@ def batch_import_archives_with_path(response):
 def header_update(records):
 
     df = records.rename(columns={
-        'dcterms.bibliographicCitation': 'Bibliographic Citation',
-        'dcterms.contributor': 'Contributor',
-        'dcterms.coverage': 'Coverage',
-        'dcterms.created': 'Start Date',
-        'dcterms.creator': 'Creator',
-        'dcterms.date': 'End Date',
-        'dcterms.description': 'Description',
-        'dcterms.format': 'Format',
-        'dcterms.extent': 'Extent',
-        'dcterms.identifier': 'Identifier',
-        'dcterms.isPartOf': 'Is Part Of',
-        'dcterms.language': 'Language',
-        'dcterms.medium': 'Medium',
-        'dcterms.provenance': 'Provenance',
-        'dcterms.references': 'Reference',
-        'dcterms.relation': 'Related URL',
-        'dcterms.rights': 'Rights',
-        'dcterms.source': 'Source',
-        'dcterms.subject': 'Subject',
-        'dcterms.rightsHolder': 'Rights Holder',
-        'dcterms.title': 'Title',
-        'dcterms.type': 'Type'})
+        'dcterms.bibliographicCitation': 'bibliographic_citation',
+        'dcterms.contributor': 'contributor',
+        'dcterms.coverage': 'location',
+        'dcterms.created': 'start_date',
+        'dcterms.creator': 'creator',
+        'dcterms.date': 'end_date',
+        'dcterms.description': 'description',
+        'dcterms.format': 'format',
+        'dcterms.extent': 'extent',
+        'dcterms.identifier': 'identifier',
+        'dcterms.isPartOf': 'belongs_to',
+        'dcterms.language': 'language',
+        'dcterms.medium': 'medium',
+        'dcterms.provenance': 'provenance',
+        'dcterms.references': 'reference',
+        'dcterms.relation': 'related_url',
+        'dcterms.rights': 'rights_statement',
+        'dcterms.source': 'source',
+        'dcterms.subject': 'subject',
+        'dcterms.rightsHolder': 'rights_holder',
+        'dcterms.title': 'title',
+        'dcterms.type': 'resource_type'})
 
     return df
 
@@ -478,15 +474,6 @@ def process_csv_metadata(data_row, item_type):
 
 
 def set_attributes_from_env(attr_dict, item_type):
-    if collection_category == 'IAWA':
-        if ('rights_statement' not in attr_dict.keys()):
-            attr_dict['rights_statement'] = rights_statement_with_title(
-                attr_dict['title'])
-        if ('bibliographic_citation' not in attr_dict.keys()):
-            attr_dict['bibliographic_citation'] = biblio_citation_with_title(
-                attr_dict['title'])
-        if ('rights_holder' not in attr_dict.keys()):
-            attr_dict['rights_holder'] = rights_holder
     if item_type == 'Collection':
         attr_dict['collection_category'] = collection_category
         if 'visibility' not in attr_dict.keys():
@@ -498,26 +485,26 @@ def set_attributes_from_env(attr_dict, item_type):
 
 def set_attribute(attr_dict, attr, value):
     lower_attr = attr.lower().replace(' ', '_')
-    if attr == 'Circa':
+    if attr == 'circa':
         if str(value).lower() == 'yes':
             attr_dict[lower_attr] = 'Circa '
-    elif attr == 'Visibility':
+    elif attr == 'visibility' or attr == 'explicit_content' or attr == 'explicit':
         if str(value).lower() == 'true':
             attr_dict[lower_attr] = True
         else:
             attr_dict[lower_attr] = False
-    elif attr == 'Start Date' or attr == 'End Date':
+    elif attr == 'start_date' or attr == 'end_date':
         print_index_date(attr_dict, value, lower_attr)
-    elif attr == 'Parent Collection':
+    elif attr == 'parent_collection':
         items = query_by_index(collection_table, 'Identifier', value)
         if len(items) == 1:
             parent_collection_id = items[0]['id']
             attr_dict['heirarchy_path'] = items[0]['heirarchy_path']
             attr_dict[lower_attr] = [parent_collection_id]
-    elif attr == 'Thumbnail Path':
+    elif attr == 'thumbnail_path':
         attr_dict[lower_attr] = app_img_root_path + \
             value + '/representative.jpg'
-    elif attr == 'Filename':
+    elif attr == 'filename':
         if value.endswith('.pdf') or value.endswith('.jpg'):
             attr_dict['thumbnail_path'] = app_img_root_path + \
                 'thumbnail/' + value.replace('.pdf', '.jpg')
@@ -528,8 +515,6 @@ def set_attribute(attr_dict, attr, value):
                 'thumbnail/' + thumbnail + '.png'
             attr_dict['manifest_url'] = value
     else:
-        if attr in csv_columns_to_attributes:
-            lower_attr = csv_columns_to_attributes[attr]
         extracted_value = extract_attribute(attr, value)
         if extracted_value:
             attr_dict[lower_attr] = extracted_value
@@ -546,7 +531,7 @@ def print_index_date(attr_dict, value, attr):
     except OverflowError:
         print(f"Error - Invalid date range: {value} for {attr}")
     except BaseException:
-        print(f"Error - Unexpect error: {value} for {attr}")
+        print(f"Error - Unexpected error: {value} for {attr}")
 
 
 def query_by_index(table, index_name, value):
