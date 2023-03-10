@@ -335,7 +335,7 @@ def header_update(records):
     df = records.rename(columns={
         'dcterms.alternative': 'alternative',
         'dcterms.bibliographicCitation': 'bibliographic_citation',
-        'dcterms.conformsTo': 'conforms_to'
+        'dcterms.conformsTo': 'conforms_to',
         'dcterms.contributor': 'contributor',
         'dcterms.coverage': 'coverage',
         'dcterms.created': 'created',
