@@ -337,7 +337,7 @@ def header_update(records):
         'dcterms.bibliographicCitation': 'bibliographic_citation',
         'dcterms.conformsTo': 'conforms_to'
         'dcterms.contributor': 'contributor',
-        'dcterms.coverage': 'coverage,
+        'dcterms.coverage': 'coverage',
         'dcterms.created': 'created',
         'dcterms.creator': 'creator',
         'dcterms.date': 'date',
