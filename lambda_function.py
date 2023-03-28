@@ -118,7 +118,22 @@ old_key_list = [
     'updatedAt',
     'display_date',
     'extent',
-    'heirarchy_path']
+    'heirarchy_path',
+    'alternative',
+    'publisher',
+    'date',
+    'created',
+    'coverage',
+    'conforms_to',
+    'has_format',
+    'has_part',
+    'has_version',
+    'is_format_of',
+    'is_version_of',
+    'other_identifier',
+    'basis_of_record',
+    'temporal',
+    'license']
 removable_key_list = [
     'description',
     'creator',
@@ -144,7 +159,22 @@ removable_key_list = [
     'repository',
     'create_date',
     'modified_date',
-    'extent']
+    'extent',
+    'alternative',
+    'publisher',
+    'date',
+    'created',
+    'coverage',
+    'conforms_to',
+    'has_format',
+    'has_part',
+    'has_version',
+    'is_format_of',
+    'is_version_of',
+    'other_identifier',
+    'basis_of_record',
+    'temporal',
+    'license']
 new_key_list = [
     ':t',
     ':d',
@@ -182,7 +212,22 @@ new_key_list = [
     ':ua',
     ':dd',
     ':et',
-    ':hp']
+    ':hp',
+    ':alt',
+    ':pub',
+    ':dat',
+    ':cre',
+    ':cov',
+    ':conf',
+    ':hasfo',
+    ':haspa',
+    ':hasve',
+    ':isfo',
+    ':isve',
+    ':othid',
+    ':basofre',
+    ':tmpl',
+    ':lic']
 key_list_len = len(old_key_list)
 reversed_attribute_names = {
     'source': '#s',
@@ -190,7 +235,8 @@ reversed_attribute_names = {
     'language': '#la',
     'format': '#f',
     'collection': '#c',
-    'reference': '#rf'}
+    'reference': '#rf',
+    'date': '#dat'}
 
 DUPLICATED = "Duplicated"
 
