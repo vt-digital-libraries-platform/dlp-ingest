@@ -4,13 +4,14 @@ import urllib.request
 import requests
 import boto3
 import io
-import re
+import sys
 import pandas as pd
 from datetime import datetime, timezone
 from dateutil.parser import parse
 import uuid
 import os
 from boto3.dynamodb.conditions import Key, Attr
+from botocore.response import StreamingBody
 
 # Environment variables
 collection_category = os.getenv('Collection_Category')
@@ -25,6 +26,7 @@ long_url_path = os.getenv('LONG_URL_PATH')
 short_url_path = os.getenv('SHORT_URL_PATH')
 api_key = os.getenv('API_KEY')
 api_endpoint = os.getenv('API_ENDPOINT')
+
 
 try:
     dyndb = boto3.resource('dynamodb', region_name=region_name)
@@ -239,6 +241,18 @@ reversed_attribute_names = {
     'date': '#dat'}
 
 DUPLICATED = "Duplicated"
+
+def local_handler(filename):
+    body_encoded = open(filename).read().encode()
+    stream = StreamingBody(io.BytesIO(body_encoded),len(body_encoded))
+    response = {"Body": stream}
+
+    if 'index.csv' in filename:
+        batch_import_archives_with_path(response)
+    elif 'collection_metadata.csv' in filename:
+        batch_import_collections(response)
+    elif 'archive_metadata.csv' in filename:
+        batch_import_archives(response)
 
 def lambda_handler(event, context):
 
@@ -832,3 +846,14 @@ def update_NOID(long_url, short_url, noid, create_date):
     url = api_endpoint + 'update'
     response = requests.post(url, data=body, headers=headers)
     print(f"update_NOID: {response.text}")
+
+
+
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print("Usage: python3 lambda_function.py <filename>")
+        sys.exit(1)
+    else:
+        filename = "".join(sys.argv[1])
+        local_handler(filename)
+        
