@@ -18,16 +18,19 @@ pip install -r ./requirements.txt
 #
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-Collection_Category=<Your Collection_Category> \
-REGION=<Your AWS region> \
-DYNO_Collection_TABLE=<Your Collection table name> \
-DYNO_Archive_TABLE=<Your Archive table name> \
-DYNO_Collectionmap_TABLE=<Your Collectionmap table name> \
-APP_IMG_ROOT_PATH=<Your APP_IMG_ROOT_PATH> \
-NOID_Scheme=<Your NOID_Scheme> \
-NOID_NAA=<Your NOID_NAA> \
-LONG_URL_PATH=<Your LONG_URL_PATH> \
-SHORT_URL_PATH=<Your SHORT_URL_PATH> \
-API_KEY=<Your API_KEY> \
-API_ENDPOINT=<Your API_ENDPOINT> \
+Collection_Category="<Your Collection_Category>" \
+REGION="<Your AWS region>" \
+DYNO_Collection_TABLE="<Your Collection table name>" \
+DYNO_Archive_TABLE="<Your Archive table name>" \
+DYNO_Collectionmap_TABLE="<Your Collectionmap table name>" \
+APP_IMG_ROOT_PATH="<Your APP_IMG_ROOT_PATH>" \
+NOID_Scheme="<Your NOID_Scheme>" \
+NOID_NAA="<Your NOID_NAA>" \
+LONG_URL_PATH="<Your LONG_URL_PATH>" \
+SHORT_URL_PATH="<Your SHORT_URL_PATH>" \
+API_KEY="<Your API_KEY>" \
+API_ENDPOINT="<Your API_ENDPOINT>" \
+MEDIA_INGEST="<Boolean>" \
+MEDIA_TYPE="<Your Media Type>" \
+METADATA_INGEST="<Boolean>" \
 python3 lambda_function.py "/path/to/your/archive_metadata.csv"
