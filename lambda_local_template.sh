@@ -18,19 +18,19 @@ pip install -r ./requirements.txt
 #
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-Collection_Category="default" \
-REGION="us-east-1" \
-DYNO_Archive_TABLE="Archive-w2ps5pqmqja4rbgtw46jp4nsvy-ingest" \
-DYNO_Collection_TABLE="Collection-w2ps5pqmqja4rbgtw46jp4nsvy-ingest" \
-DYNO_Collectionmap_TABLE="Collectionmap-w2ps5pqmqja4rbgtw46jp4nsvy-ingest" \
-APP_IMG_ROOT_PATH="https://img.cloud.lib.vt.edu/demo/" \
-NOID_Scheme="ark:/" \
-NOID_NAA="53696" \
-LONG_URL_PATH="https://demo-dev.dlp.cloud.lib.vt.edu/" \
-SHORT_URL_PATH="https://ssxezg5su1.execute-api.us-east-1.amazonaws.com/Prod/" \
-API_KEY="2PtUFKWiwU5qAR7w4cOhb3vTRZthgkeJ6JNmTXyf" \
-API_ENDPOINT="https://ffzatqkiqe.execute-api.us-east-1.amazonaws.com/Prod/" \
-MEDIA_INGEST="true" \
-MEDIA_TYPE="3d" \
-METADATA_INGEST="true" \
+Collection_Category="<Your Collection_Category>" \
+REGION="<Your AWS region>" \
+DYNO_Collection_TABLE="<Your Collection table name>" \
+DYNO_Archive_TABLE="<Your Archive table name>" \
+DYNO_Collectionmap_TABLE="<Your Collectionmap table name>" \
+APP_IMG_ROOT_PATH="<Your APP_IMG_ROOT_PATH>" \
+NOID_Scheme="<Your NOID_Scheme>" \
+NOID_NAA="<Your NOID_NAA>" \
+LONG_URL_PATH="<Your LONG_URL_PATH>" \
+SHORT_URL_PATH="<Your SHORT_URL_PATH>" \
+API_KEY="<Your API_KEY>" \
+API_ENDPOINT="<Your API_ENDPOINT>" \
+MEDIA_INGEST="<Boolean>" \
+MEDIA_TYPE="<Your Media Type>" \
+METADATA_INGEST="<Boolean>" \
 python3 lambda_function.py "/path/to/your/archive_metadata.csv"

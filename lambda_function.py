@@ -26,6 +26,9 @@ long_url_path = os.getenv('LONG_URL_PATH')
 short_url_path = os.getenv('SHORT_URL_PATH')
 api_key = os.getenv('API_KEY')
 api_endpoint = os.getenv('API_ENDPOINT')
+media_ingest = os.getenv('MEDIA_INGEST')
+media_type = os.getenv('MEDIA_TYPE')
+metadata_ingest = os.getenv('METADATA_INGEST')
 
 
 try:
@@ -33,212 +36,30 @@ try:
     archive_table = dyndb.Table(archive_table_name)
     collection_table = dyndb.Table(collection_table_name)
     collectionmap_table = dyndb.Table(collectionmap_table_name)
-
 except Exception as e:
     print(f"An error occurred: {str(e)}")
     raise e
 
-single_value_headers = [
-    'bibliographic_citation',
-    'circa',
-    'display_date',
-    'end_date',
-    'explicit',
-    'explicit_content',
-    'extent',
-    'identifier',
-    'rights_holder',
-    'rights_statement',
-    'start_date',
-    'title']
-multi_value_headers = [
-    'alternative',
-    'basis_of_record',
-    'belongs_to',
-    'contributor',
-    'conforms_to',
-    'coverage',
-    'created',
-    'creator',
-    'date',
-    'description',
-    'format',
-    'has_format',
-    'has_part',
-    'has_version',
-    'is_format_of',
-    'is_version_of',
-    'language',
-    'license',
-    'location',
-    'medium',
-    'other_identifier',
-    'provenance',
-    'publisher',
-    'reference',
-    'related_url',
-    'repository',
-    'resource_type',
-    'source',
-    'subject',
-    'tags',
-    'temporal']
-old_key_list = [
-    'title',
-    'description',
-    'creator',
-    'source',
-    'circa',
-    'start_date',
-    'end_date',
-    'subject',
-    'belongs_to',
-    'resource_type',
-    'location',
-    'language',
-    'rights_statement',
-    'medium',
-    'bibliographic_citation',
-    'rights_holder',
-    'format',
-    'related_url',
-    'contributor',
-    'tags',
-    'parent_collection',
-    'collection_category',
-    'item_category',
-    'collection',
-    'manifest_url',
-    'thumbnail_path',
-    'visibility',
-    'create_date',
-    'modified_date',
-    'provenance',
-    'reference',
-    'repository',
-    'createdAt',
-    'updatedAt',
-    'display_date',
-    'extent',
-    'heirarchy_path',
-    'alternative',
-    'publisher',
-    'date',
-    'created',
-    'coverage',
-    'conforms_to',
-    'has_format',
-    'has_part',
-    'has_version',
-    'is_format_of',
-    'is_version_of',
-    'other_identifier',
-    'basis_of_record',
-    'temporal',
-    'license']
-removable_key_list = [
-    'description',
-    'creator',
-    'source',
-    'circa',
-    'start_date',
-    'end_date',
-    'subject',
-    'belongs_to',
-    'resource_type',
-    'location',
-    'language',
-    'medium',
-    'format',
-    'related_url',
-    'contributor',
-    'tags',
-    'rights_statement',
-    'rights_holder',
-    'bibliographic_citation',
-    'provenance',
-    'reference',
-    'repository',
-    'create_date',
-    'modified_date',
-    'extent',
-    'alternative',
-    'publisher',
-    'date',
-    'created',
-    'coverage',
-    'conforms_to',
-    'has_format',
-    'has_part',
-    'has_version',
-    'is_format_of',
-    'is_version_of',
-    'other_identifier',
-    'basis_of_record',
-    'temporal',
-    'license']
-new_key_list = [
-    ':t',
-    ':d',
-    ':c',
-    ':s',
-    ':ci',
-    ':st',
-    ':e',
-    ':su',
-    ':bt',
-    ':rt',
-    ':l',
-    ':la',
-    ':rs',
-    ':me',
-    ':bc',
-    ':rh',
-    ':f',
-    ':ru',
-    ':ct',
-    ':tg',
-    ':pc',
-    ':cc',
-    ':ic',
-    ':co',
-    ':mu',
-    ':tp',
-    ':v',
-    ':cd',
-    ':m',
-    ':pv',
-    ':rf',
-    ':rp',
-    ':ca',
-    ':ua',
-    ':dd',
-    ':et',
-    ':hp',
-    ':alt',
-    ':pub',
-    ':dat',
-    ':cre',
-    ':cov',
-    ':conf',
-    ':hasfo',
-    ':haspa',
-    ':hasve',
-    ':isfo',
-    ':isve',
-    ':othid',
-    ':basofre',
-    ':tmpl',
-    ':lic']
-key_list_len = len(old_key_list)
-reversed_attribute_names = {
-    'source': '#s',
-    'location': '#l',
-    'language': '#la',
-    'format': '#f',
-    'collection': '#c',
-    'reference': '#rf',
-    'date': '#dat'}
+headers_keys_file = 'lib_files/data/headers_keys.json'
+try:
+    with open(headers_keys_file, 'r') as f:
+        headers_keys = json.load(f)
+except Exception as e:
+    print(f"An error occurred: {str(e)}")
+    raise e
+if bool(headers_keys):
+    single_value_headers = headers_keys['single_value_headers']
+    multi_value_headers = headers_keys['multi_value_headers']
+    reversed_attribute_names = headers_keys['reversed_attribute_names']
+    removable_key_list = headers_keys['removable_key_list']
+    old_key_list = headers_keys['old_key_list']
+    key_list_len = len(old_key_list)
+    new_key_list = headers_keys['new_key_list']
+    dublin_to_key_map = headers_keys['dublin_to_key_map']
+else:
+    print(f"Error: loading data from {headers_keys_file} failed")
+    sys.exit(1)
+
 
 DUPLICATED = "Duplicated"
 
@@ -290,7 +111,7 @@ def csv_to_dataframe(csv_path):
             'Start Date': str,
             'End Date': str})
 
-    df = header_update(df)
+    df = map_dublin_headers_to_schema_keys(df)
 
     return df
 
@@ -390,43 +211,8 @@ def batch_import_archives_with_path(response):
         print(f"{line_count}: Archive Metadata ({csv_path}) has been processed.")
 
 
-def header_update(records):
-
-    df = records.rename(columns={
-        'dcterms.alternative': 'alternative',
-        'dcterms.bibliographicCitation': 'bibliographic_citation',
-        'dcterms.conformsTo': 'conforms_to',
-        'dcterms.contributor': 'contributor',
-        'dcterms.coverage': 'coverage',
-        'dcterms.created': 'created',
-        'dcterms.creator': 'creator',
-        'dcterms.date': 'date',
-        'dcterms.description': 'description',
-        'dcterms.extent': 'extent',
-        'dcterms.format': 'format',
-        'dcterms.hasFormat': 'has_format',
-        'dcterms.hasPart': 'has_part',
-        'dcterms.hasVersion': 'has_version',
-        'dcterms.identifier': 'identifier',
-        'dcterms.isFormatOf': 'is_format_of',
-        'dcterms.isPartOf': 'belongs_to',
-        'dcterms.isVersionOf': 'is_version_of',
-        'dcterms.language': 'language',
-        'dcterms.license': 'license',
-        'dcterms.medium': 'medium',
-        'dcterms.provenance': 'provenance',
-        'dcterms.publisher': 'publisher',
-        'dcterms.references': 'reference',
-        'dcterms.relation': 'related_url',
-        'dcterms.rights': 'rights_statement',
-        'dcterms.source': 'source',
-        'dcterms.spatial': 'location',
-        'dcterms.subject': 'subject',
-        'dcterms.rightsHolder': 'rights_holder',
-        'dcterms.temporal': 'temporal',
-        'dcterms.title': 'title',
-        'dcterms.type': 'resource_type'})
-
+def map_dublin_headers_to_schema_keys(records):
+    df = records.rename(columns=dublin_to_key_map)
     return df
 
 
@@ -581,7 +367,7 @@ def set_attribute(attr_dict, attr, value):
     elif attr == 'start_date' or attr == 'end_date':
         print_index_date(attr_dict, value, lower_attr)
     elif attr == 'parent_collection':
-        items = query_by_index(collection_table, 'Identifier', value)
+        items = query_by_index(collection_table, 'identifier', value)
         if len(items) == 1:
             parent_collection_id = items[0]['id']
             attr_dict['heirarchy_path'] = items[0]['heirarchy_path']
@@ -675,18 +461,6 @@ def remove_attr_dict(attr_dict, attr_names):
             else:
                 remove_exp += " " + old_attr + ","
     return remove_exp
-
-
-def rights_statement_with_title(title):
-    index_r_s = rights_statement.find('must')
-    return rights_statement[:index_r_s] + \
-        title + ' ' + rights_statement[index_r_s:]
-
-
-def biblio_citation_with_title(title):
-    index_b_c = biblio_citation.find('- Special')
-    return biblio_citation[:index_b_c] + \
-        title + ' ' + biblio_citation[index_b_c:]
 
 
 def extract_attribute(header, value):
