@@ -1,5 +1,5 @@
 #!/bin/bash
-pip install -r ./requirements.txt
+pip install -q -r ./requirements.txt
 
 # In order to run you must set the following Environment variables below.
 # Environment variable details can be found here: 

@@ -77,9 +77,9 @@ class MediaType():
         else:
             attr_dict['heirarchy_path'] = [attr_id]
 
-    short_id = mint_NOID()
+    short_id = self.mint_NOID()
     if short_id:
-        attr_dict['custom_key'] = noid_scheme + noid_naa + "/" + short_id
+        attr_dict['custom_key'] = self.env["noid_scheme"] + self.env["noid_naa"] + "/" + short_id
     now = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
     utc_now = self.utcformat(datetime.now())
     attr_dict['createdAt'] = utc_now
@@ -91,9 +91,9 @@ class MediaType():
     if short_id:
         # after NOID is created and item is inserted, update long_url and
         # short_url through API
-        long_url = long_url_path + item_type.lower() + "/" + short_id
-        short_url = short_url_path + noid_scheme + noid_naa + "/" + short_id
-        update_NOID(long_url, short_url, short_id, now)
+        long_url = self.env["long_url_path"] + item_type.lower() + "/" + short_id
+        short_url = self.env["short_url_path"] + self.env["noid_scheme"] + self.env["noid_naa"] + "/" + short_id
+        self.update_NOID(long_url, short_url, short_id, now)
     return attr_id
   
 
@@ -183,11 +183,11 @@ class MediaType():
 
   def set_attributes_from_env(self, attr_dict, item_type):
     if item_type == 'Collection':
-        attr_dict['collection_category'] = collection_category
+        attr_dict['collection_category'] = self.env["collection_category"]
         if 'visibility' not in attr_dict.keys():
             attr_dict['visibility'] = False
     elif item_type == 'Archive':
-        attr_dict['item_category'] = collection_category
+        attr_dict['item_category'] = self.env["collection_category"]
         attr_dict['visibility'] = True
 
 
@@ -204,22 +204,22 @@ class MediaType():
     elif attr == 'start_date' or attr == 'end_date':
         self.print_index_date(attr_dict, value, lower_attr)
     elif attr == 'parent_collection':
-        items = self.query_by_index(collection_table, 'identifier', value)
+        items = self.query_by_index(self.env["collection_table"], 'identifier', value)
         if len(items) == 1:
             parent_collection_id = items[0]['id']
             attr_dict['heirarchy_path'] = items[0]['heirarchy_path']
             attr_dict[lower_attr] = [parent_collection_id]
     elif attr == 'thumbnail_path':
-        attr_dict[lower_attr] = app_img_root_path + \
+        attr_dict[lower_attr] = self.env["app_img_root_path"] + \
             value + '/representative.jpg'
     elif attr == 'filename':
         if value.endswith('.pdf') or value.endswith('.jpg'):
-            attr_dict['thumbnail_path'] = app_img_root_path + \
+            attr_dict['thumbnail_path'] = self.env["app_img_root_path"] + \
                 'thumbnail/' + value.replace('.pdf', '.jpg')
-            attr_dict['manifest_url'] = app_img_root_path + 'pdf/' + value
+            attr_dict['manifest_url'] = self.env["app_img_root_path"] + 'pdf/' + value
         elif 'video.vt.edu/media' in value:
             thumbnail = value.split('_')[1]
-            attr_dict['thumbnail_path'] = app_img_root_path + \
+            attr_dict['thumbnail_path'] = self.env["app_img_root_path"] + \
                 'thumbnail/' + thumbnail + '.png'
             attr_dict['manifest_url'] = value
     else:
@@ -254,7 +254,7 @@ class MediaType():
   def get_collection(self, collection_id):
     ret_val = None
     try:
-        response = collection_table.query(
+        response = self.env["collection_table"].query(
             KeyConditionExpression=Key('id').eq(collection_id),
             Limit=1
         )
@@ -277,8 +277,8 @@ class MediaType():
     if old_attr in attr_dict.keys():
         if attr_dict[old_attr] or old_attr == "visibility":
             updated_attr_dict[new_attr] = attr_dict[old_attr]
-            if old_attr in reversed_attribute_names:
-                new_key = reversed_attribute_names[old_attr]
+            if old_attr in self.reversed_attribute_names:
+                new_key = self.reversed_attribute_names[old_attr]
                 attr_names[new_key] = old_attr
                 update_exp = ' ' + new_key + '=' + new_attr + ','
             else:
@@ -290,10 +290,10 @@ class MediaType():
 
   def remove_attr_dict(self, attr_dict, attr_names):
     remove_exp = "REMOVE"
-    for old_attr in removable_key_list:
+    for old_attr in self.removable_key_list:
         if old_attr not in attr_dict.keys():
-            if old_attr in reversed_attribute_names:
-                new_key = reversed_attribute_names[old_attr]
+            if old_attr in self.reversed_attribute_names:
+                new_key = self.reversed_attribute_names[old_attr]
                 attr_names[new_key] = old_attr
                 remove_exp += " " + new_key + ","
             else:
@@ -302,9 +302,9 @@ class MediaType():
   
 
   def extract_attribute(self, header, value):
-    if header in single_value_headers:
+    if header in self.single_value_headers:
         return value
-    elif header in multi_value_headers:
+    elif header in self.multi_value_headers:
         return value.split('||')
     
 
@@ -326,18 +326,18 @@ class MediaType():
           collection_dict['parent_collection'] = [parent_id]
           collection_dict['heirarchy_path'] = heirarchy_list
 
-        items = self.query_by_index(collection_table, 'Identifier', identifier)
+        items = self.query_by_index(self.env["collection_table"], 'Identifier', identifier)
         if len(items) > 1:
           print(
-              f"Error: Duplicated Identifier ({identifier}) found in {collection_table}.")
+              f"Error: Duplicated Identifier ({identifier}) found in {self.env['collection_table']}.")
           break
         elif len(items) == 1:
           print(f"Collection {identifier} exists!")
           parent_id = items[0]['id']
           heirarchy_list = items[0]['heirarchy_path']
         else:
-          parent_id = create_item_in_table(
-            collection_table, collection_dict, 'Collection')
+          parent_id = self.create_item_in_table(
+            self.env["collection_table"], collection_dict, 'Collection')
           print(f"Collection PutItem succeeded: {identifier}")
 
     if len(heirarchy_list) > 0:
@@ -345,13 +345,27 @@ class MediaType():
     return [parent_id]
   
 
+  def walk_collection(self, parent):
+    custom_key = parent['custom_key'].replace('ark:/53696/', '')
+    map_location = {
+        'id': parent['id'],
+        'name': parent['title'],
+        'custom_key': custom_key}
+    children = self.get_collection_children(parent['id'])
+    if len(children) > 0:
+        map_location['children'] = []
+        for child in children:
+            map_location['children'].append(self.walk_collection(child))
+    return map_location
+  
+
   def update_collection_map(self, top_parent_id):
     parent = self.get_collection(top_parent_id)
     if 'parent_collection' not in parent:
-      map_obj = walk_collection(parent)
+      map_obj = self.walk_collection(parent)
       utc_now = self.utcformat(datetime.now())
       if 'collectionmap_id' in parent:
-        collectionmap_table.update_item(
+        self.env["collectionmap_table"].update_item(
           Key={
             "id": parent["collectionmap_id"]
           },
@@ -372,7 +386,7 @@ class MediaType():
         )
       else:
         map_id = str(uuid.uuid4())
-        collectionmap_table.put_item(
+        self.env["collectionmap_table"].put_item(
           Item={
             "id": map_id,
             "map_object": json.dumps(map_obj),
@@ -383,7 +397,7 @@ class MediaType():
           }
         )
 
-        collection_table.update_item(
+        self.env["collection_table"].update_item(
           Key={
             "id": parent["id"]
           },
@@ -411,7 +425,7 @@ class MediaType():
       while not done:
         if start_key:
           scan_kwargs['ExclusiveStartKey'] = start_key
-        response = collection_table.scan(**scan_kwargs)
+        response = self.env["collection_table"].scan(**scan_kwargs)
         source_table_items.extend(response['Items'])
         start_key = response.get('LastEvaluatedKey', None)
         done = start_key is None
