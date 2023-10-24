@@ -33,4 +33,4 @@ API_ENDPOINT="https://ffzatqkiqe.execute-api.us-east-1.amazonaws.com/Prod/" \
 MEDIA_INGEST="true" \
 MEDIA_TYPE="3d" \
 METADATA_INGEST="true" \
-python3 lambda_function.py "/path/to/your/archive_metadata.csv"
+python3 lambda_function.py "/Users/whunter/dev/dlp/dlp-ingest/examples/metadata/2023-09-27_example_archive_metadata.csv"

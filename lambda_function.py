@@ -52,24 +52,12 @@ except Exception as e:
     raise e
 
 
-def import_metadata(filename, data, handler):
-    print(filename)
-    sys.exit(0)
-    if 'index.csv' in filename:
-        handler.batch_import_archives_with_path(data)
-    elif 'collection_metadata.csv' in filename:
-        handler.batch_import_collections(data)
-    elif 'archive_metadata.csv' in filename:
-        handler.batch_import_archives(data)
-
-
-def get_media_type_handler(env, headers_keys):
+def new_media_type_handler(env, headers_keys, filename, response):
     media_type = media_types_map[env['media_type']]
-    return media_type["handler"](env, headers_keys)
+    return media_type["handler"](env, headers_keys, filename, response)
 
 
 def local_handler(filename):
-    media_type_handler = get_media_type_handler(env, headers_keys)
     response = None
     try:
         body_encoded = open(filename).read().encode()
@@ -77,11 +65,8 @@ def local_handler(filename):
         response = {"Body": stream}
     except FileNotFoundError as e:
         print(f"An error occurred: {str(e)}")
-
-    if env["metadata_ingest"] == "true" and bool(response):
-        import_metadata(filename, response, media_type_handler)
-    else:
-        print("No metadata to import.")
+    media_type_handler = new_media_type_handler(env, headers_keys, filename, response)
+    media_type_handler.ingest()
 
 
 def lambda_handler(event, context):
@@ -92,9 +77,8 @@ def lambda_handler(event, context):
     try:
         s3 = boto3.client('s3')
         response = s3.get_object(Bucket=bucket, Key=key)
-        media_type_handler = get_media_type_handler(env, headers_keys)
-        if env["metadata_ingest"] == "true":
-            import_metadata(key, response, media_type_handler)
+        media_type_handler = new_media_type_handler(env, headers_keys, key, response)
+        media_type_handler.ingest()
     except Exception as e:
         print(
             f"An error occurred importing {key} from bucket {bucket}: {str(e)}")

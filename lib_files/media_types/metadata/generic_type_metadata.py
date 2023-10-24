@@ -15,9 +15,11 @@ from botocore.response import StreamingBody
 
 DUPLICATED = "Duplicated"
 
-class MediaType():
-  def __init__(self, env, headers_keys):
+class GenericTypeMetadata():
+  def __init__(self, env, headers_keys, metadata_filename, metadata):
     self.env = env
+    self.metadata_filename = metadata_filename
+    self.metadata = metadata
     if bool(headers_keys):
       self.single_value_headers = headers_keys['single_value_headers']
       self.multi_value_headers = headers_keys['multi_value_headers']
@@ -434,3 +436,93 @@ class MediaType():
       print(f"An error occurred: {str(e)}")
       raise e
     return source_table_items
+  
+
+  def batch_import_archives(self):
+    df = self.csv_to_dataframe(io.BytesIO(self.metadata['Body'].read()))
+    for idx, row in df.iterrows():
+      archive_dict = self.process_csv_metadata(row, 'Archive')
+      if not archive_dict:
+        print(f"Error: Archive {idx+1} has failed to be imported.")
+        break
+      self.find_and_update(self.env['archive_table'], archive_dict, 'Archive', idx)
+
+
+  def batch_import_archives_from_legacy_manifest_list(self):
+    csv_lines = self.metadata['Body'].read().decode('utf-8').split()
+    line_count = 0
+    for line in csv_lines:
+      csv_row = line.split(',')
+      # get path to archive metadata csv file
+      metadata_csv = csv_row[0].strip()
+      csv_path = self.env['app_img_root_path'] + metadata_csv
+      # get identifiers with corresponding paths
+      archive_identifiers = [i.strip() for i in csv_row[1:]]
+
+      # process archive metadata csv
+      df = self.csv_to_dataframe(csv_path)
+      for idx, row in df.iterrows():
+        archive_dict = self.process_csv_metadata(row, 'Archive')
+        if not archive_dict:
+          print(f"Error: Archive {idx+1} has failed to be imported.")
+          break
+        identifier = archive_dict['identifier']
+        matching_parent_paths = [
+          path for path in archive_identifiers if path.endswith(identifier)]
+        if len(matching_parent_paths) == 1:
+          parent_collections = matching_parent_paths[0].split('/')
+          parent_collections.pop()
+          if len(parent_collections) > 0:
+            parent_collection_ids = self.create_sub_collections(
+              parent_collections)
+        else:
+          print(
+            f"Wrong archive path invloving {identifier} occurred processing {csv_path}")
+          continue
+        archive_dict['manifest_url'] = self.env['app_img_root_path'] + \
+          matching_parent_paths[0].strip() + '/manifest.json'
+        json_url = urllib.request.urlopen(archive_dict['manifest_url'])
+        archive_dict['thumbnail_path'] = json.loads(json_url.read())[
+          "thumbnail"]["@id"]
+        archive_dict['parent_collection'] = parent_collection_ids
+        if len(parent_collection_ids) > 0:
+          archive_dict['collection'] = parent_collection_ids[0]
+          parent_collection = self.get_collection(parent_collection_ids[0])
+          archive_dict['heirarchy_path'] = parent_collection['heirarchy_path']
+
+        self.find_and_update(self.env['archive_table'], archive_dict, 'Archive', idx)
+      line_count += 1
+    print(f"{line_count}: Archive Metadata ({csv_path}) has been processed.")
+
+
+  def batch_import_collections(self):
+    df = self.csv_to_dataframe(io.BytesIO(self.metadata['Body'].read()))
+
+    for idx, row in df.iterrows():
+        collection_dict = self.process_csv_metadata(row, 'Collection')
+        if not collection_dict:
+            print(f"Error: Collection {idx+1} has failed to be imported.")
+            break
+        identifier = collection_dict['identifier']
+        items = self.query_by_index(self.env['collection_table'], 'Identifier', identifier)
+        if len(items) > 1:
+            print(
+                f"Error: Duplicated Identifier ({identifier}) found in {self.env['collection_table']}.")
+            break
+        elif len(items) == 1:
+            if 'heirarchy_path' in collection_dict:
+                collection_dict['heirarchy_path'].append(items[0]['id'])
+            self.update_item_in_table(
+                self.env['collection_table'],
+                collection_dict,
+                items[0]['id'])
+        else:
+            collection_dict['thumbnail_path'] = self.env['app_img_root_path'] + \
+                identifier + "/representative.jpg"
+            self.create_item_in_table(
+                self.env['collection_table'],
+                collection_dict,
+                'Collection')
+        if 'heirarchy_path' in collection_dict:
+            self.update_collection_map(collection_dict['heirarchy_path'][0])
+        print(f"Collection {idx+1} ({identifier}) has been imported.")
