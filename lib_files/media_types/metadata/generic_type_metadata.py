@@ -20,18 +20,9 @@ class GenericTypeMetadata():
     self.env = env
     self.metadata_filename = metadata_filename
     self.metadata = metadata
-    if bool(headers_keys):
-      self.single_value_headers = headers_keys['single_value_headers']
-      self.multi_value_headers = headers_keys['multi_value_headers']
-      self.reversed_attribute_names = headers_keys['reversed_attribute_names']
-      self.removable_key_list = headers_keys['removable_key_list']
-      self.old_key_list = headers_keys['old_key_list']
-      self.key_list_len = len(self.old_key_list)
-      self.new_key_list = headers_keys['new_key_list']
-      self.dublin_to_key_map = headers_keys['dublin_to_key_map']
-    else:
-      print(f"Error: initializing MediaType object failed")
-      sys.exit(1)
+    self.headers_keys = headers_keys
+    self.headers_keys['old_key_list_len'] = len(self.headers_keys['old_key_list'])
+      
 
 
   def ingest(self):
@@ -53,7 +44,7 @@ class GenericTypeMetadata():
   
 
   def map_dublin_headers_to_schema_keys(self, records):
-    df = records.rename(columns=self.dublin_to_key_map)
+    df = records.rename(columns=self.headers_keys['dublin_to_key_map'])
     return df
   
 
@@ -119,11 +110,11 @@ class GenericTypeMetadata():
     update_expression = 'SET'
     update_dict = {}
     update_names = {}
-    for i in range(self.key_list_len):
+    for i in range(self.headers_keys['old_key_list_len']):
         update_expression += self.update_attr_dict(item_dict,
                                               update_dict,
-                                              self.old_key_list[i],
-                                              self.new_key_list[i],
+                                              self.headers_keys['old_key_list'][i],
+                                              self.headers_keys['new_key_list'][i],
                                               update_names)
     if bool(update_names):
         response = item_table.update_item(
@@ -279,8 +270,8 @@ class GenericTypeMetadata():
     if old_attr in attr_dict.keys():
         if attr_dict[old_attr] or old_attr == "visibility":
             updated_attr_dict[new_attr] = attr_dict[old_attr]
-            if old_attr in self.reversed_attribute_names:
-                new_key = self.reversed_attribute_names[old_attr]
+            if old_attr in self.headers_keys['reversed_attribute_names']:
+                new_key = self.headers_keys['reversed_attribute_names'][old_attr]
                 attr_names[new_key] = old_attr
                 update_exp = ' ' + new_key + '=' + new_attr + ','
             else:
@@ -292,10 +283,10 @@ class GenericTypeMetadata():
 
   def remove_attr_dict(self, attr_dict, attr_names):
     remove_exp = "REMOVE"
-    for old_attr in self.removable_key_list:
+    for old_attr in self.headers_keys['removable_key_list']:
         if old_attr not in attr_dict.keys():
-            if old_attr in self.reversed_attribute_names:
-                new_key = self.reversed_attribute_names[old_attr]
+            if old_attr in self.headers_keys['reversed_attribute_names']:
+                new_key = self.headers_keys['reversed_attribute_names'][old_attr]
                 attr_names[new_key] = old_attr
                 remove_exp += " " + new_key + ","
             else:
@@ -304,9 +295,9 @@ class GenericTypeMetadata():
   
 
   def extract_attribute(self, header, value):
-    if header in self.single_value_headers:
+    if header in self.headers_keys['single_value_headers']:
         return value
-    elif header in self.multi_value_headers:
+    elif header in self.headers_keys['multi_value_headers']:
         return value.split('||')
     
 

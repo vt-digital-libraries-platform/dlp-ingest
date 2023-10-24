@@ -11,13 +11,13 @@ class GenericType():
 
   def ingest(self):
     if self.env["media_ingest"] == "true":
-      self.import_media()
+      self.import_digital_objects()
     if self.env["metadata_ingest"] == "true":
       self.import_metadata()
 
 
-  def import_media(self):
-    self.media_handler.import_media()
+  def import_digital_objects(self):
+    self.media_handler.import_digital_objects()
 
 
   def import_metadata(self):

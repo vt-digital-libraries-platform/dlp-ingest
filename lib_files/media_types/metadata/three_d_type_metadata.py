@@ -7,3 +7,4 @@ class ThreeDTypeMetadata(GenericTypeMetadata):
 
   def batch_import_archives(self):
     print("batch_import_archives called from ThreeDTypeMetadata")
+
