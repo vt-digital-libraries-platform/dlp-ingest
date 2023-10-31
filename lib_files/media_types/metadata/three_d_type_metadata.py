@@ -5,6 +5,6 @@ class ThreeDTypeMetadata(GenericTypeMetadata):
     super().__init__(env, headers_keys, metadata_filename, metadata)
 
 
-  def batch_import_archives(self):
+  def batch_import_archives(self, modified_metadata=None):
     print("batch_import_archives called from ThreeDTypeMetadata")
 

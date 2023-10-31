@@ -30,18 +30,12 @@ env["short_url_path"] = os.getenv('SHORT_URL_PATH')
 env["api_key"] = os.getenv('API_KEY')
 env["api_endpoint"] = os.getenv('API_ENDPOINT')
 env["media_ingest"] = os.getenv('MEDIA_INGEST')
+env['src_bucket'] = os.getenv('SRC_BUCKET')
+env['src_prefix'] = os.getenv('SRC_PREFIX')
+env['target_bucket'] = os.getenv('TARGET_BUCKET')
+env['target_prefix'] = os.getenv('TARGET_PREFIX')
 env["media_type"] = os.getenv('MEDIA_TYPE')
 env["metadata_ingest"] = os.getenv('METADATA_INGEST')
-
-
-try:
-    dyndb = boto3.resource('dynamodb', region_name=env["region_name"])
-    env["archive_table"] = dyndb.Table(env["archive_table_name"])
-    env["collection_table"] = dyndb.Table(env["collection_table_name"])
-    env["collectionmap_table"] = dyndb.Table(env["collectionmap_table_name"])
-except Exception as e:
-    print(f"An error occurred: {str(e)}")
-    raise e
 
 headers_keys_file = 'lib_files/data/headers_keys.json'
 try:

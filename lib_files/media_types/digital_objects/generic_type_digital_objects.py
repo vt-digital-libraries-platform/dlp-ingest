@@ -7,4 +7,4 @@ class GenericTypeDigitalObjects():
     self.metadata = metadata
 
   def import_digital_objects(self):
-    print("import_digital_objects called from GenericTypeDigitalObjects")
+    print(self.env)

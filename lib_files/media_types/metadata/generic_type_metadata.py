@@ -22,6 +22,15 @@ class GenericTypeMetadata():
     self.metadata = metadata
     self.headers_keys = headers_keys
     self.headers_keys['old_key_list_len'] = len(self.headers_keys['old_key_list'])
+
+    try:
+      dyndb = boto3.resource('dynamodb', region_name=self.env["region_name"])
+      self.env["archive_table"] = dyndb.Table(self.env["archive_table_name"])
+      self.env["collection_table"] = dyndb.Table(self.env["collection_table_name"])
+      self.env["collectionmap_table"] = dyndb.Table(self.env["collectionmap_table_name"])
+    except Exception as e:
+      print(f"An error occurred: {str(e)}")
+      raise e
       
 
 
@@ -429,8 +438,9 @@ class GenericTypeMetadata():
     return source_table_items
   
 
-  def batch_import_archives(self):
-    df = self.csv_to_dataframe(io.BytesIO(self.metadata['Body'].read()))
+  def batch_import_archives(self, modified_metadata=None):
+    metadata = modified_metadata if bool(modified_metadata) else self.metadata
+    df = self.csv_to_dataframe(io.BytesIO(metadata['Body'].read()))
     for idx, row in df.iterrows():
       archive_dict = self.process_csv_metadata(row, 'Archive')
       if not archive_dict:
@@ -439,8 +449,9 @@ class GenericTypeMetadata():
       self.find_and_update(self.env['archive_table'], archive_dict, 'Archive', idx)
 
 
-  def batch_import_archives_from_legacy_manifest_list(self):
-    csv_lines = self.metadata['Body'].read().decode('utf-8').split()
+  def batch_import_archives_from_legacy_manifest_list(self, modified_metadata=None):
+    metadata = modified_metadata if bool(modified_metadata) else self.metadata
+    csv_lines = metadata['Body'].read().decode('utf-8').split()
     line_count = 0
     for line in csv_lines:
       csv_row = line.split(',')
@@ -486,8 +497,9 @@ class GenericTypeMetadata():
     print(f"{line_count}: Archive Metadata ({csv_path}) has been processed.")
 
 
-  def batch_import_collections(self):
-    df = self.csv_to_dataframe(io.BytesIO(self.metadata['Body'].read()))
+  def batch_import_collections(self, modified_metadata=None):
+    metadata = modified_metadata if bool(modified_metadata) else self.metadata
+    df = self.csv_to_dataframe(io.BytesIO(metadata['Body'].read()))
 
     for idx, row in df.iterrows():
         collection_dict = self.process_csv_metadata(row, 'Collection')
