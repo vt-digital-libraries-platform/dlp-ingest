@@ -50,4 +50,4 @@ API_ENDPOINT="https://ffzatqkiqe.execute-api.us-east-1.amazonaws.com/Prod/" \
 MEDIA_INGEST="<Boolean>" \
 MEDIA_TYPE="<Your Media Type>" \
 METADATA_INGEST="<Boolean>" \
-python3 lambda_function.py "/Users/whunter/dev/dlp/assets/swva/fchs/20240211_fchs_archive_metadata.csv"
+python3 lambda_function.py "./examples/20240211_fchs_archive_metadata.csv"
