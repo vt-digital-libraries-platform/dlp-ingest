@@ -51,6 +51,7 @@ except Exception as e:
 
 single_value_headers = None
 multi_value_headers = None
+DUPLICATED = "Duplicated"
 try:
     headers_json = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
@@ -63,7 +64,6 @@ try:
 except Exception as e:
     print(f"An error occurred reading headers_keys.json: {str(e)}")
     raise e
-DUPLICATED = "Duplicated"
 
 
 def local_handler(filename):
