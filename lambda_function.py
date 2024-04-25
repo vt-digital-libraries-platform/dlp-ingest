@@ -55,7 +55,7 @@ DUPLICATED = "Duplicated"
 try:
     headers_json = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
-        "lib_files/data/20240312_headers_keys.json",
+        "lib_files/data/20240425_headers_keys.json",
     )
     with open(headers_json) as f:
         headers_keys = json.load(f)
