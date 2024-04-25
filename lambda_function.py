@@ -549,7 +549,10 @@ def extract_attribute(header, value):
     if header in single_value_headers:
         return value
     elif header in multi_value_headers:
-        return value.split("||")
+        values = value.split("||")
+        for idx, val in enumerate(values):
+            values[idx] = val.strip()
+        return values
 
 
 def create_sub_collections(parent_collections):
