@@ -42,6 +42,7 @@
     "repository",
     "resource_type",
     "source",
+    "spatial",
     "subject",
     "tags",
     "temporal"
