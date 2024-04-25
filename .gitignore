@@ -246,3 +246,5 @@ custom_pytest.ini
 
 */build/*
 # End of https://www.gitignore.io/api/osx,linux,python,windows,pycharm,visualstudiocode
+
+results_files/
