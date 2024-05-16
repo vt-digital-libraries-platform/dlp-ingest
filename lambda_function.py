@@ -268,11 +268,6 @@ def batch_import_archives(response):
                 )
                 break
             else:
-                archive_dict["identifier"] = (
-                    archive_dict["identifier"]
-                    if collection_identifier in archive_dict["identifier"]
-                    else f"{collection_identifier}_{archive_dict['identifier']}"
-                )
                 archive_dict["collection"] = collection["id"]
                 archive_dict["parent_collection"] = [collection["id"]]
                 archive_dict["heirarchy_path"] = collection["heirarchy_path"]
