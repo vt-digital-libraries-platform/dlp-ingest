@@ -1,5 +1,5 @@
 {
-    "single_value_headers": [
+  "single_value_headers": [
     "bibliographic_citation",
     "circa",
     "end_date",
@@ -8,8 +8,8 @@
     "identifier",
     "start_date",
     "title"
-],
-"multi_value_headers": [
+  ],
+  "multi_value_headers": [
     "alternative",
     "basis_of_record",
     "belongs_to",
@@ -35,7 +35,7 @@
     "other_identifier",
     "provenance",
     "publisher",
-    "reference",
+    "references",
     "related_url",
     "repository",
     "resource_type",
@@ -45,6 +45,7 @@
     "spatial",
     "subject",
     "tags",
-    "temporal"
-]
+    "temporal",
+    "type"
+  ]
 }
