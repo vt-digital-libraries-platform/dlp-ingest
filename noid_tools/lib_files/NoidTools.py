@@ -11,11 +11,11 @@ class NoidHandler:
         self.full_url = full_url
         self.short_url = short_url
 
-    def mint_NOID(self):
+    def api_mint_NOID(self):
         headers = {"x-api-key": self.api_key}
         url = os.path.join(self.api_endpoint + "mint")
         response = requests.get(url, headers=headers)
-        print(f"mint_NOID {response.text}")
+        print(f"api_mint_NOID {response.text}")
         if response.status_code == 200:
             res_message = (response.json())["message"]
             start_idx = res_message.find("New NOID: ") + len("New NOID: ")
@@ -24,9 +24,9 @@ class NoidHandler:
         else:
             return None
 
-    def update_NOID(self, noid, create_date):
+    def api_update_NOID(self, noid, create_date):
         headers = {"x-api-key": self.api_key}
-        print(f"update_NOID: {noid}")
+        print(f"api_update_NOID: {noid}")
         body = (
             "long_url="
             + os.path.join(self.full_url, "archive", noid)
@@ -39,7 +39,7 @@ class NoidHandler:
         )
         url = os.path.join(self.api_endpoint + "update")
         response = requests.post(url, data=body, headers=headers)
-        print(f"update_NOID: {response.text}")
+        print(f"api_update_NOID: {response.text}")
 
 
 if __name__ == "__main__":
@@ -54,7 +54,7 @@ if __name__ == "__main__":
     else:
         noidHandler = NoidHandler(api_key, api_endpoint, full_url, short_url)
         if sys.argv[1] == "mint":
-            response = noidHandler.mint_NOID()
+            response = noidHandler.api_mint_NOID()
             print(f"NOID: {response}")
         elif sys.argv[1] == "update":
             if len(sys.argv) < 3:
@@ -62,7 +62,7 @@ if __name__ == "__main__":
                 sys.exit(1)
             else:
                 noid = sys.argv[2]
-                noidHandler.update_NOID(
+                noidHandler.api_update_NOID(
                     noid, datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
                 )
         else:

@@ -2,7 +2,7 @@
 command=$1
 noid=$2
 cwd=$(pwd)
-cd ./lib_files
+cd ./src
 
 FULL_URL="https://digital.lib.vt.edu/" \
 SHORT_URL="https://idn.lib.vt.edu/" \

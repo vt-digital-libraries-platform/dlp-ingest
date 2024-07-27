@@ -248,5 +248,5 @@ custom_pytest.ini
 # End of https://www.gitignore.io/api/osx,linux,python,windows,pycharm,visualstudiocode
 
 
-my_lambda_local.sh
+lambda_local.sh
 results_files/
