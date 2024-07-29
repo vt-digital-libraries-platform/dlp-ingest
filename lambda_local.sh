@@ -22,45 +22,48 @@ pip install -r ./requirements.txt --quiet
 
 
 ##### prod #####
-AWS_SRC_BUCKET="vtlib-store" \
-AWS_DEST_BUCKET="img.cloud.lib.vt.edu" \
-COLLECTION_CATEGORY="federated" \
-COLLECTION_IDENTIFIER="sfd" \
-COLLECTION_SUBDIRECTORY="" \
-ITEM_SUBDIRECTORY="" \
-REGION="us-east-1" \
-DYNAMODB_TABLE_SUFFIX="m6rxpkb73zehlhwrmyirtfbw3e-prod" \
-APP_IMG_ROOT_PATH="https://img.cloud.lib.vt.edu/" \
-NOID_SCHEME="ark:/" \
-NOID_NAA="53696" \
-LONG_URL_PATH="https://digital.lib.vt.edu/" \
-SHORT_URL_PATH="https://idn.lib.vt.edu/" \
-API_KEY="eSIaSK2L3y3hWpmSAzPpWaAgnghnRrEVabe5KbR4" \
-API_ENDPOINT="https://2xmdyl893j.execute-api.us-east-1.amazonaws.com/Prod/" \
-MEDIA_INGEST="false" \
-MEDIA_TYPE="iiif" \
-METADATA_INGEST="true" \
-DRY_RUN="false" \
-python3 lambda_function.py "./examples/20240705_sfd_archive_metadata.csv"
-
-##### pprd #####
-# AWS_SRC_BUCKET="ingest-dev-vtlib-store" \
-# AWS_DEST_BUCKET="ingest-dev.img.cloud.lib.vt.edu" \
+# AWS_SRC_BUCKET="vtlib-store" \
+# AWS_DEST_BUCKET="img.cloud.lib.vt.edu" \
 # COLLECTION_CATEGORY="federated" \
-# COLLECTION_IDENTIFIER="sfd" \
+# COLLECTION_IDENTIFIER="ms1992_020_stepp" \
 # COLLECTION_SUBDIRECTORY="" \
 # ITEM_SUBDIRECTORY="" \
 # REGION="us-east-1" \
-# DYNAMODB_TABLE_SUFFIX="ws6c4ek7urgsflpjicndw27noa-dev" \
-# APP_IMG_ROOT_PATH="https://d21nnzi4oh5qvs.cloudfront.net/" \
+# DYNAMODB_TABLE_SUFFIX="m6rxpkb73zehlhwrmyirtfbw3e-prod" \
+# APP_IMG_ROOT_PATH="https://img.cloud.lib.vt.edu/" \
 # NOID_SCHEME="ark:/" \
 # NOID_NAA="53696" \
-# LONG_URL_PATH="https://federated-dev.dlp.cloud.lib.vt.edu/" \
-# SHORT_URL_PATH="https://ssxezg5su1.execute-api.us-east-1.amazonaws.com/Prod" \
-# API_KEY="2PtUFKWiwU5qAR7w4cOhb3vTRZthgkeJ6JNmTXyf" \
-# API_ENDPOINT="https://ffzatqkiqe.execute-api.us-east-1.amazonaws.com/Prod/" \
+# LONG_URL_PATH="https://digital.lib.vt.edu/" \
+# SHORT_URL_PATH="https://idn.lib.vt.edu/" \
+# API_KEY="eSIaSK2L3y3hWpmSAzPpWaAgnghnRrEVabe5KbR4" \
+# API_ENDPOINT="https://2xmdyl893j.execute-api.us-east-1.amazonaws.com/Prod/" \
 # MEDIA_INGEST="false" \
 # MEDIA_TYPE="iiif" \
 # METADATA_INGEST="true" \
+# GENERATE_THUMBNAILS="false" \
 # DRY_RUN="false" \
-# python3 lambda_function.py "./examples/sfd_apr5_archive_metadata.csv"
+# python3 lambda_function.py "./examples/ms1992_020_archive_metadata.csv"
+
+##### dev/pprd #####
+VERBOSE="true" \
+AWS_SRC_BUCKET="ingest-dev-vtlib-store" \
+AWS_DEST_BUCKET="ingest-dev.img.cloud.lib.vt.edu" \
+COLLECTION_CATEGORY="federated" \
+COLLECTION_IDENTIFIER="LD5655.V8.T5_" \
+COLLECTION_SUBDIRECTORY="" \
+ITEM_SUBDIRECTORY="" \
+REGION="us-east-1" \
+DYNAMODB_TABLE_SUFFIX="ws6c4ek7urgsflpjicndw27noa-dev" \
+APP_IMG_ROOT_PATH="https://d21nnzi4oh5qvs.cloudfront.net/" \
+NOID_SCHEME="ark:/" \
+NOID_NAA="53696" \
+LONG_URL_PATH="https://federated-dev.d2ysrrdhih4bgc.amplifyapp.com" \
+SHORT_URL_PATH="https://ssxezg5su1.execute-api.us-east-1.amazonaws.com/Prod" \
+API_KEY="dfF3FKVu3C9MN24Kfz5Gm60admMuf6Yi41vRGv6X" \
+API_ENDPOINT="https://ffzatqkiqe.execute-api.us-east-1.amazonaws.com/pprd/" \
+MEDIA_INGEST="false" \
+MEDIA_TYPE="pdf" \
+METADATA_INGEST="true" \
+GENERATE_THUMBNAILS="false" \
+DRY_RUN="false" \
+python3 lambda_function.py "./examples/LD5655.V8.T5_collection_metadata.csv"

@@ -47,8 +47,8 @@ class GenericMetadata:
             raise e
 
         try:
-            # headers_file = "/home/wlh/dev/dlp/ingest/metadata/dlp-ingest/src/data/20240702_headers_keys.json"
-            headers_file = "/Users/whunter/dev/dlp/ingest/dlp-ingest/src/data/20240702_headers_keys.json"
+            headers_file = "/home/wlh/dev/dlp/ingest/metadata/dlp-ingest/src/data/20240702_headers_keys.json"
+            # headers_file = "/Users/whunter/dev/dlp/ingest/dlp-ingest/src/data/20240702_headers_keys.json"
             headers_json = os.path.join(headers_file)
             with open(headers_json) as f:
                 headers_keys = json.load(f)
@@ -100,7 +100,6 @@ class GenericMetadata:
             print("")
             print("===================================")
             collection_dict = self.process_csv_metadata(row, "Collection")
-            print(collection_dict)
             if not collection_dict:
                 print(f"Error: Collection {idx+1} has failed to be imported.")
                 self.log_result(
@@ -519,8 +518,7 @@ class GenericMetadata:
             if "Items" in response and len(response["Items"]) == 1:
                 ret_val = response["Items"][0]
         except Exception as e:
-            print(f"An error occurred querying {table.name} by {index_name}: {value}")
-            print(str(e))
+            print(f"Could not find {index_name}: {value} in {table.name}.")
         return ret_val
 
     def get_collection(self, archive_dict):
