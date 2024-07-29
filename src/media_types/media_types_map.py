@@ -26,7 +26,7 @@ media_types_map = {
                 "pdf": "<variable>.pdf",
                 "thumbnail": "<variable>thumbnail.jpg",
             },
-            "options": {"generated_thumbnail_src": "pdf"},
+            "options": {"asset_src": "pdf"},
         },
         "extensions": ["pdf", "jpg"],
         "handler": PDFType,

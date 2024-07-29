@@ -47,8 +47,9 @@ class GenericMetadata:
             raise e
 
         try:
-            headers_file = "/home/wlh/dev/dlp/ingest/metadata/dlp-ingest/src/data/20240702_headers_keys.json"
-            # headers_file = "/Users/whunter/dev/dlp/ingest/dlp-ingest/src/data/20240702_headers_keys.json"
+            # headers_file = "/home/wlh/dev/dlp/ingest/metadata/dlp-ingest/src/data/20240702_headers_keys.json"
+            # /Users/whunter/dev/dlp/ingest/dlp-ingest/
+            headers_file = "./src/data/20240702_headers_keys.json"
             headers_json = os.path.join(headers_file)
             with open(headers_json) as f:
                 headers_keys = json.load(f)
@@ -429,10 +430,9 @@ class GenericMetadata:
     def set_attributes_from_env(self, attr_dict, item_type):
         if item_type == "Collection":
             attr_dict["collection_category"] = self.env["collection_category"]
-            if "visibility" not in attr_dict.keys():
-                attr_dict["visibility"] = False
         elif item_type == "Archive":
             attr_dict["item_category"] = self.env["collection_category"]
+        if "visibility" not in attr_dict.keys():
             attr_dict["visibility"] = True
 
     def set_attribute(self, attr_dict, attr, value):

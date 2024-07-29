@@ -58,67 +58,41 @@ class PDFMetadata(GenericMetadata):
                     archive_dict["collection"] = collection["id"]
                     archive_dict["parent_collection"] = [collection["id"]]
                     archive_dict["heirarchy_path"] = collection["heirarchy_path"]
-                    archive_dict["manifest_url"] = os.path.join(
-                        self.env["app_img_root_path"],
-                        self.env["collection_category"],
-                        collection_identifier,
-                        archive_dict["identifier"],
-                        "manifest.json",
+                    archive_dict["manifest_url"] = self.asset_path(
+                        archive_dict, collection_identifier
                     )
-                    try:
-                        json_url = urllib.request.urlopen(archive_dict["manifest_url"])
-                        archive_dict["thumbnail_path"] = json.loads(json_url.read())[
-                            "thumbnail"
-                        ]["@id"]
-                    except (
-                        urllib.error.HTTPError,
-                        http.client.IncompleteRead,
-                    ) as http_err:
-                        print(http_err)
-                        print(f"{archive_dict['manifest_url']} not found.")
-                        self.log_result(
-                            archive_dict,
-                            idx,
-                            4,
-                            False,
-                        )
-                    except Exception as e:
-                        print(e)
-                        print(f"{archive_dict['manifest_url']} not found.")
-                        self.log_result(
-                            archive_dict,
-                            idx,
-                            4,
-                            False,
-                        )
+                    archive_dict["thumbnail_path"] = self.asset_path(
+                        archive_dict, collection_identifier, "thumbnail"
+                    )
                     self.archive_option_additions = self.set_archive_option_additions(
                         archive_dict
                     )
-
-                    existing_item = self.query_by_index(
-                        self.env["archive_table"],
-                        "Identifier",
-                        archive_dict["identifier"],
-                    )
-                    if existing_item is not None and "archiveOptions" in existing_item:
-                        archive_dict["archiveOptions"] = {
-                            **existing_item["archiveOptions"],
-                            **self.archive_option_additions,
-                        }
-                    else:
-                        archive_dict["archiveOptions"] = self.archive_option_additions
-
                     if (
                         "thumbnail_path" in archive_dict
                         and len(archive_dict["thumbnail_path"]) > 0
                     ):
-                        self.create_or_update(
-                            self.env["archive_table"],
-                            archive_dict,
-                            "Archive",
-                            idx,
-                            existing_item,
+                        self.create_if_not_exists(
+                            self.env["archive_table"], archive_dict, "Archive", idx
                         )
+
+    def asset_path(self, archive_dict, collection_identifier, asset_type=None):
+        if asset_type is None:
+            asset_type = self.assets["options"]["asset_src"]
+        asset_url = ""
+        try:
+            prefix = os.path.join(
+                self.env["collection_category"],
+                collection_identifier,
+                archive_dict["identifier"],
+            )
+            suffix = self.assets["item"][asset_type].replace("<variable>", "")
+        except Exception as e:
+            print(e)
+            return ""
+        asset_url = ""
+        for key in get_matching_s3_keys(self.env["aws_dest_bucket"], prefix, suffix):
+            asset_url = os.path.join(self.env["app_img_root_path"], key)
+        return asset_url
 
     def key_by_asset_path(self, asset_path):
         matching_key = None
@@ -146,101 +120,5 @@ class PDFMetadata(GenericMetadata):
 
     def set_archive_option_additions(self, archive_dict):
         archive_option_additions = {}
-        collection_path = os.path.join(
-            self.env["collection_category"],
-            self.env["collection_identifier"],
-        )
-        archive_3d_asset_path = os.path.join(
-            collection_path, archive_dict["identifier"], "3d"
-        )
-        for asset in self.assets["item"]:
-            if type(self.assets["item"][asset]) == list:
-                asset_list = []
-                for item_asset in self.assets["item"][asset]:
-                    asset_path = os.path.join(
-                        archive_3d_asset_path,
-                        item_asset.split("/")[-1].replace(
-                            "<item_identifier>", archive_dict["identifier"]
-                        ),
-                    )
-                    asset_path = asset_path.replace(self.env["app_img_root_path"], "")
-                    print(f"Asset Path: {asset_path}")
-                    print(self.env["app_img_root_path"])
-                    key = self.key_by_asset_path(asset_path)
-                    if key:
-                        asset_full_path = os.path.join(
-                            self.env["app_img_root_path"], key
-                        )
-                        asset_list.append(asset_full_path)
-
-                archive_option_additions[asset] = asset_list
-            else:
-                asset_path = os.path.join(
-                    archive_3d_asset_path,
-                    self.assets["item"][asset]
-                    .split("/")[-1]
-                    .replace("<item_identifier>", archive_dict["identifier"]),
-                )
-                asset_path = asset_path.replace(self.env["app_img_root_path"], "")
-                print(f"Asset Path: {asset_path}")
-                print(self.env["app_img_root_path"])
-                key = self.key_by_asset_path(asset_path)
-                if key:
-                    archive_option_additions[asset] = os.path.join(
-                        self.env["app_img_root_path"], key
-                    )
         archive_option_additions["media_type"] = self.env["media_type"]
         return {"assets": archive_option_additions}
-
-    def create_or_update(self, table, attr_dict, item_type, idx, existing_item=None):
-        if existing_item is None or len(existing_item) == 0:
-            return self.create_item_in_table(table, attr_dict, item_type, idx)
-        else:
-            return self.update_item_in_table(table, attr_dict, existing_item, idx)
-
-    def get_update_params(self, body):
-        update_expression = ["set "]
-        update_values = dict()
-        exp_attr_names = {
-            "collection": "#col",
-            "date": "#dt",
-            "format": "#fmt",
-            "location": "#loc",
-        }
-        used_keys = {}
-        for key, val in body.items():
-            try:
-                exp_key = exp_attr_names[key]
-                used_keys[exp_attr_names[key]] = key
-            except KeyError:
-                exp_key = key
-            update_expression.append(f" {exp_key} = :{key}_val,")
-            update_values[f":{key}_val"] = val
-
-        return "".join(update_expression)[:-1], update_values, used_keys
-
-    def update_item_in_table(self, table, attr_dict, existing_item, idx):
-        update_expression, update_values, used_keys = self.get_update_params(attr_dict)
-        try:
-            response = table.update_item(
-                Key={"id": existing_item["id"]},
-                UpdateExpression=update_expression,
-                ExpressionAttributeValues=update_values,
-                ExpressionAttributeNames=used_keys,
-                ReturnValues="UPDATED_NEW",
-            )
-
-            self.log_result(
-                response["Attributes"],
-                idx,
-                2,
-                True,
-            )
-        except Exception as e:
-            print(e)
-            self.log_result(
-                attr_dict,
-                idx,
-                2,
-                False,
-            )

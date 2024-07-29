@@ -256,13 +256,11 @@ class GenericDigitalObject:
                         if (
                             success
                             and self.env["generate_thumbnails"]
-                            and key.endswith(
-                                self.assets["options"]["generated_thumbnail_src"]
-                            )
+                            and key.endswith(self.assets["options"]["asset_src"])
                         ):
                             target_key = os.path.join(dest_dir, os.path.basename(key))
                             thumbnail_key = target_key.replace(
-                                f".{self.assets['options']['generated_thumbnail_src']}",
+                                f".{self.assets['options']['asset_src']}",
                                 "_thumbnail.jpg",
                             )
                             self.call_thumbnail_service(
