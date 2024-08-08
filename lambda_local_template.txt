@@ -17,7 +17,7 @@ pip install -r ./requirements.txt --quiet
 # TABLES ATTACHED TO A DEVELOPMENT/TESTING AMPLIFY BACKEND
 # ...OR YOU REALLY KNOW WHAT YOU'RE DOING
 #
-# EXAMPLE METADATA FILES FROM OUR COLLECTIONS CAN BE FOUND IN THE './examples' DIRECTORY
+# EXAMPLE METADATA FILES FROM OUR COLLECTIONS CAN BE FOUND IN THE './metadata_files' DIRECTORY
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 AWS_DEST_BUCKET="<AWS bucket where results will be written>" \

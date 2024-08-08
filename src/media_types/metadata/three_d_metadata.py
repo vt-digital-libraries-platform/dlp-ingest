@@ -16,7 +16,6 @@ class ThreeDMetadata(GenericMetadata):
         df = self.csv_to_dataframe(io.BytesIO(response["Body"].read()))
         for idx, row in df.iterrows():
             print("")
-            print("===================================")
             archive_dict = self.process_csv_metadata(row, "Archive")
             if not archive_dict:
                 print(f"Error: Archive {idx+1} has failed to be imported.")
@@ -30,8 +29,7 @@ class ThreeDMetadata(GenericMetadata):
             else:
                 collection = self.get_collection(archive_dict)
                 if not collection:
-                    print(f"Error: Collection not found for Archive {idx+1}.")
-                    print("Error: Archive must belong to a collection to be ingested")
+                    print(f"Error: Collection not found for Archive {idx+1} in dynamo.")
                     self.log_result(
                         archive_dict,
                         idx,
@@ -45,8 +43,7 @@ class ThreeDMetadata(GenericMetadata):
                     else self.env["collection_identifier"]
                 )
                 if collection_identifier is None:
-                    print(f"Error: Collection not found for Archive {idx+1}.")
-                    print("Error: Archive must belong to a collection to be ingested")
+                    print(f"Error: Collection not found for Archive {idx+1}. in env.")
                     self.log_result(
                         archive_dict,
                         idx,
@@ -74,8 +71,7 @@ class ThreeDMetadata(GenericMetadata):
                         urllib.error.HTTPError,
                         http.client.IncompleteRead,
                     ) as http_err:
-                        print(http_err)
-                        print(f"{archive_dict['manifest_url']} not found.")
+                        print(f"http: {archive_dict['manifest_url']} not found.")
                         self.log_result(
                             archive_dict,
                             idx,
@@ -83,7 +79,6 @@ class ThreeDMetadata(GenericMetadata):
                             False,
                         )
                     except Exception as e:
-                        print(e)
                         print(f"{archive_dict['manifest_url']} not found.")
                         self.log_result(
                             archive_dict,
@@ -122,25 +117,16 @@ class ThreeDMetadata(GenericMetadata):
 
     def key_by_asset_path(self, asset_path):
         matching_key = None
-        print(f"Looking for key that matches: {asset_path}")
         for key in get_matching_s3_keys(self.env["aws_dest_bucket"], asset_path):
             matching_key = key
-            print(f"Key: {key}")
-            print(f"Match")
-        print("===================================")
         if matching_key is None:
             # try ignoring the filename case
-            print("No match found, trying to ignore filename case")
             asset_path_no_filename = asset_path.replace(asset_path.split("/")[-1], "")
             for key in get_matching_s3_keys(
                 self.env["aws_dest_bucket"], asset_path_no_filename
             ):
                 if key.lower() == asset_path.lower():
                     matching_key = key
-                    print(f"Key: {key}")
-                    print(f"Match")
-            if matching_key is None:
-                print("No match found still? I got nothing.")
         print("===================================")
         return matching_key
 
@@ -150,22 +136,26 @@ class ThreeDMetadata(GenericMetadata):
             self.env["collection_category"],
             self.env["collection_identifier"],
         )
-        archive_3d_asset_path = os.path.join(
-            collection_path, archive_dict["identifier"], "3d"
-        )
+        archive_asset_path = os.path.join(collection_path, archive_dict["identifier"])
+        archive_3d_asset_path = os.path.join(archive_asset_path, "3d")
         for asset in self.assets["item"]:
-            if type(self.assets["item"][asset]) == list:
+            adjusted_path = (
+                archive_asset_path
+                if asset == "iiif_manifest"
+                else archive_3d_asset_path
+            )
+            asset_val = self.assets["item"][asset]
+            print(f"Asset => {asset}: Value => {asset_val}")
+            if type(asset_val) == list:
                 asset_list = []
-                for item_asset in self.assets["item"][asset]:
+                for item_asset in asset_val:
                     asset_path = os.path.join(
-                        archive_3d_asset_path,
-                        item_asset.split("/")[-1].replace(
+                        adjusted_path,
+                        os.path.basename(item_asset).replace(
                             "<item_identifier>", archive_dict["identifier"]
                         ),
                     )
                     asset_path = asset_path.replace(self.env["app_img_root_path"], "")
-                    print(f"Asset Path: {asset_path}")
-                    print(self.env["app_img_root_path"])
                     key = self.key_by_asset_path(asset_path)
                     if key:
                         asset_full_path = os.path.join(
@@ -176,14 +166,12 @@ class ThreeDMetadata(GenericMetadata):
                 archive_option_additions[asset] = asset_list
             else:
                 asset_path = os.path.join(
-                    archive_3d_asset_path,
-                    self.assets["item"][asset]
-                    .split("/")[-1]
-                    .replace("<item_identifier>", archive_dict["identifier"]),
+                    adjusted_path,
+                    os.path.basename(asset_val).replace(
+                        "<item_identifier>", archive_dict["identifier"]
+                    ),
                 )
                 asset_path = asset_path.replace(self.env["app_img_root_path"], "")
-                print(f"Asset Path: {asset_path}")
-                print(self.env["app_img_root_path"])
                 key = self.key_by_asset_path(asset_path)
                 if key:
                     archive_option_additions[asset] = os.path.join(
@@ -206,6 +194,8 @@ class ThreeDMetadata(GenericMetadata):
             "date": "#dt",
             "format": "#fmt",
             "location": "#loc",
+            "references": "#ref",
+            "type": "#tp",
         }
         used_keys = {}
         for key, val in body.items():
@@ -221,26 +211,32 @@ class ThreeDMetadata(GenericMetadata):
 
     def update_item_in_table(self, table, attr_dict, existing_item, idx):
         update_expression, update_values, used_keys = self.get_update_params(attr_dict)
-        try:
-            response = table.update_item(
-                Key={"id": existing_item["id"]},
-                UpdateExpression=update_expression,
-                ExpressionAttributeValues=update_values,
-                ExpressionAttributeNames=used_keys,
-                ReturnValues="UPDATED_NEW",
-            )
+        if self.env["dry_run"]:
+            print(f"Update item simulated for {existing_item['id']}")
+            print(f"Update Values: {update_values}")
+        else:
+            print(f"Updating item {existing_item['id']}")
+            print(f"Update Values: {update_values}")
+            try:
+                response = table.update_item(
+                    Key={"id": existing_item["id"]},
+                    UpdateExpression=update_expression,
+                    ExpressionAttributeValues=update_values,
+                    ExpressionAttributeNames=used_keys,
+                    ReturnValues="UPDATED_NEW",
+                )
 
-            self.log_result(
-                response["Attributes"],
-                idx,
-                2,
-                True,
-            )
-        except Exception as e:
-            print(e)
-            self.log_result(
-                attr_dict,
-                idx,
-                2,
-                False,
-            )
+                self.log_result(
+                    response["Attributes"],
+                    idx,
+                    2,
+                    True,
+                )
+            except Exception as e:
+                print(e)
+                self.log_result(
+                    attr_dict,
+                    idx,
+                    2,
+                    False,
+                )
