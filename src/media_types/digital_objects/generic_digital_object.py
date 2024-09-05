@@ -338,18 +338,23 @@ class GenericDigitalObject:
             print("to:")
             print(f"{dest_bucket.name}:{dest_key}")
         if not dest_key.endswith("/"):
-            try:
-                dest_bucket.copy(
-                    {
-                        "Bucket": source_bucket.name,
-                        "Key": source_key,
-                    },
-                    dest_key,
-                )
+            if self.env["dry_run"]:
+                print(f"DRYRUN: s3 copy: simulated")
                 return True
-            except Exception as e:
-                print(e)
-                return False
+            else:
+                try:
+                    dest_bucket.copy(
+                        {
+                            "Bucket": source_bucket.name,
+                            "Key": source_key,
+                        },
+                        dest_key,
+                    )
+                    return True
+                except Exception as e:
+                    print(e)
+                    return False
+            
         else:
             return False
 
