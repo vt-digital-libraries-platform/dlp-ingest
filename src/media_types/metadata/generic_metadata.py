@@ -419,7 +419,7 @@ class GenericMetadata:
         attr_dict = {}
         for items in data_row.items():
             if items[0].strip() and str(items[1]).strip():
-                self.set_attribute(attr_dict, items[0].strip(), str(items[1]).strip())
+                self.set_attribute(attr_dict, items[0].strip(), str(items[1]).strip().strip("\"").strip())
         if ("identifier" not in attr_dict.keys()) or ("title" not in attr_dict.keys()):
             attr_dict = None
             print(f"Missing required attribute in this row!")
