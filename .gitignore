@@ -247,6 +247,6 @@ custom_pytest.ini
 */build/*
 # End of https://www.gitignore.io/api/osx,linux,python,windows,pycharm,visualstudiocode
 
-
+run_vtdlp-ingest.sh
 lambda_local.sh
 results_files/
