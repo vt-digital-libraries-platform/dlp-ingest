@@ -67,28 +67,19 @@ class ThreeDMetadata(GenericMetadata):
                         archive_dict["thumbnail_path"] = json.loads(json_url.read())[
                             "thumbnail"
                         ]["@id"]
-                    except (
-                        urllib.error.HTTPError,
-                        http.client.IncompleteRead,
-                    ) as http_err:
-                        print(f"http: {archive_dict['manifest_url']} not found.")
-                        self.log_result(
-                            archive_dict,
-                            idx,
-                            4,
-                            False,
-                        )
                     except Exception as e:
                         print(f"{archive_dict['manifest_url']} not found.")
-                        self.log_result(
-                            archive_dict,
-                            idx,
-                            4,
-                            False,
-                        )
+                        archive_dict["thumbnail_path"] = None
+                        archive_dict["manifest_url"] = None
+
                     self.archive_option_additions = self.set_archive_option_additions(
                         archive_dict
                     )
+                    if archive_dict["thumbnail_path"] is None:
+                        try:
+                            archive_dict["thumbnail_path"] = self.archive_option_additions["assets"]["morpho_thumb"]
+                        except Exception as e:
+                            print(f"No thumbnail found for archive. {archive_dict['identifier']}")
 
                     existing_item = self.query_by_index(
                         self.env["archive_table"],
@@ -103,17 +94,33 @@ class ThreeDMetadata(GenericMetadata):
                     else:
                         archive_dict["archiveOptions"] = self.archive_option_additions
 
-                    if (
-                        "thumbnail_path" in archive_dict
-                        and len(archive_dict["thumbnail_path"]) > 0
-                    ):
-                        self.create_or_update(
-                            self.env["archive_table"],
+                    try:
+                        if archive_dict["archiveOptions"]["assets"]["x3d_config"] and archive_dict["archiveOptions"]["assets"]["x3d_src_img"]:
+                            self.create_or_update(
+                                self.env["archive_table"],
+                                archive_dict,
+                                "Archive",
+                                idx,
+                                existing_item,
+                            )
+                    except Exception as e:
+                        print(f"Error: Archive {idx+1}:{archive_dict['identifier']} has failed to be imported.")
+                        self.log_result(
                             archive_dict,
-                            "Archive",
                             idx,
-                            existing_item,
+                            1,
+                            False,
                         )
+                        try:
+                            print("Config")
+                            print(archive_dict["archiveOptions"]["assets"]["x3d_config"])
+                        except Exception as e:
+                            print("Nope")
+                        try:
+                            print("Src Img")
+                            print(archive_dict["archiveOptions"]["assets"]["x3d_src_img"])
+                        except Exception as e:
+                            print("Nope")
 
     def key_by_asset_path(self, asset_path):
         matching_key = None
@@ -127,7 +134,6 @@ class ThreeDMetadata(GenericMetadata):
             ):
                 if key.lower() == asset_path.lower():
                     matching_key = key
-        print("===================================")
         return matching_key
 
     def set_archive_option_additions(self, archive_dict):
@@ -145,7 +151,6 @@ class ThreeDMetadata(GenericMetadata):
                 else archive_3d_asset_path
             )
             asset_val = self.assets["item"][asset]
-            print(f"Asset => {asset}: Value => {asset_val}")
             if type(asset_val) == list:
                 asset_list = []
                 for item_asset in asset_val:
@@ -186,7 +191,11 @@ class ThreeDMetadata(GenericMetadata):
         else:
             return self.update_item_in_table(table, attr_dict, existing_item, idx)
 
-    def get_update_params(self, body):
+    def get_update_params(self, attr_dict, existing_item):
+        append_list = [
+            "format",
+            "tags"
+        ]
         update_expression = ["set "]
         update_values = dict()
         exp_attr_names = {
@@ -198,19 +207,23 @@ class ThreeDMetadata(GenericMetadata):
             "type": "#tp",
         }
         used_keys = {}
-        for key, val in body.items():
+        for key, val in attr_dict.items():
             try:
                 exp_key = exp_attr_names[key]
                 used_keys[exp_attr_names[key]] = key
             except KeyError:
                 exp_key = key
             update_expression.append(f" {exp_key} = :{key}_val,")
-            update_values[f":{key}_val"] = val
+            if key in append_list and type(val) == list:
+                # NOTE TO SELF: This concats the two lists and removes duplicates
+                update_values[f":{key}_val"] = list(set((existing_item[key] if key in existing_item else []) + val))
+            else:
+                update_values[f":{key}_val"] = val
 
         return "".join(update_expression)[:-1], update_values, used_keys
 
     def update_item_in_table(self, table, attr_dict, existing_item, idx):
-        update_expression, update_values, used_keys = self.get_update_params(attr_dict)
+        update_expression, update_values, used_keys = self.get_update_params(attr_dict, existing_item)
         if self.env["dry_run"]:
             print(f"Update item simulated for {existing_item['id']}")
             print(f"Update Values: {update_values}")
