@@ -68,7 +68,7 @@ class GenericMetadata:
 
         if "_collection_metadata.csv" in self.filename:
             self.batch_import_collections(metadata_stream)
-        elif "_archive_metadata.csv" in self.filename:
+        elif "_archive_metadata.csv" in self.filename or "_item_metadata.csv" in self.filename:
             self.batch_import_archives(metadata_stream)
         else:
             error_message = f"Error: {self.filename} is not a valid filename."

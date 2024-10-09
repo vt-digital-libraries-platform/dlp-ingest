@@ -21,6 +21,7 @@
     "date",
     "description",
     "display_date",
+    "download_link",
     "extent",
     "format",
     "has_format",
