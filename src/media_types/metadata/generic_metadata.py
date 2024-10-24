@@ -35,6 +35,7 @@ class GenericMetadata:
             self.env["collectionmap_table"] = self.dyndb.Table(
                 self.get_table_name("Collectionmap")
             )
+            self.env["mint_table"] = self.dyndb.Table(self.env["dynamodb_mint_table"])
         except Exception as e:
             print(f"An error occurred connecting to an AWS Dynamo resource: {str(e)}")
             raise e
@@ -365,7 +366,6 @@ class GenericMetadata:
                 attr_dict["heirarchy_path"].append(attr_id)
             else:
                 attr_dict["heirarchy_path"] = [attr_id]
-
         short_id = self.mint_NOID()
         if short_id:
             attr_dict["custom_key"] = os.path.join(
@@ -385,29 +385,35 @@ class GenericMetadata:
                     True,
                 )
             else:
-                table.put_item(Item=attr_dict)
-                print(f"PutItem succeeded: {attr_dict['identifier']}")
-                self.log_result(
-                    attr_dict,
-                    index,
-                    0,
-                    True,
-                )
+                newRecord = table.put_item(Item=attr_dict)
+                success = (newRecord["ResponseMetadata"]["HTTPStatusCode"] == 200)
+                if success:
+                    print(f"PutItem succeeded: {attr_dict['identifier']}")
+                    self.log_result(
+                        attr_dict,
+                        index,
+                        0,
+                        True,
+                    )
         except Exception as e:
             print(f"Error PutItem failed: {attr_dict['identifier']}")
         if short_id:
-            # after NOID is created and item is inserted, update long_url and
-            # short_url through API
-            long_url = os.path.join(
-                self.env["long_url_path"], item_type.lower(), short_id
-            )
-            short_url = os.path.join(
-                self.env["short_url_path"],
-                self.env["noid_scheme"],
-                self.env["noid_naa"],
-                short_id,
-            )
-            self.update_NOID(long_url, short_url, short_id, now)
+            if success:
+                # after NOID is created and item is inserted, update long_url and
+                # short_url through API
+                long_url = os.path.join(
+                    self.env["long_url_path"], item_type.lower(), short_id
+                )
+                short_url = os.path.join(
+                    self.env["short_url_path"],
+                    self.env["noid_scheme"],
+                    self.env["noid_naa"],
+                    short_id,
+                )
+                self.update_NOID(long_url, short_url, short_id, now)
+            else:
+                self.delete_NOID(short_id)
+
         return attr_id
 
     def utcformat(self, dt, timespec="milliseconds"):
@@ -417,14 +423,15 @@ class GenericMetadata:
 
     def process_csv_metadata(self, data_row, item_type):
         attr_dict = {}
-        for items in data_row.items():
-            if items[0].strip() and str(items[1]).strip():
-                self.set_attribute(attr_dict, items[0].strip(), str(items[1]).strip().strip("\"").strip())
+        for item in data_row.items():
+            if item[0].strip() and str(item[1]).strip():
+                self.set_attribute(attr_dict, item[0].strip(), str(item[1]).strip().strip("\"").strip())
         if ("identifier" not in attr_dict.keys()) or ("title" not in attr_dict.keys()):
             attr_dict = None
             print(f"Missing required attribute in this row!")
         else:
             self.set_attributes_from_env(attr_dict, item_type)
+        
         return attr_dict
 
     def set_attributes_from_env(self, attr_dict, item_type):
@@ -444,14 +451,15 @@ class GenericMetadata:
                 attr_dict[lower_attr] = False
         elif attr == "start_date" or attr == "end_date":
             self.print_index_date(attr_dict, value, lower_attr)
-        elif attr == "parent_collection":
-            items = self.query_by_index(
+        elif attr == "parent_collection_identifier":
+            parent = self.query_by_index(
                 self.env["collection_table"], "Identifier", value
             )
-            if items is not None and len(items) == 1:
-                parent_collection_id = items[0]["id"]
-                attr_dict["heirarchy_path"] = items[0]["heirarchy_path"]
-                attr_dict[lower_attr] = [parent_collection_id]
+            if parent is not None:
+                parent_collection_id = parent["id"]
+                attr_dict["heirarchy_path"] = parent["heirarchy_path"]
+                attr_dict["parent_collection"] = [parent_collection_id]
+                attr_dict["parent_collection_identifier"] = [value]
         elif attr == "thumbnail_path":
             attr_dict[lower_attr] = os.path.join(
                 self.env["app_img_root_path"],
@@ -717,3 +725,10 @@ class GenericMetadata:
         else:
             response = requests.post(url, data=body, headers=headers)
             print(f"update_NOID: {(response.json())['message']}")
+
+    def delete_NOID(self, noid):
+        if self.env["dry_run"]:
+            print("delete_NOID: SIMULATED.")
+        else:
+            self.env["mint_table"].delete_item(Key={"noid": noid})
+            print(f"delete_NOID: {noid}")

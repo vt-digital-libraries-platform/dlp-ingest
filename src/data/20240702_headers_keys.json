@@ -34,6 +34,7 @@
     "location",
     "medium",
     "other_identifier",
+    "parent_collection_identifier",
     "provenance",
     "publisher",
     "references",
