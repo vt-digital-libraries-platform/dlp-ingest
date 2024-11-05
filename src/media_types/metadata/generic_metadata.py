@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 from dateutil.parser import parse
 import uuid
 import os
+import sys
 from boto3.dynamodb.conditions import Key, Attr
 from botocore.response import StreamingBody
 
@@ -35,7 +36,7 @@ class GenericMetadata:
             self.env["collectionmap_table"] = self.dyndb.Table(
                 self.get_table_name("Collectionmap")
             )
-            self.env["mint_table"] = self.dyndb.Table(self.env["dynamodb_mint_table"])
+            self.env["mint_table"] = self.dyndb.Table(self.env["dynamodb_noid_table"])
         except Exception as e:
             print(f"An error occurred connecting to an AWS Dynamo resource: {str(e)}")
             raise e
@@ -375,6 +376,7 @@ class GenericMetadata:
         utc_now = self.utcformat(datetime.now())
         attr_dict["createdAt"] = utc_now
         attr_dict["updatedAt"] = utc_now
+        success = False
         try:
             if self.env["dry_run"]:
                 print(f"PutItem SIMULATED: {attr_dict['identifier']}")
@@ -399,8 +401,6 @@ class GenericMetadata:
             print(f"Error PutItem failed: {attr_dict['identifier']}")
         if short_id:
             if success:
-                # after NOID is created and item is inserted, update long_url and
-                # short_url through API
                 long_url = os.path.join(
                     self.env["long_url_path"], item_type.lower(), short_id
                 )
@@ -410,9 +410,9 @@ class GenericMetadata:
                     self.env["noid_naa"],
                     short_id,
                 )
-                self.update_NOID(long_url, short_url, short_id, now)
+                self.create_NOID_record(short_id, attr_dict, long_url, short_url, now)
             else:
-                self.delete_NOID(short_id)
+                self.delete_NOID_record(short_id)
 
         return attr_id
 
@@ -526,7 +526,7 @@ class GenericMetadata:
             if "Items" in response and len(response["Items"]) == 1:
                 ret_val = response["Items"][0]
         except Exception as e:
-            print(f"Could not find {index_name}: {value} in {table.name}.")
+            pass
         return ret_val
 
     def get_collection(self, archive_dict):
@@ -688,45 +688,40 @@ class GenericMetadata:
                     f"Error: parent is None or parent['identifier'] is not a top level collection"
                 )
 
+
     def mint_NOID(self):
+        noid = str(uuid.uuid4()).replace("-", "")[:8]
+        in_table = self.query_by_index(self.env["mint_table"], "short_id", noid)
+        while in_table:
+            noid = str(uuid.uuid4()).replace("-", "")[:8]
+            in_table = self.query_by_index(self.env["mint_table"], "short_id", noid)
+
+        return noid
+
+
+    def create_NOID_record(self, noid, item, long_url, short_url, now):
         if self.env["dry_run"]:
-            print("mint_NOID: New NOID SIMULATED.")
+            print("create_NOID_record: New NOID SIMULATED.")
             return "12345678"
 
-        headers = {"x-api-key": self.env["api_key"]}
-        url = os.path.join(self.env["api_endpoint"], "mint")
-        response = requests.get(url, headers=headers)
-        print(response.json())
-        if response.status_code == 200:
-            res_message = (response.json())["message"]
-            print(f"mint_NOID: {res_message}")
-            start_idx = res_message.find("New NOID: ") + len("New NOID: ")
-            end_idx = res_message.find(" is created.", start_idx)
-            return res_message[start_idx:end_idx]
+        noid_record = {
+            "short_id": noid,
+            "type": "Collection" if "collection_category" in item else "Item",
+            "collection_category": item["collection_category"],
+            "identifier": item["identifier"],
+            "long_url": long_url,
+            "short_url": short_url,
+            "created_at": now,
+        }
+        newNoidResponse = self.env["mint_table"].put_item(Item=noid_record)
+        success = (newNoidResponse["ResponseMetadata"]["HTTPStatusCode"] == 200)
+        if success:
+            return noid
         else:
-            print("mint_NOID: failed")
             return None
+        
 
-    def update_NOID(self, long_url, short_url, noid, create_date):
-        headers = {"x-api-key": self.env["api_key"]}
-        body = (
-            "long_url="
-            + long_url
-            + "&short_url="
-            + short_url
-            + "&noid="
-            + noid
-            + "&create_date="
-            + create_date
-        )
-        url = os.path.join(self.env["api_endpoint"], "update")
-        if self.env["dry_run"]:
-            print("update_NOID: SIMULATED.")
-        else:
-            response = requests.post(url, data=body, headers=headers)
-            print(f"update_NOID: {(response.json())['message']}")
-
-    def delete_NOID(self, noid):
+    def delete_NOID_record(self, noid):
         if self.env["dry_run"]:
             print("delete_NOID: SIMULATED.")
         else:
