@@ -703,11 +703,15 @@ class GenericMetadata:
         if self.env["dry_run"]:
             print("create_NOID_record: New NOID SIMULATED.")
             return "12345678"
-
+        category = None
+        if "collection_category" in item:
+            category = item["collection_category"]
+        elif "item_category" in item:
+            category = item["item_category"]
         noid_record = {
             "short_id": noid,
             "type": "Collection" if "collection_category" in item else "Item",
-            "collection_category": item["collection_category"],
+            "collection_category": category,
             "identifier": item["identifier"],
             "long_url": long_url,
             "short_url": short_url,

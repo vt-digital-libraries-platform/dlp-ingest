@@ -110,7 +110,7 @@ class GenericDigitalObject:
                     )
                     matching_key = None
                     for key in get_matching_s3_keys(
-                        source_bucket, asset_path_no_filename
+                        source_bucket.name, asset_path_no_filename
                     ):
                         if key.lower() == asset_path.lower():
                             matching_key = key
@@ -284,6 +284,7 @@ class GenericDigitalObject:
         print(payload)
         response = self.lambda_client.invoke(
             FunctionName="vtdlp-thumbnail-service",
+            InvocationType='Event',
             Payload=bytes(json.dumps(payload), "utf8"),
         )
         print("Thumbnail service response:")
