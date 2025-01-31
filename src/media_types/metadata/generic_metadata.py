@@ -139,8 +139,7 @@ class GenericMetadata:
     def batch_import_archives(self, response):
         df = self.csv_to_dataframe(io.BytesIO(response["Body"].read()))
         for idx, row in df.iterrows():
-            print("")
-            print("===================================")
+            print()
             archive_dict = self.process_csv_metadata(row, "Archive")
             if not archive_dict:
                 print(f"Error: Archive {idx+1} has failed to be imported.")

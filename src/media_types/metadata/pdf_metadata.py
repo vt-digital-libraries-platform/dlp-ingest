@@ -16,7 +16,6 @@ class PDFMetadata(GenericMetadata):
         df = self.csv_to_dataframe(io.BytesIO(response["Body"].read()))
         for idx, row in df.iterrows():
             print("")
-            print("===================================")
             archive_dict = self.process_csv_metadata(row, "Archive")
             if not archive_dict:
                 print(f"Error: Archive {idx+1} has failed to be imported.")
@@ -74,6 +73,8 @@ class PDFMetadata(GenericMetadata):
                         self.create_if_not_exists(
                             self.env["archive_table"], archive_dict, "Archive", idx
                         )
+                    else:
+                        print(archive_dict["thumbnail_path"] or f"No thumbnail path for {archive_dict['identifier']}")
 
     def asset_path(self, archive_dict, collection_identifier, asset_type=None):
         if asset_type is None:
@@ -96,15 +97,12 @@ class PDFMetadata(GenericMetadata):
 
     def key_by_asset_path(self, asset_path):
         matching_key = None
-        print(f"Looking for key that matches: {asset_path}")
         for key in get_matching_s3_keys(self.env["aws_dest_bucket"], asset_path):
             matching_key = key
             print(f"Key: {key}")
             print(f"Match")
-        print("===================================")
         if matching_key is None:
             # try ignoring the filename case
-            print("No match found, trying to ignore filename case")
             asset_path_no_filename = asset_path.replace(asset_path.split("/")[-1], "")
             for key in get_matching_s3_keys(
                 self.env["aws_dest_bucket"], asset_path_no_filename
@@ -114,8 +112,8 @@ class PDFMetadata(GenericMetadata):
                     print(f"Key: {key}")
                     print(f"Match")
             if matching_key is None:
-                print("No match found still? I got nothing.")
-        print("===================================")
+                print(f"Couldn't find key for: {asset_path}.")
+
         return matching_key
 
     def set_archive_option_additions(self, archive_dict):
