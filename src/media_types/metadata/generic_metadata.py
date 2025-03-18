@@ -711,6 +711,7 @@ class GenericMetadata:
             "short_id": noid,
             "type": "Collection" if "collection_category" in item else "Item",
             "collection_category": category,
+            "hits": 0,
             "identifier": item["identifier"],
             "long_url": long_url,
             "short_url": short_url,

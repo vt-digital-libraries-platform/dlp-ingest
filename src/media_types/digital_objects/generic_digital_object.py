@@ -14,6 +14,8 @@ class GenericDigitalObject:
         self.s3_resource = s3_resource or boto3.resource("s3")
         self.lambda_client = boto3.client("lambda")
 
+
+    # TODO: Holy shit, this method needs to be cleaned up
     def import_digital_objects(self):
         metadataHandler = GenericMetadata(
             self.env, self.filename, self.bucket, self.assets
@@ -110,7 +112,7 @@ class GenericDigitalObject:
                     )
                     matching_key = None
                     for key in get_matching_s3_keys(
-                        source_bucket.name, asset_path_no_filename
+                        self.s3_client, source_bucket.name, asset_path_no_filename
                     ):
                         if key.lower() == asset_path.lower():
                             matching_key = key
@@ -171,7 +173,9 @@ class GenericDigitalObject:
                             print("No match found, trying to ignore filename case")
                             asset_path = os.path.join(source_dir, formatted_asset)
                             matching_key = None
-                            for key in get_matching_s3_keys(source_bucket, source_dir):
+                            for key in get_matching_s3_keys(
+                                source_bucket, source_dir
+                            ):
                                 if key.lower() == asset_path.lower():
                                     matching_key = key
                                     print(f"Item list: {key}")
@@ -223,7 +227,9 @@ class GenericDigitalObject:
                         print("No match found, trying to ignore filename case")
                         asset_path = os.path.join(source_dir, "")
                         matching_key = None
-                        for key in get_matching_s3_keys(source_bucket.name, source_dir):
+                        for key in get_matching_s3_keys(
+                            source_bucket.name, source_dir
+                        ):
                             if key.lower() == asset_path.lower() and not key.endswith(
                                 "/"
                             ):

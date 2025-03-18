@@ -41,9 +41,6 @@ env["generate_thumbnails"] = (
     os.getenv("GENERATE_THUMBNAILS") is not None
     and os.getenv("GENERATE_THUMBNAILS").lower() == "true"
 )
-env["is_lambda"] = (
-    os.getenv("IS_LAMBDA") is not None and os.getenv("IS_LAMBDA").lower() == "true"
-)
 env["verbose"] = (
     os.getenv("VERBOSE") is not None and os.getenv("VERBOSE").lower() == "true"
 )
@@ -56,22 +53,37 @@ def new_media_type_handler(env, filename, bucket):
 
 def main(event, context, csv_file=None):
     filename = None
-    if event and env["is_lambda"]:
+    # lambda will pass an event object to your function handler so you could parse that here
+    if event:
         bucket = event["Records"][0]["s3"]["bucket"]["name"]
         filename = urllib.parse.unquote_plus(
             event["Records"][0]["s3"]["object"]["key"], encoding="utf-8"
         )
-    elif csv_file and not env["is_lambda"]:
+    # or you could get the same info from the command line args if local
+    elif csv_file:
         bucket = None
         filename = csv_file
     media_type_handler = new_media_type_handler(env, filename, bucket)
     return media_type_handler.ingest()
 
 
+# This is the default entry point for lambda
+def lambda_handler(event, context):
+    return main(event, context)
+
+
+
+#
+# This block runs when the script is called from the command line.
+# So you can use it to develop on your local machine.
+# It won't run when the script is run on lambda.
+#
 if __name__ == "__main__":
+    
     if len(sys.argv) < 2:
         print("Usage: python3 lambda_function.py <filename>")
         sys.exit(1)
     else:
         filename = "".join(sys.argv[1])
         main(None, None, filename)
+    
