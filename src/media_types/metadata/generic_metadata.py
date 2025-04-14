@@ -63,7 +63,7 @@ class GenericMetadata:
 
     def ingest(self):
         metadata_stream = None
-        if self.env["is_lambda"]:
+        if "is_lambda" in self.env and self.env["is_lambda"]:
             metadata_stream = self.lambda_metadata(self.filename, self.bucket)
         else:
             metadata_stream = self.local_metadata(self.filename)

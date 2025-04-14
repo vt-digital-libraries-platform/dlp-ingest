@@ -24,6 +24,7 @@
     "download_link",
     "extent",
     "format",
+    "format_physical",
     "has_format",
     "has_part",
     "has_version",
