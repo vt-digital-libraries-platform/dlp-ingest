@@ -715,6 +715,7 @@ class GenericMetadata:
             "long_url": long_url,
             "short_url": short_url,
             "created_at": now,
+            "hits": 0
         }
         newNoidResponse = self.env["mint_table"].put_item(Item=noid_record)
         success = (newNoidResponse["ResponseMetadata"]["HTTPStatusCode"] == 200)
