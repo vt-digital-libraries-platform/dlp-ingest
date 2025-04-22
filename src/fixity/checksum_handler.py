@@ -1,4 +1,4 @@
-from src.fixity.fileCharacterization import lambda_handler
+from src.fixity.lambda_function import lambda_handler
 
 def checksum_handler(event, context):
     response = lambda_handler(event, context)
