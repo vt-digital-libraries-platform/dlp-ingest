@@ -1,14 +1,28 @@
 import boto3, json, logging, os, uuid
 import pandas as pd
-from boto3.dynamodb.conditions import Key, Attr
-from datetime import datetime, timezone
+from boto3.dynamodb.conditions import Attr
+from datetime import datetime
 from io import StringIO
+
+"""
+    Lambda invocation event must contain: 
+        COLLECTION_IDENTIFIER <string>
+
+    All other values will be configured based on lambda environment vars.
+    These can be overridden by the invocation event if provided.
+    
+    FIXITY_TABLE_NAME <string> - DynamoDB table name to write file records to
+    S3_BUCKET_NAME <string> - S3 bucket to write results to
+    S3_PREFIX <string> - S3 prefix for the collection
+"""
 
 try:
     s3_client = boto3.client("s3")
     dynamo_resource = boto3.resource("dynamodb", region_name="us-east-1")
 except Exception as e:
-    logging.error(f"Error instantiating aws services: {e}")
+    logging.error(f"Error instantiating aws services. Quitting: {e}")
+    raise e
+
 
 
 def get_matching_s3_keys(bucket, prefix="", suffix=""):
@@ -57,7 +71,8 @@ def get_fileList(s3_bucket, checksum_file_path):
         data = response["Body"].read().decode('utf-8')
         dataframe = pd.read_csv(StringIO(data))
     except Exception as e:
-        logging.error(f"Error fetching/reading file list from {checksum_file_path}")
+        logging.error(f"Error fetching/reading file list from {checksum_file_path}. Quitting")
+        raise e
 
     return dataframe
 
@@ -127,6 +142,17 @@ def lambda_handler(event, context):
     ingested = []
     not_found = []
 
+    """
+        Lambda invocation event must contain: 
+            COLLECTION_IDENTIFIER <string>
+
+        All other values will be configured based on lambda environment vars.
+        These can be overridden by the invocation event if provided.
+
+        FIXITY_TABLE_NAME <string> - DynamoDB table name to write file records to
+        S3_BUCKET_NAME <string> - S3 bucket to write results to
+        S3_PREFIX <string> - S3 prefix for the collection
+    """
     collection_identifier = event.get('COLLECTION_IDENTIFIER')
     fixity_table_name = event.get('FIXITY_TABLE_NAME') or os.getenv('FIXITY_TABLE_NAME')
     s3_bucket = event.get('S3_BUCKET_NAME') or os.getenv('S3_BUCKET_NAME')
@@ -178,7 +204,6 @@ def lambda_handler(event, context):
                 metadata = create_s3_file_metadata(record, response)
             except Exception as e:
                 logging.error(f"Error fetching head object for file: {record['File Path']}")
-                logging.error(e)
                 
             ingested_date = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
             file_record = {
