@@ -24,7 +24,13 @@ class GenericType:
         if self.env["metadata_ingest"]:
             self.modified_metadata = self.import_metadata()
 
-        checksum_handler.lambda_handler({"COLLECTION_IDENTIFIER": self.env["collection_identifier"]}, None)
+        checksum_options = {
+            "COLLECTION_IDENTIFIER": self.env["collection_identifier"],
+            "FIXITY_TABLE_NAME": self.env["dynamodb_file_char_table"],
+            "S3_BUCKET_NAME": self.env["aws_src_bucket"],
+            "S3_PREFIX": self.env["collection_category"]
+        }
+        checksum_handler(checksum_options, None)
 
     def import_digital_objects(self):
         return self.media_handler.import_digital_objects()

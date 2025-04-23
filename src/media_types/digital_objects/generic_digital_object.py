@@ -1,5 +1,5 @@
 import boto3, datetime, io, json, os, pathlib, sys
-from src.s3_tools import get_matching_s3_keys
+from src.utils.s3_tools import get_matching_s3_keys
 from src.media_types.metadata.generic_metadata import GenericMetadata
 from botocore.response import StreamingBody
 
