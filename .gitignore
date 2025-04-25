@@ -250,3 +250,9 @@ custom_pytest.ini
 run_vtdlp-ingest.sh
 lambda_local.sh
 results_files/
+
+bin/
+examples/
+lib64/
+pyvenv.cfg
+lib64*

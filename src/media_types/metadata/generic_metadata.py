@@ -343,20 +343,99 @@ class GenericMetadata:
         os.chdir(working_dir)
 
     def create_if_not_exists(self, table, attr_dict, item_type, index):
-        identifier = attr_dict["identifier"]
-        items = self.query_by_index(table, "Identifier", identifier)
-        if items is not None and len(items) >= 1:
-            print(f"Identifier ({identifier}) already exists in {table}.")
-            # TODO: Update existing item implementation.
+        identifier = attr_dict["identifier"]  
+        #This block of code is used for bulk updates in the csv file provided in the shell file. If the bulk_metadata is enabled, the code below will do the updates on the table
+        try:
+            # Scan the DynamoDB table for the identifier with pagination only if bulk_metadata is enabled, if it is not enabled then create the item directly using put_item
+            if self.env["bulk_metadata"]:
+                items = []
+                done = False
+                start_key = None
+                # Use scan with FilterExpression to check if 'identifier' already exists in the table
+                while not done:
+                    scan_kwargs = {
+                        "FilterExpression": Attr("identifier").eq(identifier),  # Filter to find items with the same identifier
+                    }
+                    if start_key:
+                        scan_kwargs["ExclusiveStartKey"] = start_key  # Continue scanning from the last evaluated key
+
+                    response = table.scan(**scan_kwargs)  
+                    items.extend(response.get("Items", []))  # Append the items from the current scan
+                    start_key = response.get("LastEvaluatedKey", None)  # Get the next start key
+                    done = start_key is None  # Stop if there are no more items to scan
+
+                if items:
+                    print(f"Identifier ({identifier}) already exists in {table}.")
+                    print(f"BULK_METADATA is enabled. Updating the existing record for {identifier}.")
+                    # Retrieve the 'id' of the existing item since it is the partition key, updating the table can only be done using the partition key
+                    existing_item_id = items[0]["id"]  # Assuming 'id' is the partition key
+                    print(f"Existing item ID: {existing_item_id}")
+                    # Pass the partition key 'id' as an argument to update_items_in_table
+                    success = self.update_items_in_table(table, existing_item_id, attr_dict, index, identifier)
+                    if success:
+                        print(f"Update for {identifier} was successful.")
+                    else:
+                        print(f"Update for {identifier} failed.")
+                    return DUPLICATED
+                else:
+                    print(f"Identifier ({identifier}) does not exist in {table}.")
+                    return self.create_item_in_table(table, attr_dict, item_type, index)  # Create a new item if it doesn't exist
+            else:
+                print(f"BULK_METADATA is not enabled. Directly creating the item for {identifier}.")
+                return self.create_item_in_table(table, attr_dict, item_type, index)  # Directly create the item if bulk_metadata is disabled
+        except Exception as e:
+            print(f"Error scanning table for identifier '{identifier}': {str(e)}")
+            items = []
+
+    def update_items_in_table(self, table, item_id, attr_dict, index, identifier):
+        """
+        Updates an existing item in the DynamoDB table with the provided attributes.
+        Uses the 'id' as the partition key.
+        Returns True if the update was successful, False otherwise.
+        """
+        try:
+            # Filter out keys that are not in the CSV file and exclude keys containing 'collection' and 'identifier' and None values
+            update_keys = {
+                key: value
+                for key, value in attr_dict.items()
+                if key != "identifier" and value is not None and "collection" not in key.lower()
+            }
+
+            if not update_keys:
+                print(f"No attributes to update for Identifier ({identifier}).")
+                return False  # no attributes to update
+
+            # Use attribute names directly (no hash prefix)
+            update_expression = "SET " + ", ".join(
+                f"{key} = :{key}" for key in update_keys.keys()  # Construct the update expression dynamically
+            )
+            expression_attribute_values = {
+                f":{key}": value for key, value in update_keys.items()  # Map the values for the update expression
+            }
+
+            # Perform the update using the 'id' as the partition key
+            table.update_item(
+                Key={"id": item_id},  # 'id' is the partition key
+                UpdateExpression=update_expression,
+                ExpressionAttributeValues=expression_attribute_values,
+            )
+            print(f"Identifier ({identifier}) with ID ({item_id}) has been updated in {table}.")
             self.log_result(
                 attr_dict,
                 index,
-                2,
+                0,  # Success message index
                 True,
             )
-            return DUPLICATED
-        else:
-            return self.create_item_in_table(table, attr_dict, item_type, index)
+            return True  # Indicate success
+        except Exception as e:
+            print(f"Error updating Identifier ({identifier}) in {table}: {str(e)}")
+            self.log_result(
+                attr_dict,
+                index,
+                1,  # Error message index
+                False,
+            )
+            return False  # Indicate failure
 
     def create_item_in_table(self, table, attr_dict, item_type, index):
         attr_id = str(uuid.uuid4())
