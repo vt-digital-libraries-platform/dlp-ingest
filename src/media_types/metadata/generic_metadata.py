@@ -405,6 +405,9 @@ class GenericMetadata:
                 print(f"No attributes to update for Identifier ({identifier}).")
                 return False  # no attributes to update
 
+            # Add updatedAt to the update keys
+            update_keys["updatedAt"] = self.utcformat(datetime.now())  # Set updatedAt to the current time
+
             # Use attribute names directly (no hash prefix)
             update_expression = "SET " + ", ".join(
                 f"{key} = :{key}" for key in update_keys.keys()  # Construct the update expression dynamically
@@ -450,10 +453,9 @@ class GenericMetadata:
             attr_dict["custom_key"] = os.path.join(
                 self.env["noid_scheme"], self.env["noid_naa"], short_id
             )
-        now = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
         utc_now = self.utcformat(datetime.now())
-        attr_dict["createdAt"] = utc_now
-        attr_dict["updatedAt"] = utc_now
+        attr_dict["createdAt"] = utc_now  # Set createdAt to the current time
+        attr_dict["updatedAt"] = utc_now  # Set updatedAt to the current time
         success = False
         try:
             if self.env["dry_run"]:
@@ -488,7 +490,7 @@ class GenericMetadata:
                     self.env["noid_naa"],
                     short_id,
                 )
-                self.create_NOID_record(short_id, attr_dict, long_url, short_url, now)
+                self.create_NOID_record(short_id, attr_dict, long_url, short_url, utc_now)
             else:
                 self.delete_NOID_record(short_id)
 
