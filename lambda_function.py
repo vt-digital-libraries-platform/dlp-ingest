@@ -48,8 +48,10 @@ env["is_lambda"] = (
 env["verbose"] = (
     os.getenv("VERBOSE") is not None and os.getenv("VERBOSE").lower() == "true"
 )
-env["bulk_metadata"] = (
-    os.getenv("BULK_METADATA") is not None and os.getenv("BULK_METADATA").lower() == "true"
+
+# The environment variable should probably have "update" in it, to differentiate the process from create
+env["update_metadata"] = (
+    os.getenv("UPDATE_METADATA") is not None and os.getenv("UPDATE_METADATA").lower() == "true"
 )
 
 

@@ -219,9 +219,45 @@ class GenericMetadata:
                         "thumbnail_path" in archive_dict
                         and len(archive_dict["thumbnail_path"]) > 0
                     ):
-                        self.create_if_not_exists(
-                            self.env["archive_table"], archive_dict, "Archive", idx
-                        )
+                        
+                        '''
+                            ===============================================================
+                            ===============================================================
+                            We could check if we're updating or creating the archive record and if it
+                            already exists in the table here instead.
+
+                            Note: the env var should probably have "update" in it to describe the process
+                            ===============================================================
+                            ===============================================================
+                        '''
+                        item_exists = False
+                        if self.env["update_metadata"]:
+                            # item_exists = checkIfItemExists()
+                            if item_exists:
+                                self.update(
+                                    self.env["archive_table"], archive_dict, "Archive", idx
+                                )
+                            else:
+                                pass
+                                #log trying to update an item that does not exist
+                        else:
+                            if not item_exists:
+                                self.create(
+                                    self.env["archive_table"], archive_dict, "Archive", idx
+                                )
+                            else:
+                                pass
+                                # log trying to create an item that already exists
+
+
+
+
+
+
+
+
+
+
 
     def get_table_name(self, table_name):
         return f"{table_name}-{self.env['dynamodb_table_suffix']}"
@@ -342,12 +378,29 @@ class GenericMetadata:
                 )
         os.chdir(working_dir)
 
-    def create_if_not_exists(self, table, attr_dict, item_type, index):
+
+
+
+
+
+
+
+    # We could rename this one to just "create()"
+    def create(self, table, attr_dict, item_type, index):
         identifier = attr_dict["identifier"]  
+
+
+        """
+        ==========================================================
+        The block below could be moved to the update method.
+        ==========================================================
+        """
+
+
         #This block of code is used for bulk updates in the csv file provided in the shell file. If the bulk_metadata is enabled, the code below will do the updates on the table
         try:
             # Scan the DynamoDB table for the identifier with pagination only if bulk_metadata is enabled, if it is not enabled then create the item directly using put_item
-            if self.env["bulk_metadata"]:
+            if self.env["update_metadata"]: 
                 items = []
                 done = False
                 start_key = None
@@ -381,11 +434,26 @@ class GenericMetadata:
                     print(f"Identifier ({identifier}) does not exist in {table}.")
                     return self.create_item_in_table(table, attr_dict, item_type, index)  # Create a new item if it doesn't exist
             else:
+                """
+                ==========================================================
+                The block above could be moved to the update method.
+                ==========================================================
+                """
+
                 print(f"BULK_METADATA is not enabled. Directly creating the item for {identifier}.")
                 return self.create_item_in_table(table, attr_dict, item_type, index)  # Directly create the item if bulk_metadata is disabled
         except Exception as e:
             print(f"Error scanning table for identifier '{identifier}': {str(e)}")
             items = []
+
+    # New method to handle updates
+    def update(self, table, attr_dict, item_type, index):
+        '''
+        The block currently in create() could be moved here.
+
+        And then after doing all the checks, it could call the update_items_in_table() method.
+        '''
+    
 
     def update_items_in_table(self, table, item_id, attr_dict, index, identifier):
         """
