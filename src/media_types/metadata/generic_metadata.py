@@ -129,7 +129,7 @@ class GenericMetadata:
                     identifier,
                     "representative.jpg",
                 )
-                self.create_if_not_exists(
+                self.create(
                     self.env["collection_table"], collection_dict, "Collection", idx
                 )
             if "heirarchy_path" in collection_dict:
@@ -219,9 +219,13 @@ class GenericMetadata:
                         "thumbnail_path" in archive_dict
                         and len(archive_dict["thumbnail_path"]) > 0
                     ):
-                        self.create_if_not_exists(
-                            self.env["archive_table"], archive_dict, "Archive", idx
-                        )
+                        self.create(
+                                self.env["archive_table"],
+                                archive_dict,
+                                "Archive",
+                                idx
+                            )
+                            # Log trying to create an item that already exists
 
     def get_table_name(self, table_name):
         return f"{table_name}-{self.env['dynamodb_table_suffix']}"
@@ -342,50 +346,52 @@ class GenericMetadata:
                 )
         os.chdir(working_dir)
 
-    def create_if_not_exists(self, table, attr_dict, item_type, index):
-        identifier = attr_dict["identifier"]  
-        #This block of code is used for bulk updates in the csv file provided in the shell file. If the bulk_metadata is enabled, the code below will do the updates on the table
+    def create(self, table, attr_dict, item_type, index):
+        #create or update the items in the table based on update_metadata flag
+        # If update_metadata is enabled, update the item that exists, otherwise create a new item if it doesn't exist
+        identifier = attr_dict["identifier"] 
         try:
-            # Scan the DynamoDB table for the identifier with pagination only if bulk_metadata is enabled, if it is not enabled then create the item directly using put_item
-            if self.env["bulk_metadata"]:
-                items = []
-                done = False
-                start_key = None
-                # Use scan with FilterExpression to check if 'identifier' already exists in the table
-                while not done:
-                    scan_kwargs = {
-                        "FilterExpression": Attr("identifier").eq(identifier),  # Filter to find items with the same identifier
-                    }
-                    if start_key:
-                        scan_kwargs["ExclusiveStartKey"] = start_key  # Continue scanning from the last evaluated key
-
-                    response = table.scan(**scan_kwargs)  
-                    items.extend(response.get("Items", []))  # Append the items from the current scan
-                    start_key = response.get("LastEvaluatedKey", None)  # Get the next start key
-                    done = start_key is None  # Stop if there are no more items to scan
-
-                if items:
-                    print(f"Identifier ({identifier}) already exists in {table}.")
-                    print(f"BULK_METADATA is enabled. Updating the existing record for {identifier}.")
-                    # Retrieve the 'id' of the existing item since it is the partition key, updating the table can only be done using the partition key
-                    existing_item_id = items[0]["id"]  # Assuming 'id' is the partition key
-                    print(f"Existing item ID: {existing_item_id}")
-                    # Pass the partition key 'id' as an argument to update_items_in_table
-                    success = self.update_items_in_table(table, existing_item_id, attr_dict, index, identifier)
-                    if success:
-                        print(f"Update for {identifier} was successful.")
-                    else:
-                        print(f"Update for {identifier} failed.")
-                    return DUPLICATED
-                else:
-                    print(f"Identifier ({identifier}) does not exist in {table}.")
-                    return self.create_item_in_table(table, attr_dict, item_type, index)  # Create a new item if it doesn't exist
-            else:
-                print(f"BULK_METADATA is not enabled. Directly creating the item for {identifier}.")
-                return self.create_item_in_table(table, attr_dict, item_type, index)  # Directly create the item if bulk_metadata is disabled
+            # Query the table for existing items with the given identifier
+            items = self.query_by_index(table, "Identifier", identifier)
+            # Handle case where items already exist and update_metadata is disabled
+            if items and len(items) >= 1 and self.env["update_metadata"] == False:
+                print(f"Error: Identifier ({identifier}) already exists in {table}. Please update the metadata flag")
+                self.log_result(attr_dict,index,2,True)
+                return DUPLICATED
+            # Handle case where no items exist and update_metadata is disabled
+            if not items and self.env["update_metadata"] == False:
+                print(f"UPDATE_METADATA is not enabled. Directly creating the item for {identifier}.")
+                return self.create_item_in_table(table, attr_dict, item_type, index)  # Directly create the item if update_metadata is disabled
+            # Handle case where update_metadata is enabled
+            if self.env["update_metadata"]:
+                self.update(table, attr_dict, item_type, identifier,index)
         except Exception as e:
             print(f"Error scanning table for identifier '{identifier}': {str(e)}")
-            items = []
+
+
+    def update(self, table, attr_dict, item_type, identifier, index):
+        try:
+            # Query the table for existing items with the given identifier
+            items = self.query_by_index(table, "Identifier", identifier)
+            # Handle case where items already exist and update_metadata is enabled
+            if items:
+                print(f"Identifier ({identifier}) already exists in {table}.")
+                print(f"UPDATE_METADATA is enabled. Updating the existing record for {identifier}.")
+                # Retrieve the 'id' of the existing item since it is the partition key
+                existing_item_id = items["id"]  # Assuming 'id' is the partition key
+                print(f"Existing item ID: {existing_item_id}")
+                # Pass the partition key 'id' as an argument to update_items_in_table
+                success = self.update_items_in_table(table, existing_item_id, attr_dict, index, identifier)
+                if success:
+                    print(f"Update for {identifier} was successful.")
+                else:
+                    print(f"Update for {identifier} failed.")
+                return DUPLICATED
+            else:
+                print(f"Identifier ({identifier}) does not exist in {table}.")
+                return self.create_item_in_table(table, attr_dict, item_type, index)  # Create a new item if it doesn't exist
+        except Exception as e:
+            print(f"Error updating table for identifier '{identifier}': {str(e)}")
 
     def update_items_in_table(self, table, item_id, attr_dict, index, identifier):
         """
@@ -680,7 +686,7 @@ class GenericMetadata:
                 parent_id = items[0]["id"]
                 heirarchy_list = items[0]["heirarchy_path"]
             else:
-                parent_id = self.create_if_not_exists(
+                parent_id = self.create(
                     self.env["collection_table"], collection_dict, "Collection", idx
                 )
                 print(f"Collection PutItem succeeded: {identifier}")

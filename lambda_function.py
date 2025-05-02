@@ -48,8 +48,8 @@ env["is_lambda"] = (
 env["verbose"] = (
     os.getenv("VERBOSE") is not None and os.getenv("VERBOSE").lower() == "true"
 )
-env["bulk_metadata"] = (
-    os.getenv("BULK_METADATA") is not None and os.getenv("BULK_METADATA").lower() == "true"
+env["update_metadata"] = (
+    os.getenv("UPDATE_METADATA") is not None and os.getenv("UPDATE_METADATA").lower() == "true"
 )
 
 

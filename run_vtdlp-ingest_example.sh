@@ -20,5 +20,5 @@ MEDIA_TYPE="" \
 METADATA_INGEST="true" \
 GENERATE_THUMBNAILS="false" \
 DRY_RUN="false" \
-BULK_METADATA="false" \
+UPDATE_METADATA="false" \
 python3 lambda_function.py "examples/testss/test_archive_metadata.csv"
