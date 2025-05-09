@@ -411,23 +411,36 @@ class GenericMetadata:
                 print(f"No attributes to update for Identifier ({identifier}).")
                 return False  # no attributes to update
 
-            # Add updatedAt to the update keys
-            update_keys["updatedAt"] = self.utcformat(datetime.now())  # Set updatedAt to the current time
-
-            # Use attribute names directly (no hash prefix)
-            update_expression = "SET " + ", ".join(
-                f"{key} = :{key}" for key in update_keys.keys()  # Construct the update expression dynamically
-            )
-            expression_attribute_values = {
-                f":{key}": value for key, value in update_keys.items()  # Map the values for the update expression
-            }
-
+            # Add updatedAt to the update keys and set it to the current time in utc format
+            update_keys["updatedAt"] = self.utcformat(datetime.now())  
+            #Initialize the update expression and attribute values
+            update_expression = "SET " 
+            # 'update_expression_names' maps placeholders (e.g., #key) to actual attribute names. This is used to avoid conflicts with DynamoDB reserved keywords
+            update_expression_names = {}
+            # 'expression_attribute_values' maps placeholders (e.g., :value) to actual attribute values
+            expression_attribute_values = {}
+            # 'update_expression_string' will include all attributes to update
+            update_expression_string = ""
+            #Iterate over the update keys and build the update expression
+            for key, value in update_keys.items():
+                # Append each key-value pair to the update expression string
+                # Use placeholders for attribute names (#key) and values (:value)
+                update_expression_string = f"{update_expression_string}#{key} = :{key},"
+                # Add the attribute name to the expression names dictionary to ensure that reserved keywords are handled correctly
+                update_expression_names[f"#{key}"] = key
+                # Add the attribute value to the expression values dictionary
+                expression_attribute_values[f":{key}"] = value 
+            # Remove the trailing comma from the update expression string
+            update_expression += update_expression_string.strip(",")
             # Perform the update using the 'id' as the partition key
+            # This sends the update request to DynamoDB with the constructed update expression
             table.update_item(
                 Key={"id": item_id},  # 'id' is the partition key
                 UpdateExpression=update_expression,
-                ExpressionAttributeValues=expression_attribute_values,
+                ExpressionAttributeNames=update_expression_names, # Placeholder mappings for attribute names
+                ExpressionAttributeValues=expression_attribute_values # Placeholder mappings for attribute values
             )
+
             print(f"Identifier ({identifier}) with ID ({item_id}) has been updated in {table}.")
             self.log_result(
                 attr_dict,
