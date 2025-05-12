@@ -21,6 +21,7 @@ env["noid_naa"] = os.getenv("NOID_NAA")
 env["long_url_path"] = os.getenv("LONG_URL_PATH")
 env["short_url_path"] = os.getenv("SHORT_URL_PATH")
 env["media_type"] = os.getenv("MEDIA_TYPE")
+
 # Booleans
 env["dry_run"] = (
     os.getenv("DRY_RUN") is not None and os.getenv("DRY_RUN").lower() == "true"
@@ -46,6 +47,9 @@ env["is_lambda"] = (
 )
 env["verbose"] = (
     os.getenv("VERBOSE") is not None and os.getenv("VERBOSE").lower() == "true"
+)
+env["update_metadata"] = (
+    os.getenv("UPDATE_METADATA") is not None and os.getenv("UPDATE_METADATA").lower() == "true"
 )
 
 

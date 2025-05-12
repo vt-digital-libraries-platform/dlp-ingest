@@ -129,7 +129,7 @@ class GenericMetadata:
                     identifier,
                     "representative.jpg",
                 )
-                self.create_if_not_exists(
+                self.create(
                     self.env["collection_table"], collection_dict, "Collection", idx
                 )
             if "heirarchy_path" in collection_dict:
@@ -219,9 +219,13 @@ class GenericMetadata:
                         "thumbnail_path" in archive_dict
                         and len(archive_dict["thumbnail_path"]) > 0
                     ):
-                        self.create_if_not_exists(
-                            self.env["archive_table"], archive_dict, "Archive", idx
-                        )
+                        self.create(
+                                self.env["archive_table"],
+                                archive_dict,
+                                "Archive",
+                                idx
+                            )
+                            # Log trying to create an item that already exists
 
     def get_table_name(self, table_name):
         return f"{table_name}-{self.env['dynamodb_table_suffix']}"
@@ -342,21 +346,118 @@ class GenericMetadata:
                 )
         os.chdir(working_dir)
 
-    def create_if_not_exists(self, table, attr_dict, item_type, index):
-        identifier = attr_dict["identifier"]
-        items = self.query_by_index(table, "Identifier", identifier)
-        if items is not None and len(items) >= 1:
-            print(f"Identifier ({identifier}) already exists in {table}.")
-            # TODO: Update existing item implementation.
+    def create(self, table, attr_dict, item_type, index):
+        #create or update the items in the table based on update_metadata flag
+        # If update_metadata is enabled, update the item that exists, otherwise create a new item if it doesn't exist
+        identifier = attr_dict["identifier"] 
+        try:
+            # Query the table for existing items with the given identifier
+            items = self.query_by_index(table, "Identifier", identifier)
+            # Handle case where items already exist and update_metadata is disabled
+            if items and len(items) >= 1 and self.env["update_metadata"] == False:
+                print(f"Error: Identifier ({identifier}) already exists in {table}. Please update the metadata flag")
+                self.log_result(attr_dict,index,2,True)
+                return DUPLICATED
+            # Handle case where no items exist and update_metadata is disabled
+            if not items and self.env["update_metadata"] == False:
+                print(f"UPDATE_METADATA is not enabled. Directly creating the item for {identifier}.")
+                return self.create_item_in_table(table, attr_dict, item_type, index)  # Directly create the item if update_metadata is disabled
+            # Handle case where update_metadata is enabled
+            if self.env["update_metadata"]:
+                self.update(table, attr_dict, item_type, identifier,index)
+        except Exception as e:
+            print(f"Error scanning table for identifier '{identifier}': {str(e)}")
+
+
+    def update(self, table, attr_dict, item_type, identifier, index):
+        try:
+            # Query the table for existing items with the given identifier
+            items = self.query_by_index(table, "Identifier", identifier)
+            # Handle case where items already exist and update_metadata is enabled
+            if items:
+                print(f"Identifier ({identifier}) already exists in {table}.")
+                print(f"UPDATE_METADATA is enabled. Updating the existing record for {identifier}.")
+                # Retrieve the 'id' of the existing item since it is the partition key
+                existing_item_id = items["id"]  # Assuming 'id' is the partition key
+                print(f"Existing item ID: {existing_item_id}")
+                # Pass the partition key 'id' as an argument to update_items_in_table
+                success = self.update_items_in_table(table, existing_item_id, attr_dict, index, identifier)
+                if success:
+                    print(f"Update for {identifier} was successful.")
+                else:
+                    print(f"Update for {identifier} failed.")
+                return DUPLICATED
+            else:
+                print(f"Identifier ({identifier}) does not exist in {table}.")
+                return self.create_item_in_table(table, attr_dict, item_type, index)  # Create a new item if it doesn't exist
+        except Exception as e:
+            print(f"Error updating table for identifier '{identifier}': {str(e)}")
+
+    def update_items_in_table(self, table, item_id, attr_dict, index, identifier):
+        """
+        Updates an existing item in the DynamoDB table with the provided attributes.
+        Uses the 'id' as the partition key.
+        Returns True if the update was successful, False otherwise.
+        """
+        try:
+            # Filter out keys that are not in the CSV file and exclude keys containing 'collection' and 'identifier' and None values
+            update_keys = {
+                key: value
+                for key, value in attr_dict.items()
+                if key != "identifier" and value is not None and "collection" not in key.lower()
+            }
+
+            if not update_keys:
+                print(f"No attributes to update for Identifier ({identifier}).")
+                return False  # no attributes to update
+
+            # Add updatedAt to the update keys and set it to the current time in utc format
+            update_keys["updatedAt"] = self.utcformat(datetime.now())  
+            #Initialize the update expression and attribute values
+            update_expression = "SET " 
+            # 'update_expression_names' maps placeholders (e.g., #key) to actual attribute names. This is used to avoid conflicts with DynamoDB reserved keywords
+            update_expression_names = {}
+            # 'expression_attribute_values' maps placeholders (e.g., :value) to actual attribute values
+            expression_attribute_values = {}
+            # 'update_expression_string' will include all attributes to update
+            update_expression_string = ""
+            #Iterate over the update keys and build the update expression
+            for key, value in update_keys.items():
+                # Append each key-value pair to the update expression string
+                # Use placeholders for attribute names (#key) and values (:value)
+                update_expression_string = f"{update_expression_string}#{key} = :{key},"
+                # Add the attribute name to the expression names dictionary to ensure that reserved keywords are handled correctly
+                update_expression_names[f"#{key}"] = key
+                # Add the attribute value to the expression values dictionary
+                expression_attribute_values[f":{key}"] = value 
+            # Remove the trailing comma from the update expression string
+            update_expression += update_expression_string.strip(",")
+            # Perform the update using the 'id' as the partition key
+            # This sends the update request to DynamoDB with the constructed update expression
+            table.update_item(
+                Key={"id": item_id},  # 'id' is the partition key
+                UpdateExpression=update_expression,
+                ExpressionAttributeNames=update_expression_names, # Placeholder mappings for attribute names
+                ExpressionAttributeValues=expression_attribute_values # Placeholder mappings for attribute values
+            )
+
+            print(f"Identifier ({identifier}) with ID ({item_id}) has been updated in {table}.")
             self.log_result(
                 attr_dict,
                 index,
-                2,
+                0,  # Success message index
                 True,
             )
-            return DUPLICATED
-        else:
-            return self.create_item_in_table(table, attr_dict, item_type, index)
+            return True  # Indicate success
+        except Exception as e:
+            print(f"Error updating Identifier ({identifier}) in {table}: {str(e)}")
+            self.log_result(
+                attr_dict,
+                index,
+                1,  # Error message index
+                False,
+            )
+            return False  # Indicate failure
 
     def create_item_in_table(self, table, attr_dict, item_type, index):
         attr_id = str(uuid.uuid4())
@@ -371,10 +472,9 @@ class GenericMetadata:
             attr_dict["custom_key"] = os.path.join(
                 self.env["noid_scheme"], self.env["noid_naa"], short_id
             )
-        now = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
         utc_now = self.utcformat(datetime.now())
-        attr_dict["createdAt"] = utc_now
-        attr_dict["updatedAt"] = utc_now
+        attr_dict["createdAt"] = utc_now  # Set createdAt to the current time
+        attr_dict["updatedAt"] = utc_now  # Set updatedAt to the current time
         success = False
         try:
             if self.env["dry_run"]:
@@ -409,7 +509,7 @@ class GenericMetadata:
                     self.env["noid_naa"],
                     short_id,
                 )
-                self.create_NOID_record(short_id, attr_dict, long_url, short_url, now)
+                self.create_NOID_record(short_id, attr_dict, long_url, short_url, utc_now)
             else:
                 self.delete_NOID_record(short_id)
 
@@ -599,7 +699,7 @@ class GenericMetadata:
                 parent_id = items[0]["id"]
                 heirarchy_list = items[0]["heirarchy_path"]
             else:
-                parent_id = self.create_if_not_exists(
+                parent_id = self.create(
                     self.env["collection_table"], collection_dict, "Collection", idx
                 )
                 print(f"Collection PutItem succeeded: {identifier}")
