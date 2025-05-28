@@ -70,7 +70,7 @@ class PDFMetadata(GenericMetadata):
                         "thumbnail_path" in archive_dict
                         and len(archive_dict["thumbnail_path"]) > 0
                     ):
-                        self.create_if_not_exists(
+                        self.create(
                             self.env["archive_table"], archive_dict, "Archive", idx
                         )
                     else:
