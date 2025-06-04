@@ -1,5 +1,5 @@
-import http, io, json, os, urllib
-from src.s3_tools import get_matching_s3_keys
+import io, os
+from src.utils.s3_tools import get_matching_s3_keys
 from src.media_types.metadata.generic_metadata import GenericMetadata
 
 

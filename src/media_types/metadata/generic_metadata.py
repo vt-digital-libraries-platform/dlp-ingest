@@ -65,7 +65,7 @@ class GenericMetadata:
 
     def ingest(self):
         metadata_stream = None
-        if self.env["is_lambda"]:
+        if "is_lambda" in self.env and self.env["is_lambda"]:
             metadata_stream = self.lambda_metadata(self.filename, self.bucket)
         else:
             metadata_stream = self.local_metadata(self.filename)
@@ -843,6 +843,7 @@ class GenericMetadata:
             "long_url": long_url,
             "short_url": short_url,
             "created_at": now,
+            "hits": 0
         }
         newNoidResponse = self.env["mint_table"].put_item(Item=noid_record)
         success = (newNoidResponse["ResponseMetadata"]["HTTPStatusCode"] == 200)
