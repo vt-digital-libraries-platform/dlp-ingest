@@ -37,6 +37,8 @@ class GenericMetadata:
                 self.get_table_name("Collectionmap")
             )
             self.env["mint_table"] = self.dyndb.Table(self.env["dynamodb_noid_table"])
+            # Add Embargo table reference using get_table_name
+            self.env["embargo_table"] = self.dyndb.Table(self.get_table_name("Embargo"))
         except Exception as e:
             print(f"An error occurred connecting to an AWS Dynamo resource: {str(e)}")
             raise e
@@ -72,11 +74,14 @@ class GenericMetadata:
             self.batch_import_collections(metadata_stream)
         elif "_archive_metadata.csv" in self.filename or "_item_metadata.csv" in self.filename:
             self.batch_import_archives(metadata_stream)
+        # Add support for embargo metadata
+        elif "_embargo_metadata.csv" in self.filename:
+            self.batch_import_embargo(metadata_stream)
         else:
             error_message = f"Error: {self.filename} is not a valid filename."
             print(error_message)
             print(
-                "Filenames must end with [ _collection_metadata.csv | _archive_metadata.csv ] in order to be processed."
+                "Filenames must end with [ _collection_metadata.csv | _archive_metadata.csv | _embargo_metadata.csv ] in order to be processed."
             )
             return {"statusCode": 200, "body": json.dumps(error_message)}
 
@@ -137,10 +142,16 @@ class GenericMetadata:
             print(f"Collection {idx+1} ({identifier}) has been imported.")
 
     def batch_import_archives(self, response):
+        print("===================================")
+        print("response is:", response)
         df = self.csv_to_dataframe(io.BytesIO(response["Body"].read()))
+        print("Dataframe is ",df)
+        print("DataFrame loaded. Number of rows:", len(df))
         for idx, row in df.iterrows():
             print()
+            print(f"\nProcessing row {idx+1}")
             archive_dict = self.process_csv_metadata(row, "Archive")
+            print("archive_dict:", archive_dict)
             if not archive_dict:
                 print(f"Error: Archive {idx+1} has failed to be imported.")
                 self.log_result(
@@ -149,9 +160,12 @@ class GenericMetadata:
                     1,
                     False,
                 )
+                print("Breaking out of loop due to invalid archive_dict.")
                 break
             else:
+                print("Getting collection for archive_dict...")
                 collection = self.get_collection(archive_dict)
+                print("collection:", collection)
                 if not collection:
                     print(f"Error: Collection not found for Archive {idx+1}.")
                     print("Error: Archive must belong to a collection to be ingested")
@@ -161,12 +175,14 @@ class GenericMetadata:
                         3,
                         False,
                     )
+                    print("Breaking out of loop due to missing collection.")
                     break
                 collection_identifier = (
                     collection["identifier"]
                     if collection
                     else self.env["collection_identifier"]
                 )
+                print("collection_identifier:", collection_identifier)
                 if collection_identifier is None:
                     print(f"Error: Collection not found for Archive {idx+1}.")
                     print("Error: Archive must belong to a collection to be ingested")
@@ -176,8 +192,10 @@ class GenericMetadata:
                         3,
                         False,
                     )
+                    print("Breaking out of loop due to missing collection_identifier.")
                     break
                 else:
+                    print("Setting archive_dict collection fields...")
                     archive_dict["collection"] = collection["id"]
                     archive_dict["parent_collection"] = [collection["id"]]
                     archive_dict["heirarchy_path"] = collection["heirarchy_path"]
@@ -188,16 +206,20 @@ class GenericMetadata:
                         archive_dict["identifier"],
                         "manifest.json",
                     )
+                    print("archive_dict['manifest_url']:", archive_dict["manifest_url"])
                     try:
+                        print("Attempting to open manifest_url...")
                         json_url = urllib.request.urlopen(archive_dict["manifest_url"])
+                        print("Manifest URL opened successfully.")
                         archive_dict["thumbnail_path"] = json.loads(json_url.read())[
                             "thumbnail"
                         ]["@id"]
+                        print("archive_dict['thumbnail_path']:", archive_dict["thumbnail_path"])
                     except (
                         urllib.error.HTTPError,
                         http.client.IncompleteRead,
                     ) as http_err:
-                        print(http_err)
+                        print("HTTPError or IncompleteRead:", http_err)
                         print(f"{archive_dict['manifest_url']} not found.")
                         self.log_result(
                             archive_dict,
@@ -206,7 +228,7 @@ class GenericMetadata:
                             False,
                         )
                     except Exception as e:
-                        print(e)
+                        print("General Exception:", e)
                         print(f"{archive_dict['manifest_url']} not found.")
                         self.log_result(
                             archive_dict,
@@ -219,13 +241,19 @@ class GenericMetadata:
                         "thumbnail_path" in archive_dict
                         and len(archive_dict["thumbnail_path"]) > 0
                     ):
+                        print("Creating archive record in archive_table...")
                         self.create(
                                 self.env["archive_table"],
                                 archive_dict,
                                 "Archive",
                                 idx
                             )
-                            # Log trying to create an item that already exists
+                        # Log trying to create an item that already exists
+                        print("Archive record created.")
+                    else:
+                        print("No thumbnail_path found, skipping creation.")
+        print("quitting)")
+        quit()
 
     def get_table_name(self, table_name):
         return f"{table_name}-{self.env['dynamodb_table_suffix']}"
@@ -831,3 +859,99 @@ class GenericMetadata:
         else:
             self.env["mint_table"].delete_item(Key={"noid": noid})
             print(f"delete_NOID: {noid}")
+
+
+    def batch_import_embargo(self, response):
+        """
+        Import a batch of embargo records from the metadata response and put them in the Embargo table.
+        Must have a collection associated with each embargo (same logic as batch_import_archives).
+        """
+        df = self.csv_to_dataframe(io.BytesIO(response["Body"].read()))
+        for idx, row in df.iterrows():
+            print("")
+            print("===================================")
+            embargo_dict = self.process_csv_metadata(row, "Embargo")
+            if not embargo_dict:
+                print(f"Error: Embargo {idx+1} has failed to be imported.")
+                self.log_result(
+                    False,
+                    idx,
+                    1,
+                    False,
+                )
+                break
+            else:
+                collection = self.get_collection(embargo_dict)
+                if not collection:
+                    print(f"Error: Collection not found for Embargo {idx+1}.")
+                    print("Error: Embargo must belong to a collection to be ingested")
+                    self.log_result(
+                        embargo_dict,
+                        idx,
+                        3,
+                        False,
+                    )
+                    break
+                collection_identifier = (
+                    collection["identifier"]
+                    if collection
+                    else self.env["collection_identifier"]
+                )
+                if collection_identifier is None:
+                    print(f"Error: Collection not found for Embargo {idx+1}.")
+                    print("Error: Embargo must belong to a collection to be ingested")
+                    self.log_result(
+                        embargo_dict,
+                        idx,
+                        3,
+                        False,
+                    )
+                    break
+                else:
+                    embargo_dict["collection"] = collection["id"]
+                    embargo_dict["parent_collection"] = [collection["id"]]
+                    embargo_dict["heirarchy_path"] = collection["heirarchy_path"]
+                    embargo_dict["manifest_url"] = os.path.join(
+                        self.env["app_img_root_path"],
+                        self.env["collection_category"],
+                        collection_identifier,
+                        embargo_dict["identifier"],
+                        "manifest.json",
+                    )
+                    try:
+                        json_url = urllib.request.urlopen(embargo_dict["manifest_url"])
+                        embargo_dict["thumbnail_path"] = json.loads(json_url.read())[
+                            "thumbnail"
+                        ]["@id"]
+                    except (
+                        urllib.error.HTTPError,
+                        http.client.IncompleteRead,
+                    ) as http_err:
+                        print(http_err)
+                        print(f"{embargo_dict['manifest_url']} not found.")
+                        self.log_result(
+                            embargo_dict,
+                            idx,
+                            4,
+                            False,
+                        )
+                    except Exception as e:
+                        print(e)
+                        print(f"{embargo_dict['manifest_url']} not found.")
+                        self.log_result(
+                            embargo_dict,
+                            idx,
+                            4,
+                            False,
+                        )
+
+                    if (
+                        "thumbnail_path" in embargo_dict
+                        and len(embargo_dict["thumbnail_path"]) > 0
+                    ):
+                        self.create(
+                            self.env["embargo_table"],
+                            embargo_dict,
+                            "Embargo",
+                            idx
+                        )
