@@ -37,6 +37,8 @@ class GenericMetadata:
                 self.get_table_name("Collectionmap")
             )
             self.env["mint_table"] = self.dyndb.Table(self.env["dynamodb_noid_table"])
+            # Add Embargo table reference using get_table_name
+            self.env["embargo_table"] = self.dyndb.Table(self.get_table_name("Embargo"))        
         except Exception as e:
             print(f"An error occurred connecting to an AWS Dynamo resource: {str(e)}")
             raise e
@@ -99,10 +101,24 @@ class GenericMetadata:
 
     def batch_import_collections(self, response):
         df = self.csv_to_dataframe(io.BytesIO(response["Body"].read()))
+        print("df is ", df)
+        skip_hierarchy = False
         for idx, row in df.iterrows():
             print("")
             print("===================================")
+            print("row is ", row)
             collection_dict = self.process_csv_metadata(row, "Collection")
+            print('collection_dict is ', collection_dict)
+
+            # If we are skipping hierarchy items, check if this row is a hierarchy item
+            if skip_hierarchy:
+                if collection_dict and "heirarchy_path" in collection_dict:
+                    print(f"Skipping hierarchy item at row {idx+1} due to previous hierarchy import failure.")
+                    continue
+                else:
+                    # Reset skip_hierarchy when a non-hierarchy item is reached
+                    skip_hierarchy = False
+
             if not collection_dict:
                 print(f"Error: Collection {idx+1} has failed to be imported.")
                 self.log_result(
@@ -111,31 +127,20 @@ class GenericMetadata:
                     1,
                     False,
                 )
-                break
-            identifier = collection_dict["identifier"]
-            items = self.query_by_index(
-                self.env["collection_table"], "Identifier", identifier
-            )
-            if items is not None and len(items) >= 1:
-                print(
-                    f"Error: Identifier ({identifier}) already exists in {self.env['collection_table']}."
-                )
-                # TODO: Update existing collection implementation.
-                break
-            else:
-                collection_dict["thumbnail_path"] = os.path.join(
-                    self.env["app_img_root_path"],
-                    self.env["collection_category"],
-                    identifier,
-                    "representative.jpg",
-                )
-                self.create(
-                    self.env["collection_table"], collection_dict, "Collection", idx
-                )
+                # If this failed row has a heirarchy_path, set skip_hierarchy to True
+                if "heirarchy_path" in row:
+                    skip_hierarchy = True
+                continue  # Continue to next row
+
+            # Always use create, which handles embargo logic and update/create logic
+            self.create(self.env["collection_table"], collection_dict, "Collection", idx)
+
+            #Revisit the collection map update logic
             if "heirarchy_path" in collection_dict:
                 self.update_collection_map(collection_dict["heirarchy_path"][0])
-            print(f"Collection {idx+1} ({identifier}) has been imported.")
-
+            # If identifier is not set, return N/A
+            print(f"Collection {idx+1} ({collection_dict.get('identifier', 'N/A')}) has been imported.")
+        #quit()
     def batch_import_archives(self, response):
         df = self.csv_to_dataframe(io.BytesIO(response["Body"].read()))
         for idx, row in df.iterrows():
@@ -228,6 +233,9 @@ class GenericMetadata:
                             # Log trying to create an item that already exists
 
     def get_table_name(self, table_name):
+            # Use embargo-specific suffix for embargo table
+        if table_name.lower() == "embargo":
+            return f"{table_name}-{self.env['dynamodb_table_suffix_embargo']}"
         return f"{table_name}-{self.env['dynamodb_table_suffix']}"
 
     def header_update(self, records):
@@ -347,16 +355,48 @@ class GenericMetadata:
         os.chdir(working_dir)
 
     def create(self, table, attr_dict, item_type, index):
-        #create or update the items in the table based on update_metadata flag
+        # create or update the items in the table based on update_metadata flag
         # If update_metadata is enabled, update the item that exists, otherwise create a new item if it doesn't exist
-        identifier = attr_dict["identifier"] 
+        # Check if _typename is 'Embargo' and always use the embargo table if embargo is detected
+        # This is a special case for embargo items present either in the _collection_metadata.csv or _archive_metadata.csv, which should always be handled in the embargo_table
+        # Check for embargo by presence of embargo-related fields 
+        is_embargo = (
+            bool(attr_dict.get("embargo_start_date")) or
+            bool(attr_dict.get("embargo_end_date")) or
+            bool(attr_dict.get("embargo_notes")) or 
+            bool(attr_dict.get("__typename")) and attr_dict["__typename"].lower() == "embargo"
+        )
+        identifier = attr_dict["identifier"]
+
+        if is_embargo:
+            print(f"Detected Embargo fields for identifier {identifier}, writing to embargo table and {table.name}.")
+            try:
+                # --- Write to embargo table (query for existing embargo items, use same logic as collection/archive) ---
+                embargo_dict = attr_dict.copy()
+                embargo_dict["_typename"] = "Embargo"
+                embargo_table = self.env["embargo_table"]
+                embargo_items = self.query_by_index(embargo_table, "Identifier", identifier)
+                if embargo_items and self.env["update_metadata"] == False:
+                    print(f"Error: Identifier ({identifier}) already exists in embargo table. Please update the metadata flag")
+                    self.log_result(embargo_dict, index, 2, True)
+                elif not embargo_items and self.env["update_metadata"] == False:
+                    print(f"UPDATE_METADATA is not enabled. Directly creating the embargo item for {identifier}.")
+                    self.create_item_in_table(embargo_table, embargo_dict, "Embargo", index)
+                elif self.env["update_metadata"]:
+                    print(f"UPDATE_METADATA is enabled. Updating embargo item for {identifier}.")
+                    self.update(embargo_table, embargo_dict, "Embargo", identifier, index)
+            except Exception as e:
+                print(f"Error processing embargo table for identifier '{identifier}': {str(e)}")
+                self.log_result(attr_dict, index, 1, False)
+                return DUPLICATED
+
+        # --- Non-embargo logic (original) ---
         try:
-            # Query the table for existing items with the given identifier
             items = self.query_by_index(table, "Identifier", identifier)
             # Handle case where items already exist and update_metadata is disabled
             if items and len(items) >= 1 and self.env["update_metadata"] == False:
                 print(f"Error: Identifier ({identifier}) already exists in {table}. Please update the metadata flag")
-                self.log_result(attr_dict,index,2,True)
+                self.log_result(attr_dict, index, 2, True)
                 return DUPLICATED
             # Handle case where no items exist and update_metadata is disabled
             if not items and self.env["update_metadata"] == False:
@@ -364,7 +404,10 @@ class GenericMetadata:
                 return self.create_item_in_table(table, attr_dict, item_type, index)  # Directly create the item if update_metadata is disabled
             # Handle case where update_metadata is enabled
             if self.env["update_metadata"]:
-                self.update(table, attr_dict, item_type, identifier,index)
+                print(f"UPDATE_METADATA is enabled. Updating item for {identifier}.")
+                # Use the same update logic as for other types
+                # For embargo, this will update the embargo_table
+                self.update(table, attr_dict, item_type, identifier, index)
         except Exception as e:
             print(f"Error scanning table for identifier '{identifier}': {str(e)}")
 
@@ -486,6 +529,9 @@ class GenericMetadata:
                     True,
                 )
             else:
+                print('Trying to put item in the table*************')
+                print(f"PutItem for {attr_dict['identifier']} in {table.name}")
+                print(attr_dict)
                 newRecord = table.put_item(Item=attr_dict)
                 success = (newRecord["ResponseMetadata"]["HTTPStatusCode"] == 200)
                 if success:

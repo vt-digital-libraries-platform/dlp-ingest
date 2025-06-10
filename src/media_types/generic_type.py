@@ -30,7 +30,7 @@ class GenericType:
             "S3_BUCKET_NAME": self.env["aws_src_bucket"],
             "S3_PREFIX": self.env["collection_category"]
         }
-        checksum_handler(checksum_options, None)
+        #checksum_handler(checksum_options, None)
 
     def import_digital_objects(self):
         return self.media_handler.import_digital_objects()

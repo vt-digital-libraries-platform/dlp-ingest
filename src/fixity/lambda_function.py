@@ -179,7 +179,8 @@ def lambda_handler(event, context):
 
     total_files_listed = 0
     # Process checksum file(s)
-    for path in checksum_file_paths:
+    if len(checksum_file_paths) > 0:
+     for path in checksum_file_paths:
         file_list = get_fileList_df(s3_bucket, path)
         total_files_listed += len(file_list)
         # Loop through checksum file and process each file listed
