@@ -1,6 +1,12 @@
-from src.media_types.generic_type import GenericType
-from src.media_types.digital_objects.iiif_digital_object import IIIFDigitalObject
-from src.media_types.metadata.iiif_metadata import IIIFMetadata
+import os
+if os.getenv("GUI") is not None and os.getenv("GUI").lower() == "true":
+    from dlp_ingest.src.media_types.generic_type import GenericType
+    from dlp_ingest.src.media_types.digital_objects.iiif_digital_object import IIIFDigitalObject
+    from dlp_ingest.src.media_types.metadata.iiif_metadata import IIIFMetadata
+else:
+    from src.media_types.generic_type import GenericType
+    from src.media_types.digital_objects.iiif_digital_object import IIIFDigitalObject
+    from src.media_types.metadata.iiif_metadata import IIIFMetadata
 
 
 class IIIFType(GenericType):

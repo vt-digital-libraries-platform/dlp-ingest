@@ -1,6 +1,12 @@
-from src.media_types.iiif_type import IIIFType
-from src.media_types.three_d_type import ThreeDType
-from src.media_types.pdf_type import PDFType
+import os
+if os.getenv("GUI") is not None and os.getenv("GUI").lower() == "true":
+    from dlp_ingest.src.media_types.iiif_type import IIIFType
+    from dlp_ingest.src.media_types.three_d_type import ThreeDType
+    from dlp_ingest.src.media_types.pdf_type import PDFType
+else:
+    from src.media_types.iiif_type import IIIFType
+    from src.media_types.three_d_type import ThreeDType
+    from src.media_types.pdf_type import PDFType
 
 # collection asset paths are relative to the collection root directory
 # item asset paths are relative to the item subdirectories

@@ -1,16 +1,7 @@
-import http
-import json
-import urllib.parse
-import urllib.request
-import requests
-import boto3
-import io
+import boto3, http, io, json, os, uuid, urllib.request
 import pandas as pd
 from datetime import datetime, timezone
 from dateutil.parser import parse
-import uuid
-import os
-import sys
 from boto3.dynamodb.conditions import Key, Attr
 from botocore.response import StreamingBody
 

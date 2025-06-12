@@ -1,7 +1,8 @@
-import boto3
-from src.media_types.digital_objects.generic_digital_object import (
-    GenericDigitalObject,
-)
+import boto3, os
+if os.getenv("GUI") is not None and os.getenv("GUI").lower() == "true":
+    from dlp_ingest.src.media_types.digital_objects.generic_digital_object import GenericDigitalObject
+else:
+    from src.media_types.digital_objects.generic_digital_object import GenericDigitalObject
 
 
 class ThreeDDigitalObject(GenericDigitalObject):

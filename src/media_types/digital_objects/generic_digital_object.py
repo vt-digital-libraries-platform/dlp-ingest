@@ -1,7 +1,12 @@
-import boto3, datetime, io, json, os, pathlib, sys
-from src.utils.s3_tools import get_matching_s3_keys
-from src.media_types.metadata.generic_metadata import GenericMetadata
+import boto3, datetime, io, json, os, pathlib
 from botocore.response import StreamingBody
+if os.getenv("GUI") is not None and os.getenv("GUI").lower() == "true":
+    from dlp_ingest.src.utils.s3_tools import get_matching_s3_keys
+    from dlp_ingest.src.media_types.metadata.generic_metadata import GenericMetadata
+else:
+    from src.utils.s3_tools import get_matching_s3_keys
+    from src.media_types.metadata.generic_metadata import GenericMetadata
+
 
 
 class GenericDigitalObject:

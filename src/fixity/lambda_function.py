@@ -179,79 +179,80 @@ def lambda_handler(event, context):
 
     total_files_listed = 0
     # Process checksum file(s)
-    for path in checksum_file_paths:
-        file_list = get_fileList_df(s3_bucket, path)
-        total_files_listed += len(file_list)
-        # Loop through checksum file and process each file listed
-        for idx, record in file_list.iterrows():
+    if checksum_file_paths is not None and len(checksum_file_paths) > 0:
+        for path in checksum_file_paths:
+            file_list = get_fileList_df(s3_bucket, path)
+            total_files_listed += len(file_list)
+            # Loop through checksum file and process each file listed
+            for idx, record in file_list.iterrows():
+                created = record[csv_headers['created']]
+                fileExt = record[csv_headers['fileExt']]  
+                fileName = record[csv_headers['fileName']]
+                filePath = record[csv_headers['filePath']]
+                fileSize = record[csv_headers['fileSize']]
+                md5 = record[csv_headers['md5']]
+                sha1 = record[csv_headers['sha1']]
 
-            created = record[csv_headers['created']]
-            fileExt = record[csv_headers['fileExt']]  
-            fileName = record[csv_headers['fileName']]
-            filePath = record[csv_headers['filePath']]
-            fileSize = record[csv_headers['fileSize']]
-            md5 = record[csv_headers['md5']]
-            sha1 = record[csv_headers['sha1']]
+                # find file(s) based on collection path and filename
+                obj_keys = get_matching_s3_keys(s3_bucket, collection_path, fileName)
+                key = obj_keys[0] if obj_keys else None
+                if key:
+                    logging.info(f"File found in s3:{s3_bucket}: {key}")
+                else:
+                    logging.warning(f"File not found: {fileName}")
+                    not_found_tuple = (filePath, "not found")
+                    if not_found_tuple not in not_found:
+                        not_found.append(not_found_tuple)
+                    continue
+                    
 
-            obj_keys = get_matching_s3_keys(s3_bucket, collection_path, fileName)
-            key = obj_keys[0] if obj_keys else None
-            if key:
-                logging.info(f"File found in s3:{s3_bucket}: {key}")
-            else:
-                logging.warning(f"File not found: {fileName}")
-                not_found_tuple = (filePath, "not found")
-                if not_found_tuple not in not_found:
-                    not_found.append(not_found_tuple)
-                continue
-                
+                # Check if fileCharacterization record is already in dynamo
+                if record_exists_in_db(fixity_table_name, key):
+                    logging.info(f"{filePath} already exists in table: {fixity_table_name} as: {key}")
+                    existing_tuple = (filePath, key)
+                    if existing_tuple not in existing:
+                        existing.append(existing_tuple)
+                    continue
 
-            # Check if fileCharacterization record is already in dynamo
-            if record_exists_in_db(fixity_table_name, key):
-                logging.info(f"{filePath} already exists in table: {fixity_table_name} as: {key}")
-                existing_tuple = (filePath, key)
-                if existing_tuple not in existing:
-                    existing.append(existing_tuple)
-                continue
+                # File found and needs to be ingested
+                metadata = None
+                mime_type = None
+                try:
+                    response = s3_client.head_object(Bucket=s3_bucket, Key=key)
+                    mime_type = response['ContentType']
+                    metadata = create_s3_file_metadata(filePath, response)
+                except Exception as e:
+                    logging.error(f"Error fetching head object for file: {filePath}")
+                    
+                ingested_date = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
 
-            # File found and needs to be ingested
-            metadata = None
-            mime_type = None
-            try:
-                response = s3_client.head_object(Bucket=s3_bucket, Key=key)
-                mime_type = response['ContentType']
-                metadata = create_s3_file_metadata(filePath, response)
-            except Exception as e:
-                logging.error(f"Error fetching head object for file: {filePath}")
-                
-            ingested_date = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
-
-            file_record = {
-                'id': str(uuid.uuid4()),
-                'collection_identifier': collection_identifier,
-                'file_name': fileName,
-                'file_size': fileSize,
-                'file_extension': fileExt,
-                'file_type': mime_type,
-                'orig_file_path': filePath,
-                's3_bucket': s3_bucket,
-                's3_file_metadata': metadata,
-                's3_file_path': key,
-                'sha1': sha1,
-                'md5': md5,
-                'created_date': created,
-                'file_ingested_date': ingested_date,
-                'ingest_job': ingest_job,
-                'md5_matches_etag': md5 == metadata['etag'].replace('\"', '')
-            }
-                
-            try:
-                fixity_table.put_item(Item=file_record)
-                ingested_tuple = (filePath, key)
-                if ingested_tuple not in ingested:  
-                    ingested.append(ingested_tuple)
-                logging.info(f"File record written to DynamoDB: {filePath}")
-            except Exception as e:
-                logging.error(f"Error writing to DynamoDB for file: {filePath}: {e}")
+                file_record = {
+                    'id': str(uuid.uuid4()),
+                    'collection_identifier': collection_identifier,
+                    'file_name': fileName,
+                    'file_size': fileSize,
+                    'file_extension': fileExt,
+                    'file_type': mime_type,
+                    'orig_file_path': filePath,
+                    's3_bucket': s3_bucket,
+                    's3_file_metadata': metadata,
+                    's3_file_path': key,
+                    'sha1': sha1,
+                    'md5': md5,
+                    'created_date': created,
+                    'file_ingested_date': ingested_date,
+                    'ingest_job': ingest_job,
+                    'md5_matches_etag': md5 == metadata['etag'].replace('\"', '')
+                }
+                    
+                try:
+                    fixity_table.put_item(Item=file_record)
+                    ingested_tuple = (filePath, key)
+                    if ingested_tuple not in ingested:  
+                        ingested.append(ingested_tuple)
+                    logging.info(f"File record written to DynamoDB: {filePath}")
+                except Exception as e:
+                    logging.error(f"Error writing to DynamoDB for file: {filePath}: {e}")
 
 # ================================================
 
