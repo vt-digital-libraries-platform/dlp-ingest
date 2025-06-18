@@ -6,7 +6,10 @@
     "explicit_content",
     "identifier",
     "start_date",
-    "title"
+    "title",
+    "embargo_start_date",
+    "embargo_end_date",
+    "__typename" 
   ],
   "multi_value_headers": [
     "alternative",
@@ -22,6 +25,7 @@
     "description",
     "display_date",
     "download_link",
+    "note",
     "extent",
     "format",
     "format_physical",
