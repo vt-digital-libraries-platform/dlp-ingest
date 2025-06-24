@@ -1,6 +1,9 @@
 
 # Created by https://www.gitignore.io/api/osx,linux,python,windows,pycharm,visualstudiocode
 
+# Exception for headers_keys.json
+!src/data/headers_keys.json
+
 ### Linux ###
 *~
 

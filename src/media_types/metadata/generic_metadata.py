@@ -49,9 +49,9 @@ class GenericMetadata:
             raise e
 
         try:
-            # headers_file = "/home/wlh/dev/dlp/ingest/metadata/dlp-ingest/src/data/20240702_headers_keys.json"
+            # headers_file = "/home/wlh/dev/dlp/ingest/metadata/dlp-ingest/src/data/headers_keys.json"
             # /Users/whunter/dev/dlp/ingest/dlp-ingest/
-            headers_file = "./src/data/20240702_headers_keys.json"
+            headers_file = "./src/data/headers_keys.json"
             headers_json = os.path.join(headers_file)
             with open(headers_json) as f:
                 headers_keys = json.load(f)
