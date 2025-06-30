@@ -6,7 +6,7 @@ else:
     from src.media_types.media_types_map import media_types_map
 
 # Environment variables
-env = None
+env = {}
 def set_environment():
     env["script_root"] = os.path.abspath(os.path.dirname(__file__))
     env["aws_src_bucket"] = os.getenv("AWS_SRC_BUCKET")
@@ -56,8 +56,6 @@ def set_environment():
         os.getenv("UPDATE_METADATA") is not None and os.getenv("UPDATE_METADATA").lower() == "true"
     )
 
-    return env
-
 
 def new_media_type_handler(env, filename, bucket):
     media_type = media_types_map[env["media_type"]]
@@ -65,7 +63,7 @@ def new_media_type_handler(env, filename, bucket):
 
 
 def main(event, context, csv_file=None):
-    env = set_environment()
+    set_environment()
     filename = None
     if event and env["is_lambda"]:
         bucket = event["Records"][0]["s3"]["bucket"]["name"]
