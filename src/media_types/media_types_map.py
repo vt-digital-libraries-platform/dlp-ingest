@@ -13,7 +13,13 @@ else:
 media_types_map = {
     "iiif": {
         "assets": {
-            "collection": {},
+            "collection": {
+                "thumbnail": "representative.jpg",
+                "metadata": [
+                    "<variable>_collection_metadata.csv",
+                    "<variable>_archive_metadata.csv",
+                ],
+            },
             "item": {},
         },
         "extensions": ["json"],
