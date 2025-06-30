@@ -42,7 +42,12 @@ class GenericMetadata:
         try:
             # headers_file = "/home/wlh/dev/dlp/ingest/metadata/dlp-ingest/src/data/20240702_headers_keys.json"
             # /Users/whunter/dev/dlp/ingest/dlp-ingest/
-            headers_file = "./src/data/20240702_headers_keys.json"
+            headers_file = None
+            if os.getenv("GUI") is not None and os.getenv("GUI").lower() == "true":
+                headers_file = "./dlp_ingest/src/data/20240702_headers_keys.json"
+            else:
+                headers_file = "./src/data/20240702_headers_keys.json"
+            
             headers_json = os.path.join(headers_file)
             with open(headers_json) as f:
                 headers_keys = json.load(f)
