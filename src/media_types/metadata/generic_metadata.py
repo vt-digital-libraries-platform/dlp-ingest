@@ -214,7 +214,7 @@ class GenericMetadata:
                             # Log trying to create an item that already exists
 
     def get_table_name(self, table_name):
-        return f"{table_name}-{self.env["DYNAMODB_TABLE_SUFFIX"]}"
+        return f"{table_name}-{self.env['DYNAMODB_TABLE_SUFFIX']}"
 
     def header_update(self, records):
         df = records.rename(
