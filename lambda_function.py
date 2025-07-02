@@ -12,7 +12,6 @@ def set_environment(app_config=None):
 
     if app_config is not None:
         for key, value in app_config.items():
-            print(f"setting {key} to {value}")
             env[key] = value
         return
     else:
