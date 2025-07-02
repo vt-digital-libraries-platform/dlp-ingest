@@ -328,7 +328,7 @@ class GenericMetadata:
             if status == 200:
                 print("")
                 print(
-                    f"Results file {os.path.join(self.env["APP_IMG_ROOT_PATH"],target)} has been uploaded to S3."
+                    f"Results file {os.path.join(self.env['APP_IMG_ROOT_PATH'],target)} has been uploaded to S3."
                 )
         os.chdir(working_dir)
 
