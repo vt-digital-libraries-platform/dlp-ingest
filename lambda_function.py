@@ -76,6 +76,8 @@ def new_media_type_handler(env, filename, bucket):
 
 def main(event, context, csv_file=None, app_config=None):
     set_environment(app_config)
+    print(env)
+    sys.exit()
     filename = None
     if event:
         bucket = event["Records"][0]["s3"]["bucket"]["name"]
