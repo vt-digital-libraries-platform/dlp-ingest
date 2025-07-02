@@ -11,6 +11,8 @@ def set_environment(app_config=None):
     env["SCRIPT_ROOT"] = os.path.abspath(os.path.dirname(__file__))
 
     if app_config is not None:
+        print("app config before lambda set_environment")
+        print(app_config)
         for key, value in app_config.items():
             if value is not None and str(value).lower() == "true":
                 value = True
@@ -18,6 +20,10 @@ def set_environment(app_config=None):
                 value = False
             else:
                 env[key] = value
+        
+        print("env after lambda set_environment")
+        print(env)
+        sys.exit(1)
     else:
         env["AWS_SRC_BUCKET"] = os.getenv("AWS_SRC_BUCKET")
         env["AWS_DEST_BUCKET"] = os.getenv("AWS_DEST_BUCKET")
