@@ -70,14 +70,14 @@ def set_environment(app_config=None):
 
 
 def new_media_type_handler(env, filename, bucket):
+    print("in new type handler")
+    print(env)
     media_type = media_types_map[env["media_type"]]
     return media_type["handler"](env, filename, bucket, media_type["assets"])
 
 
 def main(event, context, csv_file=None, app_config=None):
     set_environment(app_config)
-    print(env)
-    sys.exit()
     filename = None
     if event:
         bucket = event["Records"][0]["s3"]["bucket"]["name"]
@@ -91,10 +91,10 @@ def main(event, context, csv_file=None, app_config=None):
     return media_type_handler.ingest()
 
 
-if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Usage: python3 lambda_function.py <filename>")
-        sys.exit(1)
-    else:
-        filename = "".join(sys.argv[1])
-        main(None, None, filename)
+# if __name__ == "__main__":
+#     if len(sys.argv) < 2:
+#         print("Usage: python3 lambda_function.py <filename>")
+#         sys.exit(1)
+#     else:
+#         filename = "".join(sys.argv[1])
+#         main(None, None, filename)
