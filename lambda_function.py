@@ -14,6 +14,7 @@ def set_environment(app_config=None):
         print("app config before lambda set_environment")
         print(app_config)
         for key, value in app_config.items():
+            print(f"setting {key} to {value}")
             env[key] = value
         
         print("env after lambda set_environment")
