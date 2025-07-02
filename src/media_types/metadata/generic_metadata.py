@@ -19,7 +19,7 @@ class GenericMetadata:
         self.results = []
 
         try:
-            self.dyndb = boto3.resource("dynamodb", region_name=self.env["region_name"])
+            self.dyndb = boto3.resource("dynamodb", region_name=self.env["REGION_NAME"])
             self.env["archive_table"] = self.dyndb.Table(self.get_table_name("Archive"))
             self.env["collection_table"] = self.dyndb.Table(
                 self.get_table_name("Collection")
@@ -27,7 +27,7 @@ class GenericMetadata:
             self.env["collectionmap_table"] = self.dyndb.Table(
                 self.get_table_name("Collectionmap")
             )
-            self.env["mint_table"] = self.dyndb.Table(self.env["dynamodb_noid_table"])
+            self.env["mint_table"] = self.dyndb.Table(self.env["DYNAMODB_NOID_TABLE"])
         except Exception as e:
             print(f"An error occurred connecting to an AWS Dynamo resource: {str(e)}")
             raise e
@@ -57,7 +57,7 @@ class GenericMetadata:
 
     def ingest(self):
         metadata_stream = None
-        if "is_lambda" in self.env and self.env["is_lambda"]:
+        if "IS_LAMBDA" in self.env and self.env["IS_LAMBDA"]:
             metadata_stream = self.lambda_metadata(self.filename, self.bucket)
         else:
             metadata_stream = self.local_metadata(self.filename)
@@ -109,8 +109,8 @@ class GenericMetadata:
             identifier = collection_dict["identifier"]
             if "thumbnail_path" not in collection_dict or not collection_dict["thumbnail_path"]:
                 collection_dict["thumbnail_path"] = os.path.join(
-                    self.env["app_img_root_path"],
-                    self.env["collection_category"],
+                    self.env["APP_IMG_ROOT_PATH"],
+                    self.env["COLLECTION_CATEGORY"],
                     identifier,
                     "representative.jpg",
                 )
@@ -151,7 +151,7 @@ class GenericMetadata:
                 collection_identifier = (
                     collection["identifier"]
                     if collection
-                    else self.env["collection_identifier"]
+                    else self.env["COLLECTION_IDENTIFIER"]
                 )
                 if collection_identifier is None:
                     print(f"Error: Collection not found for Archive {idx+1}.")
@@ -168,8 +168,8 @@ class GenericMetadata:
                     archive_dict["parent_collection"] = [collection["id"]]
                     archive_dict["heirarchy_path"] = collection["heirarchy_path"]
                     archive_dict["manifest_url"] = os.path.join(
-                        self.env["app_img_root_path"],
-                        self.env["collection_category"],
+                        self.env["APP_IMG_ROOT_PATH"],
+                        self.env["COLLECTION_CATEGORY"],
                         collection_identifier,
                         archive_dict["identifier"],
                         "manifest.json",
@@ -214,7 +214,7 @@ class GenericMetadata:
                             # Log trying to create an item that already exists
 
     def get_table_name(self, table_name):
-        return f"{table_name}-{self.env['dynamodb_table_suffix']}"
+        return f"{table_name}-{self.env["DYNAMODB_TABLE_SUFFIX"]}"
 
     def header_update(self, records):
         df = records.rename(
@@ -296,7 +296,7 @@ class GenericMetadata:
 
     def print_results(self):
         df = pd.DataFrame(self.results)
-        results_filename = f"{self.env['collection_identifier']}_ingest_results_{datetime.now().strftime('%Y%m%d%H%M%S')}.csv"
+        results_filename = f"{self.env["COLLECTION_IDENTIFIER"]}_ingest_results_{datetime.now().strftime('%Y%m%d%H%M%S')}.csv"
         working_dir = os.path.abspath(os.path.dirname(__file__))
         results_path = os.path.join(working_dir, "results_files")
         if not os.path.exists(results_path):
@@ -305,8 +305,8 @@ class GenericMetadata:
         df.to_csv(results_filename, index=False)
         s3_response = None
         target = os.path.join(
-            self.env["collection_category"],
-            self.env["collection_identifier"],
+            self.env["COLLECTION_CATEGORY"],
+            self.env["COLLECTION_IDENTIFIER"],
             "metadata_import_results",
             results_filename,
         )
@@ -318,7 +318,7 @@ class GenericMetadata:
             s3_response = (
                 self.env["s3_resource"]
                 .Object(
-                    self.env["aws_dest_bucket"],
+                    self.env["AWS_DEST_BUCKET"],
                     target,
                 )
                 .put(Body=open(results_filename, "rb"))
@@ -328,7 +328,7 @@ class GenericMetadata:
             if status == 200:
                 print("")
                 print(
-                    f"Results file {os.path.join(self.env['app_img_root_path'],target)} has been uploaded to S3."
+                    f"Results file {os.path.join(self.env["APP_IMG_ROOT_PATH"],target)} has been uploaded to S3."
                 )
         os.chdir(working_dir)
 
@@ -340,16 +340,16 @@ class GenericMetadata:
             # Query the table for existing items with the given identifier
             items = self.query_by_index(table, "Identifier", identifier)
             # Handle case where items already exist and update_metadata is disabled
-            if items and len(items) >= 1 and self.env["update_metadata"] == False:
+            if items and len(items) >= 1 and self.env["UPDATE_METADATA"] == False:
                 print(f"Error: Identifier ({identifier}) already exists in {table}. Please update the metadata flag")
                 self.log_result(attr_dict,index,2,True)
                 return DUPLICATED
             # Handle case where no items exist and update_metadata is disabled
-            if not items and self.env["update_metadata"] == False:
+            if not items and self.env["UPDATE_METADATA"] == False:
                 print(f"UPDATE_METADATA is not enabled. Directly creating the item for {identifier}.")
                 return self.create_item_in_table(table, attr_dict, item_type, index)  # Directly create the item if update_metadata is disabled
             # Handle case where update_metadata is enabled
-            if self.env["update_metadata"]:
+            if self.env["UPDATE_METADATA"]:
                 self.update(table, attr_dict, item_type, identifier,index)
         except Exception as e:
             print(f"Error scanning table for identifier '{identifier}': {str(e)}")
@@ -487,14 +487,14 @@ class GenericMetadata:
         short_id = self.mint_NOID()
         if short_id:
             attr_dict["custom_key"] = os.path.join(
-                self.env["noid_scheme"], self.env["noid_naa"], short_id
+                self.env["NOID_SCHEME"], self.env["NOID_NAA"], short_id
             )
         utc_now = self.utcformat(datetime.now())
         attr_dict["createdAt"] = utc_now  # Set createdAt to the current time
         attr_dict["updatedAt"] = utc_now  # Set updatedAt to the current time
         success = False
         try:
-            if self.env["dry_run"]:
+            if self.env["DRY_RUN"]:
                 print(f"PutItem SIMULATED: {attr_dict['identifier']}")
                 self.log_result(
                     attr_dict,
@@ -518,12 +518,12 @@ class GenericMetadata:
         if short_id:
             if success:
                 long_url = os.path.join(
-                    self.env["long_url_path"], item_type.lower(), short_id
+                    self.env["LONG_URL_PATH"], item_type.lower(), short_id
                 )
                 short_url = os.path.join(
-                    self.env["short_url_path"],
-                    self.env["noid_scheme"],
-                    self.env["noid_naa"],
+                    self.env["SHORT_URL_PATH"],
+                    self.env["NOID_SCHEME"],
+                    self.env["NOID_NAA"],
                     short_id,
                 )
                 self.create_NOID_record(short_id, attr_dict, long_url, short_url, utc_now)
@@ -575,9 +575,9 @@ class GenericMetadata:
 
     def set_attributes_from_env(self, attr_dict, item_type):
         if item_type == "Collection":
-            attr_dict["collection_category"] = self.env["collection_category"]
+            attr_dict["collection_category"] = self.env["COLLECTION_CATEGORY"]
         elif item_type == "Archive":
-            attr_dict["item_category"] = self.env["collection_category"]
+            attr_dict["item_category"] = self.env["COLLECTION_CATEGORY"]
         if "visibility" not in attr_dict.keys():
         
             attr_dict["visibility"] = True
@@ -609,29 +609,30 @@ class GenericMetadata:
                 attr_dict["parent_collection_identifier"] = [value]
         elif attr == "thumbnail_path":
             attr_dict[lower_attr] = os.path.join(
-                self.env["app_img_root_path"],
-                self.env["collection_category"],
+                self.env["APP_IMG_ROOT_PATH"],
+                self.env["COLLECTION_CATEGORY"],
                 value,
                 "representative.jpg",
             )
         elif attr == "filename":
             if value.endswith(".pdf") or value.endswith(".jpg"):
                 attr_dict["thumbnail_path"] = os.path.join(
-                    self.env["app_img_root_path"],
-                    self.env["collection_category"],
+                    self.env["APP_IMG_ROOT_PATH"],
+                    self.env["COLLECTION_CATEGORY"],
                     "thumbnail",
                     value.replace(".pdf", ".jpg"),
                 )
                 attr_dict["manifest_url"] = os.path.join(
-                    self.env["app_img_root_path"],
-                    self.env["collection_category"],
+                    self.env["APP_IMG_ROOT_PATH"],
+                    self.env["COLLECTION_CATEGORY"],
                     "pdf",
                     value,
                 )
             elif "video.vt.edu/media" in value:
                 thumbnail = value.split("_")[1]
                 attr_dict["thumbnail_path"] = os.path.join(
-                    self.env["collection_category"],
+                    self.env["APP_IMG_ROOT_PATH"],
+                    self.env["COLLECTION_CATEGORY"],
                     "thumbnail",
                     thumbnail,
                     ".png",
@@ -701,7 +702,7 @@ class GenericMetadata:
             collection = self.query_by_index(
                 self.env["collection_table"],
                 "Identifier",
-                self.env["collection_identifier"],
+                self.env["COLLECTION_IDENTIFIER"],
             )
         return collection
 
@@ -840,7 +841,7 @@ class GenericMetadata:
                     },
                 )
         else:
-            if self.env["dry_run"]:
+            if self.env["DRY_RUN"]:
                 print("Collection map creation SIMULATED.")
             else:
                 print(
@@ -859,7 +860,7 @@ class GenericMetadata:
 
 
     def create_NOID_record(self, noid, item, long_url, short_url, now):
-        if self.env["dry_run"]:
+        if self.env["DRY_RUN"]:
             print("create_NOID_record: New NOID SIMULATED.")
             return "12345678"
         category = None
@@ -886,7 +887,7 @@ class GenericMetadata:
         
 
     def delete_NOID_record(self, noid):
-        if self.env["dry_run"]:
+        if self.env["DRY_RUN"]:
             print("delete_NOID: SIMULATED.")
         else:
             self.env["mint_table"].delete_item(Key={"noid": noid})

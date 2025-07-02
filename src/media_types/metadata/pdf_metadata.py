@@ -46,7 +46,7 @@ class PDFMetadata(GenericMetadata):
                 collection_identifier = (
                     collection["identifier"]
                     if collection
-                    else self.env["collection_identifier"]
+                    else self.env["COLLECTION_IDENTIFIER"]
                 )
                 if collection_identifier is None:
                     print(f"Error: Collection not found for Archive {idx+1}.")
@@ -87,7 +87,7 @@ class PDFMetadata(GenericMetadata):
         asset_url = ""
         try:
             prefix = os.path.join(
-                self.env["collection_category"],
+                self.env["COLLECTION_CATEGORY"],
                 collection_identifier,
                 archive_dict["identifier"],
             )
@@ -96,13 +96,13 @@ class PDFMetadata(GenericMetadata):
             print(e)
             return ""
         asset_url = ""
-        for key in get_matching_s3_keys(self.env["aws_dest_bucket"], prefix, suffix):
-            asset_url = os.path.join(self.env["app_img_root_path"], key)
+        for key in get_matching_s3_keys(self.env["AWS_DEST_BUCKET"], prefix, suffix):
+            asset_url = os.path.join(self.env["APP_IMG_ROOT_PATH"], key)
         return asset_url
 
     def key_by_asset_path(self, asset_path):
         matching_key = None
-        for key in get_matching_s3_keys(self.env["aws_dest_bucket"], asset_path):
+        for key in get_matching_s3_keys(self.env["AWS_DEST_BUCKET"], asset_path):
             matching_key = key
             print(f"Key: {key}")
             print(f"Match")
@@ -110,7 +110,7 @@ class PDFMetadata(GenericMetadata):
             # try ignoring the filename case
             asset_path_no_filename = asset_path.replace(asset_path.split("/")[-1], "")
             for key in get_matching_s3_keys(
-                self.env["aws_dest_bucket"], asset_path_no_filename
+                self.env["AWS_DEST_BUCKET"], asset_path_no_filename
             ):
                 if key.lower() == asset_path.lower():
                     matching_key = key
@@ -123,5 +123,5 @@ class PDFMetadata(GenericMetadata):
 
     def set_archive_option_additions(self, archive_dict):
         archive_option_additions = {}
-        archive_option_additions["media_type"] = self.env["media_type"]
+        archive_option_additions["media_type"] = self.env["MEDIA_TYPE"]
         return {"assets": archive_option_additions}

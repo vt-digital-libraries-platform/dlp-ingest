@@ -45,7 +45,7 @@ class ThreeDMetadata(GenericMetadata):
                 collection_identifier = (
                     collection["identifier"]
                     if collection
-                    else self.env["collection_identifier"]
+                    else self.env["COLLECTION_IDENTIFIER"]
                 )
                 if collection_identifier is None:
                     print(f"Error: Collection not found for Archive {idx+1}. in env.")
@@ -61,8 +61,8 @@ class ThreeDMetadata(GenericMetadata):
                     archive_dict["parent_collection"] = [collection["id"]]
                     archive_dict["heirarchy_path"] = collection["heirarchy_path"]
                     archive_dict["manifest_url"] = os.path.join(
-                        self.env["app_img_root_path"],
-                        self.env["collection_category"],
+                        self.env["APP_IMG_ROOT_PATH"],
+                        self.env["COLLECTION_CATEGORY"],
                         collection_identifier,
                         archive_dict["identifier"],
                         "manifest.json",
@@ -129,13 +129,13 @@ class ThreeDMetadata(GenericMetadata):
 
     def key_by_asset_path(self, asset_path):
         matching_key = None
-        for key in get_matching_s3_keys(self.env["aws_dest_bucket"], asset_path):
+        for key in get_matching_s3_keys(self.env["AWS_DEST_BUCKET"], asset_path):
             matching_key = key
         if matching_key is None:
             # try ignoring the filename case
             asset_path_no_filename = asset_path.replace(asset_path.split("/")[-1], "")
             for key in get_matching_s3_keys(
-                self.env["aws_dest_bucket"], asset_path_no_filename
+                self.env["AWS_DEST_BUCKET"], asset_path_no_filename
             ):
                 if key.lower() == asset_path.lower():
                     matching_key = key
@@ -144,8 +144,8 @@ class ThreeDMetadata(GenericMetadata):
     def set_archive_option_additions(self, archive_dict):
         archive_option_additions = {}
         collection_path = os.path.join(
-            self.env["collection_category"],
-            self.env["collection_identifier"],
+            self.env["COLLECTION_CATEGORY"],
+            self.env["COLLECTION_IDENTIFIER"],
         )
         archive_asset_path = os.path.join(collection_path, archive_dict["identifier"])
         archive_3d_asset_path = os.path.join(archive_asset_path, "3d")
@@ -165,11 +165,11 @@ class ThreeDMetadata(GenericMetadata):
                             "<item_identifier>", archive_dict["identifier"]
                         ),
                     )
-                    asset_path = asset_path.replace(self.env["app_img_root_path"], "")
+                    asset_path = asset_path.replace(self.env["APP_IMG_ROOT_PATH"], "")
                     key = self.key_by_asset_path(asset_path)
                     if key:
                         asset_full_path = os.path.join(
-                            self.env["app_img_root_path"], key
+                            self.env["APP_IMG_ROOT_PATH"], key
                         )
                         asset_list.append(asset_full_path)
 
@@ -181,13 +181,13 @@ class ThreeDMetadata(GenericMetadata):
                         "<item_identifier>", archive_dict["identifier"]
                     ),
                 )
-                asset_path = asset_path.replace(self.env["app_img_root_path"], "")
+                asset_path = asset_path.replace(self.env["APP_IMG_ROOT_PATH"], "")
                 key = self.key_by_asset_path(asset_path)
                 if key:
                     archive_option_additions[asset] = os.path.join(
-                        self.env["app_img_root_path"], key
+                        self.env["APP_IMG_ROOT_PATH"], key
                     )
-        archive_option_additions["media_type"] = self.env["media_type"]
+        archive_option_additions["media_type"] = self.env["MEDIA_TYPE"]
         return {"assets": archive_option_additions}
 
     def create_or_update(self, table, attr_dict, item_type, idx, existing_item=None):
@@ -229,7 +229,7 @@ class ThreeDMetadata(GenericMetadata):
 
     def update_item_in_table(self, table, attr_dict, existing_item, idx):
         update_expression, update_values, used_keys = self.get_update_params(attr_dict, existing_item)
-        if self.env["dry_run"]:
+        if self.env["DRY_RUN"]:
             print(f"Update item simulated for {existing_item['id']}")
             print(f"Update Values: {update_values}")
         else:
