@@ -336,23 +336,23 @@ class GenericMetadata:
         #create or update the items in the table based on update_metadata flag
         # If update_metadata is enabled, update the item that exists, otherwise create a new item if it doesn't exist
         identifier = attr_dict["identifier"] 
-        try:
-            # Query the table for existing items with the given identifier
-            items = self.query_by_index(table, "Identifier", identifier)
-            # Handle case where items already exist and update_metadata is disabled
-            if items and len(items) >= 1 and self.env["UPDATE_METADATA"] == False:
-                print(f"Error: Identifier ({identifier}) already exists in {table}. Please update the metadata flag")
-                self.log_result(attr_dict,index,2,True)
-                return DUPLICATED
-            # Handle case where no items exist and update_metadata is disabled
-            if not items and self.env["UPDATE_METADATA"] == False:
-                print(f"UPDATE_METADATA is not enabled. Directly creating the item for {identifier}.")
-                return self.create_item_in_table(table, attr_dict, item_type, index)  # Directly create the item if update_metadata is disabled
-            # Handle case where update_metadata is enabled
-            if self.env["UPDATE_METADATA"]:
-                self.update(table, attr_dict, item_type, identifier,index)
-        except Exception as e:
-            print(f"Error scanning table for identifier '{identifier}': {str(e)}")
+        # try:
+        # Query the table for existing items with the given identifier
+        items = self.query_by_index(table, "Identifier", identifier)
+        # Handle case where items already exist and update_metadata is disabled
+        if items and len(items) >= 1 and self.env["UPDATE_METADATA"] == False:
+            print(f"Error: Identifier ({identifier}) already exists in {table}. Please update the metadata flag")
+            self.log_result(attr_dict,index,2,True)
+            return DUPLICATED
+        # Handle case where no items exist and update_metadata is disabled
+        if not items and self.env["UPDATE_METADATA"] == False:
+            print(f"UPDATE_METADATA is not enabled. Directly creating the item for {identifier}.")
+            return self.create_item_in_table(table, attr_dict, item_type, index)  # Directly create the item if update_metadata is disabled
+        # Handle case where update_metadata is enabled
+        if self.env["UPDATE_METADATA"]:
+            self.update(table, attr_dict, item_type, identifier,index)
+        # except Exception as e:
+        #     print(f"Error scanning table for identifier '{identifier}': {str(e)}")
 
 
     def update(self, table, attr_dict, item_type, identifier, index):
