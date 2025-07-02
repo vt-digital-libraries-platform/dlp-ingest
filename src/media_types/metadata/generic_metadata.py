@@ -296,7 +296,7 @@ class GenericMetadata:
 
     def print_results(self):
         df = pd.DataFrame(self.results)
-        results_filename = f"{self.env["COLLECTION_IDENTIFIER"]}_ingest_results_{datetime.now().strftime('%Y%m%d%H%M%S')}.csv"
+        results_filename = f"{self.env['COLLECTION_IDENTIFIER']}_ingest_results_{datetime.now().strftime('%Y%m%d%H%M%S')}.csv"
         working_dir = os.path.abspath(os.path.dirname(__file__))
         results_path = os.path.join(working_dir, "results_files")
         if not os.path.exists(results_path):
