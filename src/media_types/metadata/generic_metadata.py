@@ -487,7 +487,7 @@ class GenericMetadata:
         short_id = self.mint_NOID()
         if short_id:
             attr_dict["custom_key"] = os.path.join(
-                self.env["NOID_SCHEME"], self.env["NOID_NAA"], short_id
+                self.env["NOID_SCHEME"], str(self.env["NOID_NAA"]), short_id
             )
         utc_now = self.utcformat(datetime.now())
         attr_dict["createdAt"] = utc_now  # Set createdAt to the current time
