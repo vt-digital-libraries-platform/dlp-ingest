@@ -77,12 +77,12 @@ def new_media_type_handler(env, filename, bucket):
 def main(event, context, csv_file=None, app_config=None):
     set_environment(app_config)
     filename = None
-    if event and env["is_lambda"]:
+    if event:
         bucket = event["Records"][0]["s3"]["bucket"]["name"]
         filename = urllib.parse.unquote_plus(
             event["Records"][0]["s3"]["object"]["key"], encoding="utf-8"
         )
-    elif csv_file and not env["is_lambda"]:
+    elif csv_file:
         bucket = None
         filename = csv_file
     media_type_handler = new_media_type_handler(env, filename, bucket)
