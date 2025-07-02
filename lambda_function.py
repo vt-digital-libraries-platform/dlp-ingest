@@ -11,15 +11,10 @@ def set_environment(app_config=None):
     env["SCRIPT_ROOT"] = os.path.abspath(os.path.dirname(__file__))
 
     if app_config is not None:
-        print("app config before lambda set_environment")
-        print(app_config.items())
         for key, value in app_config.items():
             print(f"setting {key} to {value}")
             env[key] = value
-        
-        print("env after lambda set_environment")
-        print(env)
-        sys.exit(1)
+        return
     else:
         env["AWS_SRC_BUCKET"] = os.getenv("AWS_SRC_BUCKET")
         env["AWS_DEST_BUCKET"] = os.getenv("AWS_DEST_BUCKET")
@@ -72,8 +67,7 @@ def set_environment(app_config=None):
 
 
 def new_media_type_handler(env, filename, bucket):
-    print("in new type handler")
-    print(env)
+
     media_type = media_types_map[env["MEDIA_TYPE"]]
     return media_type["handler"](env, filename, bucket, media_type["assets"])
 
