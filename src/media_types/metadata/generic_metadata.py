@@ -42,7 +42,7 @@ class GenericMetadata:
         try:
             headers_file = None
             if os.getenv("GUI") is not None and os.getenv("GUI").lower() == "true":
-                headers_file = os.path.join(self.env('APPLICATION_ROOT'),'dlp_ingest','src','data','20240702_headers_keys.json')
+                headers_file = os.path.join(self.env['APPLICATION_ROOT'],'dlp_ingest','src','data','20240702_headers_keys.json')
             else:
                 headers_file = "./src/data/20240702_headers_keys.json"
             
