@@ -8,7 +8,7 @@ else:
 # Environment variables
 env = {}
 def set_environment(app_config=None):
-    env["script_root"] = os.path.abspath(os.path.dirname(__file__))
+    env["SCRIPT_ROOT"] = os.path.abspath(os.path.dirname(__file__))
 
     if app_config is not None:
         for key, value in app_config.items():
@@ -19,50 +19,50 @@ def set_environment(app_config=None):
             else:
                 env[key] = value
     else:
-        env["aws_src_bucket"] = os.getenv("AWS_SRC_BUCKET")
-        env["aws_dest_bucket"] = os.getenv("AWS_DEST_BUCKET")
-        env["collection_category"] = os.getenv("COLLECTION_CATEGORY")
-        env["collection_identifier"] = os.getenv("COLLECTION_IDENTIFIER")
-        env["collection_subdirectory"] = os.getenv("COLLECTION_SUBDIRECTORY")
-        env["item_subdirectory"] = os.getenv("ITEM_SUBDIRECTORY")
-        env["region_name"] = os.getenv("REGION")
-        env["dynamodb_table_suffix"] = os.getenv("DYNAMODB_TABLE_SUFFIX")
-        env["dynamodb_noid_table"] = os.getenv("DYNAMODB_NOID_TABLE")
-        env["dynamodb_file_char_table"] = os.getenv("DYNAMODB_FILE_CHAR_TABLE")
-        env["app_img_root_path"] = os.getenv("APP_IMG_ROOT_PATH")
-        env["noid_scheme"] = os.getenv("NOID_SCHEME")
-        env["noid_naa"] = os.getenv("NOID_NAA")
-        env["long_url_path"] = os.getenv("LONG_URL_PATH")
-        env["short_url_path"] = os.getenv("SHORT_URL_PATH")
-        env["media_type"] = os.getenv("MEDIA_TYPE")
+        env["AWS_SRC_BUCKET"] = os.getenv("AWS_SRC_BUCKET")
+        env["AWS_DEST_BUCKET"] = os.getenv("AWS_DEST_BUCKET")
+        env["COLLECTION_CATEGORY"] = os.getenv("COLLECTION_CATEGORY")
+        env["COLLECTION_IDENTIFIER"] = os.getenv("COLLECTION_IDENTIFIER")
+        env["COLLECTION_SUBDIRECTORY"] = os.getenv("COLLECTION_SUBDIRECTORY")
+        env["ITEM_SUBDIRECTORY"] = os.getenv("ITEM_SUBDIRECTORY")
+        env["REGION_NAME"] = os.getenv("REGION")
+        env["DYNAMODB_TABLE_SUFFIX"] = os.getenv("DYNAMODB_TABLE_SUFFIX")
+        env["DYNAMODB_NOID_TABLE"] = os.getenv("DYNAMODB_NOID_TABLE")
+        env["DYNAMODB_FILE_CHAR_TABLE"] = os.getenv("DYNAMODB_FILE_CHAR_TABLE")
+        env["APP_IMG_ROOT_PATH"] = os.getenv("APP_IMG_ROOT_PATH")
+        env["NOID_SCHEME"] = os.getenv("NOID_SCHEME")
+        env["NOID_NAA"] = os.getenv("NOID_NAA")
+        env["LONG_URL_PATH"] = os.getenv("LONG_URL_PATH")
+        env["SHORT_URL_PATH"] = os.getenv("SHORT_URL_PATH")
+        env["MEDIA_TYPE"] = os.getenv("MEDIA_TYPE")
 
         # Booleans
-        env["dry_run"] = (
+        env["DRY_RUN"] = (
             os.getenv("DRY_RUN") is not None and os.getenv("DRY_RUN").lower() == "true"
         )
-        if env["dry_run"]:
+        if env["DRY_RUN"]:
             print("")
             print("DRY RUN ENABLED. NO RECORDS WILL BE WRITTEN TO DYNAMODB.")
             print("=========================================================")
-        env["media_ingest"] = (
+        env["MEDIA_INGEST"] = (
             os.getenv("MEDIA_INGEST") is not None
             and os.getenv("MEDIA_INGEST").lower() == "true"
         )
-        env["metadata_ingest"] = (
+        env["METADATA_INGEST"] = (
             os.getenv("METADATA_INGEST") is not None
             and os.getenv("METADATA_INGEST").lower() == "true"
         )
-        env["generate_thumbnails"] = (
+        env["GENERATE_THUMBNAILS"] = (
             os.getenv("GENERATE_THUMBNAILS") is not None
             and os.getenv("GENERATE_THUMBNAILS").lower() == "true"
         )
-        env["is_lambda"] = (
+        env["IS_LAMBDA"] = (
             os.getenv("IS_LAMBDA") is not None and os.getenv("IS_LAMBDA").lower() == "true"
         )
-        env["verbose"] = (
+        env["VERBOSE"] = (
             os.getenv("VERBOSE") is not None and os.getenv("VERBOSE").lower() == "true"
         )
-        env["update_metadata"] = (
+        env["UPDATE_METADATA"] = (
             os.getenv("UPDATE_METADATA") is not None and os.getenv("UPDATE_METADATA").lower() == "true"
         )
 
@@ -72,7 +72,7 @@ def set_environment(app_config=None):
 def new_media_type_handler(env, filename, bucket):
     print("in new type handler")
     print(env)
-    media_type = media_types_map[env["media_type"]]
+    media_type = media_types_map[env["MEDIA_TYPE"]]
     return media_type["handler"](env, filename, bucket, media_type["assets"])
 
 

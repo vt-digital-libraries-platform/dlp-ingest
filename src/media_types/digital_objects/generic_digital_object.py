@@ -33,10 +33,10 @@ class GenericDigitalObject:
         failed_copies = []
 
         source_dir = os.path.join(
-            self.env["collection_category"], self.env["collection_identifier"]
+            self.env["COLLECTION_CATEGORY"], self.env["COLLECTION_IDENTIFIER"]
         )
-        print("category: " + self.env["collection_category"])
-        print("collection identifier: " + self.env["collection_identifier"])
+        print("category: " + self.env["COLLECTION_CATEGORY"])
+        print("collection identifier: " + self.env["COLLECTION_IDENTIFIER"])
         print("source_dir: " + source_dir)
         print()
 
@@ -150,7 +150,7 @@ class GenericDigitalObject:
                 success = False
                 print("\n----")
                 print("asset: " + asset + " = " + str(self.assets["item"][asset]))
-                if asset == "thumbnail" and self.env["generate_thumbnails"]:
+                if asset == "thumbnail" and self.env["GENERATE_THUMBNAILS"]:
                     print("Thumbnail generation is set. Skipping copy.")
                     continue
                 formatted_asset = None
@@ -260,7 +260,7 @@ class GenericDigitalObject:
                     try:
                         if (
                             success
-                            and self.env["generate_thumbnails"]
+                            and self.env["GENERATE_THUMBNAILS"]
                             and key.endswith(self.assets["options"]["asset_src"])
                         ):
                             target_key = os.path.join(dest_dir, os.path.basename(key))
@@ -269,9 +269,9 @@ class GenericDigitalObject:
                                 "_thumbnail.jpg",
                             )
                             self.call_thumbnail_service(
-                                self.env["aws_src_bucket"],
+                                self.env["AWS_SRC_BUCKET"],
                                 key,
-                                self.env["aws_dest_bucket"],
+                                self.env["AWS_DEST_BUCKET"],
                                 thumbnail_key,
                             )
                     except Exception as e:
@@ -303,7 +303,7 @@ class GenericDigitalObject:
         failed_msg = f"Failed to copy {num_failed} files.\n"
         print(failed_msg)
         now = datetime.datetime.now()
-        output_path = os.path.join(self.env["script_root"], "results_files")
+        output_path = os.path.join(self.env["SCRIPT_ROOT"], "results_files")
         pathlib.Path(output_path).mkdir(parents=True, exist_ok=True)
         out_filename = os.path.join(
             output_path, str(now).replace(" ", "_") + "_ingest_results.txt"
@@ -338,13 +338,13 @@ class GenericDigitalObject:
         return self.s3_copy(source_bucket, key, dest_bucket, dest_key)
 
     def s3_copy(self, source_bucket, source_key, dest_bucket, dest_key):
-        if self.env["verbose"]:
+        if self.env["VERBOSE"]:
             print("Copying:")
             print(f"{source_bucket.name}:{source_key}")
             print("to:")
             print(f"{dest_bucket.name}:{dest_key}")
         if not dest_key.endswith("/"):
-            if self.env["dry_run"]:
+            if self.env["DRY_RUN"]:
                 print(f"DRYRUN: s3 copy: simulated")
                 return True
             else:
@@ -366,21 +366,21 @@ class GenericDigitalObject:
 
     def get_buckets(self):
         return self.s3_resource.Bucket(
-            self.env["aws_src_bucket"]
-        ), self.s3_resource.Bucket(self.env["aws_dest_bucket"])
+            self.env["AWS_SRC_BUCKET"]
+        ), self.s3_resource.Bucket(self.env["AWS_DEST_BUCKET"])
 
     def get_bucket_paths(self, row):
         src_dir = os.path.join(
-            self.env["collection_category"],
-            self.env["collection_identifier"],
-            self.env["collection_subdirectory"],
+            self.env["COLLECTION_CATEGORY"],
+            self.env["COLLECTION_IDENTIFIER"],
+            self.env["COLLECTION_SUBDIRECTORY"],
             row["identifier"],
         )
         dest_dir = os.path.join(
-            self.env["collection_category"],
-            self.env["collection_identifier"],
+            self.env["COLLECTION_CATEGORY"],
+            self.env["COLLECTION_IDENTIFIER"],
             row["identifier"],
-            self.env["item_subdirectory"],
+            self.env["ITEM_SUBDIRECTORY"],
         )
         return src_dir, dest_dir
 
