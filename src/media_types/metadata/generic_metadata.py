@@ -19,7 +19,7 @@ class GenericMetadata:
         self.results = []
 
         try:
-            self.dyndb = boto3.resource("dynamodb", region_name=self.env["REGION_NAME"])
+            self.dyndb = boto3.resource("dynamodb", region_name=self.env["REGION"])
             self.env["archive_table"] = self.dyndb.Table(self.get_table_name("Archive"))
             self.env["collection_table"] = self.dyndb.Table(
                 self.get_table_name("Collection")
