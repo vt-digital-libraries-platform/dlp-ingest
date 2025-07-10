@@ -1,7 +1,7 @@
 import os
 
 if os.getenv("GUI") is not None and os.getenv("GUI").lower() == "true":
-    from dlp_ingest.src.fixity.checksum_handler import checksum_handler
+    from src.dlp_ingest.src.fixity.checksum_handler import checksum_handler
 else:
     from src.fixity.checksum_handler import checksum_handler
 

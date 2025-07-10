@@ -1,8 +1,8 @@
 import os
 if os.getenv("GUI") is not None and os.getenv("GUI").lower() == "true":
-    from dlp_ingest.src.media_types.generic_type import GenericType
-    from dlp_ingest.src.media_types.digital_objects.pdf_digital_object import PDFDigitalObject
-    from dlp_ingest.src.media_types.metadata.pdf_metadata import PDFMetadata
+    from src.dlp_ingest.src.media_types.generic_type import GenericType
+    from src.dlp_ingest.src.media_types.digital_objects.pdf_digital_object import PDFDigitalObject
+    from src.dlp_ingest.src.media_types.metadata.pdf_metadata import PDFMetadata
 else:
     from src.media_types.generic_type import GenericType
     from src.media_types.digital_objects.pdf_digital_object import PDFDigitalObject

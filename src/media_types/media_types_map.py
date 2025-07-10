@@ -1,8 +1,8 @@
 import os
 if os.getenv("GUI") is not None and os.getenv("GUI").lower() == "true":
-    from dlp_ingest.src.media_types.iiif_type import IIIFType
-    from dlp_ingest.src.media_types.three_d_type import ThreeDType
-    from dlp_ingest.src.media_types.pdf_type import PDFType
+    from src.dlp_ingest.src.media_types.iiif_type import IIIFType
+    from src.dlp_ingest.src.media_types.three_d_type import ThreeDType
+    from src.dlp_ingest.src.media_types.pdf_type import PDFType
 else:
     from src.media_types.iiif_type import IIIFType
     from src.media_types.three_d_type import ThreeDType

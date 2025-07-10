@@ -1,6 +1,6 @@
 import os
 if os.getenv("GUI") is not None and os.getenv("GUI").lower() == "true":
-    from dlp_ingest.src.fixity.lambda_function import lambda_handler
+    from src.dlp_ingest.src.fixity.lambda_function import lambda_handler
 else:
     from src.fixity.lambda_function import lambda_handler
 
