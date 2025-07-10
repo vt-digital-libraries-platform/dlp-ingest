@@ -1,7 +1,7 @@
 import os, sys, urllib.parse
 
 if os.getenv("GUI") is not None and os.getenv("GUI").lower() == "true":
-    from dlp_ingest.src.media_types.media_types_map import media_types_map
+    from src.dlp_ingest.src.media_types.media_types_map import media_types_map
 else:
     from src.media_types.media_types_map import media_types_map
 
