@@ -617,6 +617,11 @@ class GenericMetadata:
             attr_dict[lower_attr] = extracted_value
 
     def print_index_date(self, attr_dict, value, attr):
+        # If the value is a 4-digit year, store as-is (year only)
+        if re.fullmatch(r"\d{4}", value):
+            attr_dict[attr] = value
+            print(f"Year-only detected, attr_dict[{attr}]: {attr_dict[attr]}")
+            return
         try:
             parsed_date = parse(value)
             # dates in Elasticsearch are formatted, e.g. "2015/01/01" or
@@ -626,8 +631,8 @@ class GenericMetadata:
             print(f"Error - Unknown date format: {value} for {attr}")
         except OverflowError:
             print(f"Error - Invalid date range: {value} for {attr}")
-        except BaseException:
-            print(f"Error - Unexpected error: {value} for {attr}")
+        except BaseException as e:
+            print(f"Error - Unexpected error: {value} for {attr}, Exception: {e}")
 
     def query_by_index(self, table, index_name, value):
         index_key = index_name.lower()

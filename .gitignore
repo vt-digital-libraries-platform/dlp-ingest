@@ -148,6 +148,9 @@ wheels/
 pip-log.txt
 pip-delete-this-directory.txt
 
+# Custom ingest test script
+run_vtdlp-ingest_testss.sh
+
 # Unit test / coverage reports
 htmlcov/
 .tox/
