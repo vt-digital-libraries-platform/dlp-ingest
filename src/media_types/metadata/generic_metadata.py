@@ -113,12 +113,13 @@ class GenericMetadata:
                 )
                 break
             identifier = collection_dict["identifier"]
-            collection_dict["thumbnail_path"] = os.path.join(
-                self.env["app_img_root_path"],
-                self.env["collection_category"],
-                identifier,
-                "representative.jpg",
-            )
+            if "thumbnail_path" not in collection_dict or not collection_dict["thumbnail_path"]:
+                collection_dict["thumbnail_path"] = os.path.join(
+                    self.env["app_img_root_path"],
+                    self.env["collection_category"],
+                    identifier,
+                    "representative.jpg",
+                )
             self.create(
                 self.env["collection_table"], collection_dict, "Collection", idx
             )
@@ -548,11 +549,28 @@ class GenericMetadata:
         for item in data_row.items():
             # Always set the attribute, even if value is empty
             self.set_attribute(attr_dict, item[0].strip(), str(item[1]).strip().strip("\"").strip())
+        # Set embargo flag only after all attributes are processed, based on embargo dates only
+        embargo_start = attr_dict.get("embargo_start_date")
+        embargo_end = attr_dict.get("embargo_end_date")
+        if (embargo_start and str(embargo_start).strip()) or (embargo_end and str(embargo_end).strip()):
+            embargo = True
+        else:
+            embargo = False
         if ("identifier" not in attr_dict.keys()) or ("title" not in attr_dict.keys()):
             attr_dict = None
             print(f"Missing required attribute in this row!")
         else:
             self.set_attributes_from_env(attr_dict, item_type)
+            # Visibility logic: show item only if visibility is True and embargo is False
+            visibility = attr_dict.get("visibility", True)
+            embargo = attr_dict["embargo"]  # Only set here, not from attribute dictionary
+            if visibility and not embargo:
+                attr_dict["visibility"] = True
+            else:
+                attr_dict["visibility"] = False
+            # Remove embargo key so it is not stored in the table
+            #if "embargo" in attr_dict:
+            #    del attr_dict["embargo"]
         return attr_dict
 
     def set_attributes_from_env(self, attr_dict, item_type):
@@ -565,11 +583,18 @@ class GenericMetadata:
 
     def set_attribute(self, attr_dict, attr, value):
         lower_attr = attr.lower().replace(" ", "_")
+    # Map 'Note' to 'embargo_note'
+        if lower_attr == "note":
+            lower_attr = "embargo_note"
         if attr == "visibility" or attr == "explicit_content" or attr == "explicit":
-            if str(value).lower() == "true":
+            if str(value).strip() == "":
+                attr_dict[lower_attr] = True
+            elif str(value).lower() == "true":
                 attr_dict[lower_attr] = True
             else:
                 attr_dict[lower_attr] = False
+        elif attr == "embargo_start_date" or attr == "embargo_end_date":
+            self.print_index_date(attr_dict, value, lower_attr)
         elif attr == "start_date" or attr == "end_date":
             self.print_index_date(attr_dict, value, lower_attr)
         elif attr == "parent_collection_identifier":

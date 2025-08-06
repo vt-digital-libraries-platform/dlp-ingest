@@ -9,6 +9,7 @@
     "title",
     "embargo_start_date",
     "embargo_end_date",
+    "embargo",
     "__typename" 
   ],
   "multi_value_headers": [
@@ -25,7 +26,7 @@
     "description",
     "display_date",
     "download_link",
-    "note",
+    "embargo_note",
     "extent",
     "format",
     "format_physical",
