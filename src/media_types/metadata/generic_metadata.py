@@ -558,7 +558,7 @@ class GenericMetadata:
                 start_dt = parse(str(embargo_start))
                 end_dt = parse(str(embargo_end))
                 if start_dt > end_dt:
-                    print(f"Error: Embargo start date ({embargo_start}) is after embargo end date ({embargo_end}) for identifier {attr_dict.get('identifier', 'N/A')}")
+                    print(f"\033[91m⚠️  Error: Embargo start date ({embargo_start}) is after embargo end date ({embargo_end}) for identifier {attr_dict.get('identifier', 'N/A')}\033[0m")
             except Exception as e:
                 print(f"Error parsing embargo dates for identifier {attr_dict.get('identifier', 'N/A')}: {e}")
 
@@ -577,6 +577,7 @@ class GenericMetadata:
                 attr_dict["visibility"] = True
             else:
                 attr_dict["visibility"] = False
+                quit()
         return attr_dict
 
     def set_attributes_from_env(self, attr_dict, item_type):
