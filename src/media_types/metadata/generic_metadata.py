@@ -563,14 +563,10 @@ class GenericMetadata:
             self.set_attributes_from_env(attr_dict, item_type)
             # Visibility logic: show item only if visibility is True and embargo is False
             visibility = attr_dict.get("visibility", True)
-            embargo = attr_dict["embargo"]  # Only set here, not from attribute dictionary
             if visibility and not embargo:
                 attr_dict["visibility"] = True
             else:
                 attr_dict["visibility"] = False
-            # Remove embargo key so it is not stored in the table
-            #if "embargo" in attr_dict:
-            #    del attr_dict["embargo"]
         return attr_dict
 
     def set_attributes_from_env(self, attr_dict, item_type):
