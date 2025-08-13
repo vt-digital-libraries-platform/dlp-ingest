@@ -577,7 +577,6 @@ class GenericMetadata:
                 attr_dict["visibility"] = True
             else:
                 attr_dict["visibility"] = False
-                quit()
         return attr_dict
 
     def set_attributes_from_env(self, attr_dict, item_type):
