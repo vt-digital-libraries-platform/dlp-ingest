@@ -551,6 +551,17 @@ class GenericMetadata:
         # Set embargo flag only after all attributes are processed, based on embargo dates only
         embargo_start = attr_dict.get("embargo_start_date")
         embargo_end = attr_dict.get("embargo_end_date")
+
+        # Add embargo date error checking if start date is after end date:
+        if embargo_start and embargo_end:
+            try:
+                start_dt = parse(str(embargo_start))
+                end_dt = parse(str(embargo_end))
+                if start_dt > end_dt:
+                    print(f"Error: Embargo start date ({embargo_start}) is after embargo end date ({embargo_end}) for identifier {attr_dict.get('identifier', 'N/A')}")
+            except Exception as e:
+                print(f"Error parsing embargo dates for identifier {attr_dict.get('identifier', 'N/A')}: {e}")
+
         if (embargo_start and str(embargo_start).strip()) or (embargo_end and str(embargo_end).strip()):
             embargo = True
         else:
