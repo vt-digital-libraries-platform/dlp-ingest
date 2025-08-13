@@ -9,7 +9,6 @@
     "title",
     "embargo_start_date",
     "embargo_end_date",
-    "embargo",
     "__typename" 
   ],
   "multi_value_headers": [
