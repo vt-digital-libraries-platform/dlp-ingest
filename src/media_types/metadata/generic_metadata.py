@@ -575,6 +575,7 @@ class GenericMetadata:
         elif item_type == "Archive":
             attr_dict["item_category"] = self.env["collection_category"]
         if "visibility" not in attr_dict.keys():
+        
             attr_dict["visibility"] = True
 
     def set_attribute(self, attr_dict, attr, value):
@@ -638,7 +639,12 @@ class GenericMetadata:
             attr_dict[lower_attr] = extracted_value
 
     def print_index_date(self, attr_dict, value, attr):
-        # If the value is a 4-digit year, store as-is (year only)
+        # If the value is None, 'None', or an empty string, set the attribute to an empty string.
+        # This is to ensure that the attribute is removed from the table if it is not set.
+        if value is None or str(value).strip().lower() == "none" or not str(value).strip():
+            attr_dict[attr] = ""
+            return
+        # Check if the value is a year-only format (e.g., "2023")
         if re.fullmatch(r"\d{4}", value):
             attr_dict[attr] = value
             print(f"Year-only detected, attr_dict[{attr}]: {attr_dict[attr]}")
