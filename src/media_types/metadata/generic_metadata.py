@@ -465,7 +465,6 @@ class GenericMetadata:
                 ExpressionAttributeValues=expression_attribute_values # Placeholder mappings for attribute values
             )
 
-            print(f"Identifier ({identifier}) with ID ({item_id}) has been updated in {table}.")
             self.log_result(
                 attr_dict,
                 index,
