@@ -62,4 +62,22 @@ media_types_map = {
         "extensions": ["x3d"],
         "handler": ThreeDType,
     },
+    "3d": {
+        "assets": {
+            "collection": {
+                "thumbnail": "representative.jpg",
+                "metadata": [
+                    "<variable>_collection_metadata.csv",
+                    "<variable>_archive_metadata.csv",
+                ],
+            },
+            "item": {
+                "3d_obj": "3D/GLB/<item_identifier>.glb",
+                "3d_env": "3D/GLB/<item_identifier>_env.glb",
+                "thumbnail": "<item_identifier>_thumbnail.png",
+            },
+        },
+        "extensions": ["glb, gltf"],
+        "handler": ThreeDType,
+    }
 }
