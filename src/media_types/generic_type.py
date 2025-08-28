@@ -13,9 +13,10 @@ class GenericType:
         bucket,
         media_handler,
         metadata_handler,
-        assets
+        type_config
     ):
-        self.assets = assets
+        self.type_config = type_config
+        self.assets = type_config["assets"]
         self.env = env
         self.filename = filename
         self.bucket = bucket

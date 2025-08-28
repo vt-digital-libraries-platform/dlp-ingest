@@ -10,11 +10,12 @@ else:
 
 
 class IIIFType(GenericType):
-    def __init__(self, env, filename, bucket, assets):
+    def __init__(self, env, filename, bucket, type_config):
         self.env = env
         self.filename = filename
         self.bucket = bucket
-        self.assets = assets
-        self.media = IIIFDigitalObject(env, filename, bucket, assets)
-        self.metadata = IIIFMetadata(env, filename, bucket, assets)
-        super().__init__(env, filename, bucket, self.media, self.metadata, assets)
+        self.type_config = type_config
+        self.assets = type_config["assets"]
+        self.media = IIIFDigitalObject(env, filename, bucket, type_config)
+        self.metadata = IIIFMetadata(env, filename, bucket, type_config)
+        super().__init__(env, filename, bucket, self.media, self.metadata, type_config)

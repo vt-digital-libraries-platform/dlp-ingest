@@ -10,8 +10,9 @@ else:
 
 
 class GenericDigitalObject:
-    def __init__(self, env, filename, bucket, assets, s3_client, s3_resource):
-        self.assets = assets
+    def __init__(self, env, filename, bucket, type_config, s3_client, s3_resource):
+        self.type_config = type_config
+        self.assets = type_config["assets"]
         self.env = env
         self.filename = filename
         self.bucket = bucket
@@ -21,7 +22,7 @@ class GenericDigitalObject:
 
     def import_digital_objects(self):
         metadataHandler = GenericMetadata(
-            self.env, self.filename, self.bucket, self.assets
+            self.env, self.filename, self.bucket, self.type_config
         )
         metadata = self.local_metadata()
         source_bucket, dest_bucket = self.get_buckets()
@@ -35,75 +36,25 @@ class GenericDigitalObject:
         source_dir = os.path.join(
             self.env["COLLECTION_CATEGORY"], self.env["COLLECTION_IDENTIFIER"]
         )
-        print("category: " + self.env["COLLECTION_CATEGORY"])
-        print("collection identifier: " + self.env["COLLECTION_IDENTIFIER"])
-        print("source_dir: " + source_dir)
-        print()
 
-        print("----------------")
-        print("Collection assets")
-        print("----------------")
         # collection assets
         for asset in self.assets["collection"]:
             formatted_asset = None
-            print("--------")
-            print("asset: " + asset + " = " + str(self.assets["collection"][asset]))
-            # collection: list
-            if type(self.assets["collection"][asset]) is list:
-                for item in self.assets["collection"][asset]:
-                    formatted_asset = item.replace("<variable>", "")
-                    asset_path = os.path.join(source_dir, formatted_asset)
-                    success = False
-                    for key in get_matching_s3_keys(
-                        source_bucket.name, source_dir, formatted_asset
-                    ):
-                        print(f"Collection list: {key}")
-                        print("Exact Match")
-                        success = self.format_and_copy(
-                            source_bucket, source_dir, key, dest_bucket
-                        )
-                    if not success:
-                        print("No match found, trying to ignore filename case")
-                        asset_path_no_filename = asset_path.replace(
-                            asset_path.split("/")[-1], ""
-                        )
-                        matching_key = None
-                        for key in get_matching_s3_keys(
-                            source_bucket.name, asset_path_no_filename
-                        ):
-                            if key.lower() == asset_path.lower():
-                                matching_key = key
-                                print(f"Collection list: {key}")
-                                print(f"Case Insentive Match")
-                                success = self.format_and_copy(
-                                    source_bucket, source_dir, matching_key, dest_bucket
-                                )
-                        if matching_key is None:
-                            print("No match found still? I got nothing.")
-
-                        num_successful, successful_copies, num_failed, failed_copies = (
-                            self.log_copy(
-                                key,
-                                success,
-                                num_successful,
-                                successful_copies,
-                                num_failed,
-                                failed_copies,
-                            )
-                        )
-                        # end collection: list
-            # collection: string
+            if type(self.assets["collection"][asset]) is not list:
+                asset_list = [self.assets["collection"][asset]]
             else:
-                success = False
-                formatted_asset = self.assets["collection"][asset].replace(
-                    "<variable>", ""
-                )
+                asset_list = self.assets["collection"][asset]
+            print(asset_list)
+            print(source_dir)
+            for item in asset_list:
+                formatted_asset = item.replace("<variable>", "")
+                print(formatted_asset)
                 asset_path = os.path.join(source_dir, formatted_asset)
-                # match on the entire key, case sensitive
+                success = False
                 for key in get_matching_s3_keys(
                     source_bucket.name, source_dir, formatted_asset
                 ):
-                    print(f"Collection string: {key}")
+                    print(f"Collection list: {key}")
                     print("Exact Match")
                     success = self.format_and_copy(
                         source_bucket, source_dir, key, dest_bucket
@@ -119,7 +70,7 @@ class GenericDigitalObject:
                     ):
                         if key.lower() == asset_path.lower():
                             matching_key = key
-                            print(f"Collection string: {key}")
+                            print(f"Collection list: {key}")
                             print(f"Case Insentive Match")
                             success = self.format_and_copy(
                                 source_bucket, source_dir, matching_key, dest_bucket
@@ -127,16 +78,17 @@ class GenericDigitalObject:
                     if matching_key is None:
                         print("No match found still? I got nothing.")
 
-                num_successful, successful_copies, num_failed, failed_copies = (
-                    self.log_copy(
-                        key,
-                        success,
-                        num_successful,
-                        successful_copies,
-                        num_failed,
-                        failed_copies,
+                    num_successful, successful_copies, num_failed, failed_copies = (
+                        self.log_copy(
+                            key,
+                            success,
+                            num_successful,
+                            successful_copies,
+                            num_failed,
+                            failed_copies,
+                        )
                     )
-                )
+            
         print("----------------")
         print("Item assets")
         print("----------------")
@@ -153,86 +105,36 @@ class GenericDigitalObject:
                 if asset == "thumbnail" and self.env["GENERATE_THUMBNAILS"]:
                     print("Thumbnail generation is set. Skipping copy.")
                     continue
+
                 formatted_asset = None
-                # item: list
-                if type(self.assets["item"][asset]) is list:
-                    for item in self.assets["item"][asset]:
-                        formatted_asset = item.replace(
-                            "<item_identifier>", row["identifier"]
-                        ).replace("<variable>", "")
-                        for key in get_matching_s3_keys(
-                            source_bucket.name, source_dir, formatted_asset
-                        ):
-                            print(f"Item list: {key}")
-                            print("Exact Match")
-                            success = self.format_and_copy(
-                                source_bucket,
-                                source_dir,
-                                key,
-                                dest_bucket,
-                                dest_dir,
-                            )
-                        if not success:
-                            print("No match found, trying to ignore filename case")
-                            asset_path = os.path.join(source_dir, formatted_asset)
-                            matching_key = None
-                            for key in get_matching_s3_keys(source_bucket, source_dir):
-                                if key.lower() == asset_path.lower():
-                                    matching_key = key
-                                    print(f"Item list: {key}")
-                                    print(f"Case Insentive Match")
-                                    success = self.format_and_copy(
-                                        source_bucket,
-                                        source_dir,
-                                        matching_key,
-                                        dest_bucket,
-                                    )
-                            if matching_key is None:
-                                print("No match found still? I got nothing.")
-
-                        (
-                            num_successful,
-                            successful_copies,
-                            num_failed,
-                            failed_copies,
-                        ) = self.log_copy(
-                            key,
-                            success,
-                            num_successful,
-                            successful_copies,
-                            num_failed,
-                            failed_copies,
-                        )
-                        # end item: list
-                        if success:
-                            print("GREAT SUCCESS")
-                # item: string
+                if type(self.assets["item"][asset]) is not list:
+                    asset_list = [self.assets["item"][asset]]
                 else:
-                    success = False
-                    formatted_asset = (
-                        self.assets["item"][asset]
-                        .replace("<item_identifier>", row["identifier"])
-                        .replace("<variable>", "")
-                    )
-                    print(f"Formatted asset: {formatted_asset}")
-
+                    asset_list = self.assets["item"][asset]
+                for item in asset_list:
+                    formatted_asset = item.replace(
+                        "<item_identifier>", row["identifier"]
+                    ).replace("<variable>", "")
                     for key in get_matching_s3_keys(
                         source_bucket.name, source_dir, formatted_asset
                     ):
+                        print(f"Item list: {key}")
                         print("Exact Match")
                         success = self.format_and_copy(
-                            source_bucket, source_dir, key, dest_bucket, dest_dir
+                            source_bucket,
+                            source_dir,
+                            key,
+                            dest_bucket,
+                            dest_dir,
                         )
-                        print(f"Copy success: {str(success)}")
                     if not success:
                         print("No match found, trying to ignore filename case")
-                        asset_path = os.path.join(source_dir, "")
+                        asset_path = os.path.join(source_dir, formatted_asset)
                         matching_key = None
-                        for key in get_matching_s3_keys(source_bucket.name, source_dir):
-                            if key.lower() == asset_path.lower() and not key.endswith(
-                                "/"
-                            ):
+                        for key in get_matching_s3_keys(source_bucket, source_dir):
+                            if key.lower() == asset_path.lower():
                                 matching_key = key
+                                print(f"Item list: {key}")
                                 print(f"Case Insentive Match")
                                 success = self.format_and_copy(
                                     source_bucket,
@@ -240,7 +142,6 @@ class GenericDigitalObject:
                                     matching_key,
                                     dest_bucket,
                                 )
-                                print(f"Copy success: {str(success)}")
                         if matching_key is None:
                             print("No match found still? I got nothing.")
 
@@ -257,6 +158,10 @@ class GenericDigitalObject:
                         num_failed,
                         failed_copies,
                     )
+                    # end item: list
+                    if success:
+                        print("GREAT SUCCESS")
+                
                     try:
                         if (
                             success

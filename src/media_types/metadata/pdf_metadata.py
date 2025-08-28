@@ -9,13 +9,14 @@ else:
 
 
 class PDFMetadata(GenericMetadata):
-    def __init__(self, env, filename, bucket, assets):
-        self.assets = assets
+    def __init__(self, env, filename, bucket, type_config):
+        self.type_config = type_config
+        self.assets = type_config["assets"]
         self.env = env
         self.filename = filename
         self.bucket = bucket
         self.archive_option_additions = {}
-        super().__init__(self.env, self.filename, self.bucket, self.assets)
+        super().__init__(self.env, self.filename, self.bucket, self.type_config)
 
     def batch_import_archives(self, response):
         df = self.csv_to_dataframe(io.BytesIO(response["Body"].read()))

@@ -9,13 +9,14 @@ else:
 
 
 class ThreeDMetadata(GenericMetadata):
-    def __init__(self, env, filename, bucket, assets):
-        self.assets = assets
+    def __init__(self, env, filename, bucket, type_config):
+        self.type_config = type_config
+        self.assets = type_config["assets"]
         self.env = env
         self.filename = filename
         self.bucket = bucket
         self.archive_option_additions = {}
-        super().__init__(self.env, self.filename, self.bucket, self.assets)
+        super().__init__(self.env, self.filename, self.bucket, self.type_config)
 
     def batch_import_archives(self, response):
         df = self.csv_to_dataframe(io.BytesIO(response["Body"].read()))
@@ -23,7 +24,7 @@ class ThreeDMetadata(GenericMetadata):
             print("")
             archive_dict = self.process_csv_metadata(row, "Archive")
             if not archive_dict:
-                print(f"Error: Archive {idx+1} has failed to be imported.")
+                print(f"Error parsing archive {idx+1} from csv.")
                 self.log_result(
                     False,
                     idx,
@@ -60,29 +61,38 @@ class ThreeDMetadata(GenericMetadata):
                     archive_dict["collection"] = collection["id"]
                     archive_dict["parent_collection"] = [collection["id"]]
                     archive_dict["heirarchy_path"] = collection["heirarchy_path"]
-                    archive_dict["manifest_url"] = os.path.join(
-                        self.env["APP_IMG_ROOT_PATH"],
-                        self.env["COLLECTION_CATEGORY"],
-                        collection_identifier,
-                        archive_dict["identifier"],
-                        "manifest.json",
-                    )
-                    try:
-                        json_url = urllib.request.urlopen(archive_dict["manifest_url"])
-                        archive_dict["thumbnail_path"] = json.loads(json_url.read())[
-                            "thumbnail"
-                        ]["@id"]
-                    except Exception as e:
-                        print(f"{archive_dict['manifest_url']} not found.")
-                        archive_dict["thumbnail_path"] = None
-                        archive_dict["manifest_url"] = None
+                    if "type" in self.type_config and "iiif" in self.type_config["type"]:
+                        archive_dict["manifest_url"] = os.path.join(
+                            self.env["APP_IMG_ROOT_PATH"],
+                            self.env["COLLECTION_CATEGORY"],
+                            collection_identifier,
+                            archive_dict["identifier"],
+                            "manifest.json",
+                        )
+                        try:
+                            json_url = urllib.request.urlopen(archive_dict["manifest_url"])
+                            archive_dict["thumbnail_path"] = json.loads(json_url.read())[
+                                "thumbnail"
+                            ]["@id"]
+                        except Exception as e:
+                            print(f"{archive_dict['manifest_url']} not found.")
+                            archive_dict["thumbnail_path"] = None
+                            archive_dict["manifest_url"] = None
 
                     self.archive_option_additions = self.set_archive_option_additions(
                         archive_dict
                     )
-                    if archive_dict["thumbnail_path"] is None:
+                    # archive_dict["thumbnail_path"] = os.path.join(
+                    #     self.env["APP_IMG_ROOT_PATH"],
+                    #     self.env["COLLECTION_CATEGORY"],
+                    #     collection_identifier,
+                    #     archive_dict["identifier"],
+                    #     "3d",
+                    #     archive_dict["identifier"] + "_thumbnail.jpg",
+                    # )
+                    if "thumbnail_path" not in archive_dict or archive_dict["thumbnail_path"] is None:
                         try:
-                            archive_dict["thumbnail_path"] = self.archive_option_additions["assets"]["morpho_thumb"]
+                            archive_dict["thumbnail_path"] = self.archive_option_additions["assets"]["thumbnail"]
                         except Exception as e:
                             print(f"No thumbnail found for archive. {archive_dict['identifier']}")
 
@@ -99,15 +109,16 @@ class ThreeDMetadata(GenericMetadata):
                     else:
                         archive_dict["archiveOptions"] = self.archive_option_additions
 
+
                     try:
-                        if archive_dict["archiveOptions"]["assets"]["x3d_config"] and archive_dict["archiveOptions"]["assets"]["x3d_src_img"]:
-                            self.create_or_update(
-                                self.env["archive_table"],
-                                archive_dict,
-                                "Archive",
-                                idx,
-                                existing_item,
-                            )
+                        # if len(archive_dict["archiveOptions"]["assets"]) > 0:
+                        self.create_or_update(
+                            self.env["archive_table"],
+                            archive_dict,
+                            "Archive",
+                            idx,
+                            existing_item,
+                        )
                     except Exception as e:
                         print(f"Error: Archive {idx+1}:{archive_dict['identifier']} has failed to be imported.")
                         self.log_result(
@@ -116,29 +127,26 @@ class ThreeDMetadata(GenericMetadata):
                             1,
                             False,
                         )
-                        try:
-                            print("Config")
-                            print(archive_dict["archiveOptions"]["assets"]["x3d_config"])
-                        except Exception as e:
-                            print("Nope")
-                        try:
-                            print("Src Img")
-                            print(archive_dict["archiveOptions"]["assets"]["x3d_src_img"])
-                        except Exception as e:
-                            print("Nope")
+                        
 
     def key_by_asset_path(self, asset_path):
         matching_key = None
-        for key in get_matching_s3_keys(self.env["AWS_DEST_BUCKET"], asset_path):
-            matching_key = key
+        try:
+            for key in get_matching_s3_keys(self.env["AWS_DEST_BUCKET"], asset_path):
+                matching_key = key
+        except Exception as e:
+            pass
         if matching_key is None:
             # try ignoring the filename case
             asset_path_no_filename = asset_path.replace(asset_path.split("/")[-1], "")
-            for key in get_matching_s3_keys(
-                self.env["AWS_DEST_BUCKET"], asset_path_no_filename
-            ):
-                if key.lower() == asset_path.lower():
-                    matching_key = key
+            try:
+                for key in get_matching_s3_keys(
+                    self.env["AWS_DEST_BUCKET"], asset_path_no_filename
+                ):
+                    if key.lower() == asset_path.lower():
+                        matching_key = key
+            except Exception as e:
+                pass
         return matching_key
 
     def set_archive_option_additions(self, archive_dict):
@@ -156,7 +164,8 @@ class ThreeDMetadata(GenericMetadata):
                 else archive_3d_asset_path
             )
             asset_val = self.assets["item"][asset]
-            if type(asset_val) == list:
+            if type(asset_val) is not list:
+                asset_val = [asset_val]
                 asset_list = []
                 for item_asset in asset_val:
                     asset_path = os.path.join(
@@ -172,22 +181,11 @@ class ThreeDMetadata(GenericMetadata):
                             self.env["APP_IMG_ROOT_PATH"], key
                         )
                         asset_list.append(asset_full_path)
-
-                archive_option_additions[asset] = asset_list
-            else:
-                asset_path = os.path.join(
-                    adjusted_path,
-                    os.path.basename(asset_val).replace(
-                        "<item_identifier>", archive_dict["identifier"]
-                    ),
-                )
-                asset_path = asset_path.replace(self.env["APP_IMG_ROOT_PATH"], "")
-                key = self.key_by_asset_path(asset_path)
-                if key:
-                    archive_option_additions[asset] = os.path.join(
-                        self.env["APP_IMG_ROOT_PATH"], key
-                    )
-        archive_option_additions["media_type"] = self.env["MEDIA_TYPE"]
+                if len(asset_list) > 0:
+                    archive_option_additions[asset] = asset_list[0] 
+        archive_option_additions["env_config"] = "https://d21nnzi4oh5qvs.cloudfront.net/federated/3d/gltf/studio.env"
+        archive_option_additions["media_type"] = "3d-model/gltf"
+        # archive_option_additions["scale_factor"] = "75"
         return {"assets": archive_option_additions}
 
     def create_or_update(self, table, attr_dict, item_type, idx, existing_item=None):

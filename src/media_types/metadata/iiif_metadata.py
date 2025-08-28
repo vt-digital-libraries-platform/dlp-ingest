@@ -6,5 +6,5 @@ else:
 
 
 class IIIFMetadata(GenericMetadata):
-    def __init__(self, env, filename, bucket, assets):
-        super().__init__(env, filename, bucket, assets)
+    def __init__(self, env, filename, bucket, type_config):
+        super().__init__(env, filename, bucket, type_config)

@@ -10,11 +10,12 @@ else:
 
 
 class PDFType(GenericType):
-    def __init__(self, env, filename, bucket, assets):
+    def __init__(self, env, filename, bucket, type_config):
         self.env = env
         self.filename = filename
         self.bucket = bucket
-        self.assets = assets
-        self.media = PDFDigitalObject(env, filename, bucket, assets)
-        self.metadata = PDFMetadata(env, filename, bucket, assets)
-        super().__init__(env, filename, bucket, self.media, self.metadata, assets)
+        self.type_config = type_config
+        self.assets = type_config["assets"]
+        self.media = PDFDigitalObject(env, filename, bucket, type_config)
+        self.metadata = PDFMetadata(env, filename, bucket, type_config)
+        super().__init__(env, filename, bucket, self.media, self.metadata, type_config)

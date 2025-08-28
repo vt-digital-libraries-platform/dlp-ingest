@@ -9,8 +9,9 @@ DUPLICATED = "Duplicated"
 
 
 class GenericMetadata:
-    def __init__(self, env, filename, bucket, assets):
-        self.assets = assets
+    def __init__(self, env, filename, bucket, type_config):
+        self.type_config = type_config
+        self.assets = type_config["assets"]
         self.env = env
         self.filename = filename
         self.bucket = bucket

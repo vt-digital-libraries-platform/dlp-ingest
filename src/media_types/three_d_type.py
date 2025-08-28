@@ -10,11 +10,12 @@ else:
 
 
 class ThreeDType(GenericType):
-    def __init__(self, env, filename, bucket, assets):
-        self.assets = assets
+    def __init__(self, env, filename, bucket, type_config):
+        self.type_config = type_config
+        self.assets = type_config["assets"]
         self.env = env
         self.filename = filename
         self.bucket = bucket
-        self.media = ThreeDDigitalObject(env, filename, bucket, self.assets)
-        self.metadata = ThreeDMetadata(env, filename, bucket, self.assets)
-        super().__init__(env, filename, bucket, self.media, self.metadata, self.assets)
+        self.media = ThreeDDigitalObject(env, filename, bucket, type_config)
+        self.metadata = ThreeDMetadata(env, filename, bucket, type_config)
+        super().__init__(env, filename, bucket, self.media, self.metadata, type_config)

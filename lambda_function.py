@@ -62,13 +62,12 @@ def set_environment(app_config=None):
             os.getenv("UPDATE_METADATA") is not None and os.getenv("UPDATE_METADATA").lower() == "true"
         )
 
-        print(env)
 
 
 def new_media_type_handler(env, filename, bucket):
 
     media_type = media_types_map[env["MEDIA_TYPE"]]
-    return media_type["handler"](env, filename, bucket, media_type["assets"])
+    return media_type["handler"](env, filename, bucket, media_type)
 
 
 def main(event, context, csv_file=None, app_config=None):
@@ -86,10 +85,10 @@ def main(event, context, csv_file=None, app_config=None):
     return media_type_handler.ingest()
 
 
-# if __name__ == "__main__":
-#     if len(sys.argv) < 2:
-#         print("Usage: python3 lambda_function.py <filename>")
-#         sys.exit(1)
-#     else:
-#         filename = "".join(sys.argv[1])
-#         main(None, None, filename)
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print("Usage: python3 lambda_function.py <filename>")
+        sys.exit(1)
+    else:
+        filename = "".join(sys.argv[1])
+        main(None, None, filename)

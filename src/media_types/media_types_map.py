@@ -12,6 +12,7 @@ else:
 # item asset paths are relative to the item subdirectories
 media_types_map = {
     "iiif": {
+        "type": "iiif",
         "assets": {
             "collection": {
                 "thumbnail": "representative.jpg",
@@ -26,6 +27,7 @@ media_types_map = {
         "handler": IIIFType,
     },
     "pdf": {
+        "type": "pdf",
         "assets": {
             "collection": {
                 "thumbnail": "representative.jpg",
@@ -44,6 +46,7 @@ media_types_map = {
         "handler": PDFType,
     },
     "3d_2diiif": {
+        "type": "3d_2diiif",
         "assets": {
             "collection": {
                 "thumbnail": "representative.jpg",
@@ -62,7 +65,8 @@ media_types_map = {
         "extensions": ["x3d"],
         "handler": ThreeDType,
     },
-    "3d": {
+    "3d_x3d": {
+        "type": "3d_x3d",
         "assets": {
             "collection": {
                 "thumbnail": "representative.jpg",
@@ -72,9 +76,27 @@ media_types_map = {
                 ],
             },
             "item": {
-                "3d_obj": "3D/GLB/<item_identifier>.glb",
-                "3d_env": "3D/GLB/<item_identifier>_env.glb",
-                "thumbnail": "<item_identifier>_thumbnail.png",
+                "x3d_config": "3D/X3D/LowRes/LowRes_<item_identifier>_X3D.x3d",
+                "x3d_src_img": "3D/X3D/LowRes/LowRes_<item_identifier>_X3D.png",
+                "morpho_thumb": "Morphosource Thumbnails/HighRes_<item_identifier>_thumbnail.png",
+            },
+        },
+        "extensions": ["x3d"],
+        "handler": ThreeDType,
+    },
+    "3d_gltf": {
+        "type": "3d_gltf",
+        "assets": {
+            "collection": {
+                "thumbnail": "representative.jpg",
+                "metadata": [
+                    "<variable>_collection_metadata.csv",
+                    "<variable>_archive_metadata.csv"
+                ],
+            },
+            "item": {
+                "gltf_config": "3D/GLB/<item_identifier>.glb",
+                "thumbnail": "3D/GLB/<item_identifier>_thumbnail.jpg"
             },
         },
         "extensions": ["glb, gltf"],
