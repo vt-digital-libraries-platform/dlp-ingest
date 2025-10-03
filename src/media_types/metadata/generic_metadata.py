@@ -14,6 +14,7 @@ import sys
 from boto3.dynamodb.conditions import Key, Attr
 from botocore.response import StreamingBody
 import re
+from src.media_types.metadata.textract_lambda_handler import lambda_handler
 
 DUPLICATED = "Duplicated"
 
@@ -217,7 +218,12 @@ class GenericMetadata:
                                 "Archive",
                                 idx
                             )
-                            # Log trying to create an item that already exists
+                        # --- TEXTRACT WORKFLOW ---
+                        if self.env.get("process_textract", False):
+                            print("\033[94mProcessing textract since PROCESS_TEXTRACT is set to True.\033[0m")
+                            self.run_textract_workflow(collection_identifier, archive_dict["identifier"])
+                        else:
+                            print("\033[94mSkipping Textract process as PROCESS_TEXTRACT is set to False.\033[0m")
 
     def get_table_name(self, table_name):
         return f"{table_name}-{self.env['dynamodb_table_suffix']}"
@@ -329,7 +335,7 @@ class GenericMetadata:
                 )
                 .put(Body=open(results_filename, "rb"))
             )
-            print(s3_response)
+            #print(s3_response)
             status = s3_response["ResponseMetadata"]["HTTPStatusCode"]
             if status == 200:
                 print("")
@@ -897,3 +903,66 @@ class GenericMetadata:
         else:
             self.env["mint_table"].delete_item(Key={"noid": noid})
             print(f"delete_NOID: {noid}")
+            
+    def run_textract_workflow(self, collection_identifier, archive_identifier):
+        """
+        Finds images in S3 for the given archive and triggers Textract workflow for each.
+        In both local and AWS modes, first checks if the prefix exists in the textract bucket.
+        If it exists, skips processing. If not, copies files to textract bucket (AWS mode)
+        or triggers the lambda directly (local mode).
+        """
+        s3_client = self.env["s3_client"]
+        print(f"Running Textract workflow for archive: {archive_identifier} in collection: {collection_identifier}")
+        print(f"\033[94mEnvironment settings: local_textract={self.env.get('local_textract', False)}\033[0m")
+        source_bucket = self.env["aws_src_bucket"]
+        # Build the s3 prefix for the archive
+        textract_bucket = self.env["textract_bucket"]
+        prefix = f"{self.env['collection_category']}/{collection_identifier}/{archive_identifier}/Access/"
+
+        # Check if the prefix already exists in the Textract bucket
+        print(f"Checking if prefix {prefix} exists in Textract bucket {textract_bucket}...")
+        textract_objects = s3_client.list_objects_v2(Bucket=textract_bucket, Prefix=prefix)
+        #print(f"Textract bucket response: {textract_objects}")#
+        if "Contents" in textract_objects and len(textract_objects["Contents"]) > 0:
+            print(f"\033[91mWARNING: Identifier '{archive_identifier}' already exists in Textract bucket. Skipping Textract workflow.\033[0m")
+            return  # Skip further processing
+
+        response = s3_client.list_objects_v2(Bucket=source_bucket, Prefix=prefix)
+        #print(f"Source bucket response: {response}")#
+        if "Contents" in response:
+            print("Identifier does not exist in Textract bucket. Proceeding with Textract workflow.")
+            if self.env.get("local_textract", False):
+                # Run the Textract Lambda handler locally for each image
+                for obj in response["Contents"]:
+                    key = obj["Key"]
+                    if key.lower().endswith(('.jpg', '.jpeg', '.png', '.pdf')):
+                        print(f"\033[94mRunning Textract Lambda handler locally for {key}...\033[0m")
+                        event = {
+                            "Records": [
+                                {
+                                    "body": json.dumps({
+                                        "s3": {
+                                            "bucket": {"name": source_bucket},
+                                            "object": {"key": key}
+                                        },
+                                        "collection_identifier": collection_identifier  
+                                    })
+                                }
+                            ]
+                        }
+                        lambda_handler(event, None)
+            else:
+                # Copy files to textract bucket (AWS mode)
+                print(f"\033[94mCopying files from source bucket {source_bucket} to Textract bucket {textract_bucket} since local_textract is False...\033[0m")
+                for obj in response["Contents"]:
+                    print(f"Found object in source bucket: {obj['Key']}")
+                    key = obj["Key"]
+                    if key.lower().endswith(('.jpg', '.jpeg', '.png', '.pdf')):
+                        copy_source = {'Bucket': source_bucket, 'Key': key}
+                        print(f"Copying {key} from {source_bucket} to {textract_bucket}...")
+                        s3_client.copy_object(
+                            Bucket=textract_bucket,
+                            Key=key,
+                            CopySource=copy_source
+                        )
+                print("Copy complete. S3 trigger on Textract bucket will invoke the Textract Lambda.")

@@ -1,6 +1,9 @@
 VERBOSE="true" \
 AWS_SRC_BUCKET="" \
 AWS_DEST_BUCKET="" \
+TEXTRACT_BUCKET="" \
+TEXTRACT_LINE_TABLE="" \
+TEXTRACT_WORD_TABLE="" \
 COLLECTION_CATEGORY="" \
 COLLECTION_IDENTIFIER="" \
 COLLECTION_SUBDIRECTORY="" \
@@ -22,4 +25,5 @@ METADATA_INGEST="true" \
 GENERATE_THUMBNAILS="false" \
 DRY_RUN="false" \
 UPDATE_METADATA="false" \
+PROCESS_TEXTRACT="false" \
 python3 lambda_function.py "examples/testss/test_archive_metadata.csv"
