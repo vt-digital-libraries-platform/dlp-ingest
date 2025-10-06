@@ -1,5 +1,7 @@
-
 # Created by https://www.gitignore.io/api/osx,linux,python,windows,pycharm,visualstudiocode
+
+# Exception for headers_keys.json
+!src/data/headers_keys.json
 
 ### Linux ###
 *~
@@ -145,6 +147,9 @@ wheels/
 pip-log.txt
 pip-delete-this-directory.txt
 
+# Custom ingest test script
+run_vtdlp-ingest_testss.sh
+
 # Unit test / coverage reports
 htmlcov/
 .tox/
@@ -248,6 +253,8 @@ custom_pytest.ini
 # End of https://www.gitignore.io/api/osx,linux,python,windows,pycharm,visualstudiocode
 
 run_*.sh
+!run_vtdlp-ingest_example.sh
+!run_vtdlp-testextract_example.sh
 lambda_local.sh
 results_files/
 
@@ -256,3 +263,9 @@ examples/
 lib64/
 pyvenv.cfg
 lib64*
+PR.md
+*.log
+test_event.json
+run_vtdlp-ingest_testextract.sh
+run_vtdlp-testextract.sh
+run_vtdlp-ingest_testss.sh

@@ -8,6 +8,9 @@ env = {}
 env["script_root"] = os.path.abspath(os.path.dirname(__file__))
 env["aws_src_bucket"] = os.getenv("AWS_SRC_BUCKET")
 env["aws_dest_bucket"] = os.getenv("AWS_DEST_BUCKET")
+env["textract_bucket"] = os.getenv("TEXTRACT_BUCKET")
+env["textract_line_table"] = os.getenv("TEXTRACT_LINE_TABLE")
+env["textract_word_table"] = os.getenv("TEXTRACT_WORD_TABLE")
 env["collection_category"] = os.getenv("COLLECTION_CATEGORY")
 env["collection_identifier"] = os.getenv("COLLECTION_IDENTIFIER")
 env["collection_subdirectory"] = os.getenv("COLLECTION_SUBDIRECTORY")
@@ -52,7 +55,12 @@ env["verbose"] = (
 env["update_metadata"] = (
     os.getenv("UPDATE_METADATA") is not None and os.getenv("UPDATE_METADATA").lower() == "true"
 )
-
+env['local_textract']  = (
+    os.getenv("LOCAL_TEXTRACT") is not None and os.getenv("LOCAL_TEXTRACT").lower() == "true"
+)
+env["process_textract"] = (
+    os.getenv("PROCESS_TEXTRACT") is not None and os.getenv("PROCESS_TEXTRACT").lower() == "true"
+)
 
 def new_media_type_handler(env, filename, bucket):
     media_type = media_types_map[env["media_type"]]
