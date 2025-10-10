@@ -11,6 +11,14 @@ from botocore.exceptions import ClientError
 from collections import defaultdict
 from boto3.dynamodb.conditions import Key
 import datetime
+from PIL import Image
+import pytesseract
+import pytesseract
+import os
+
+if os.environ.get("AWS_EXECUTION_ENV") is not None:
+#    # Running in AWS Lambda: use AWS Textract only
+    pytesseract.pytesseract.tesseract_cmd = '/opt/bin/tesseract'  # or the correct path to your binary
 
 # Set up logging to write to a file with a timestamp in the filename
 log_filename = f"textract_lambda_output_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
@@ -55,6 +63,8 @@ logger.setLevel("INFO")
 
 # Parse Textract response and write line information to DynamoDB
 def getLineInformation(collection_of_textract_responses, response_filename):
+    inserted_lines = []
+    skipped_lines = []
     logger.info("Parsing line information from Textract response...")
     print("Parsing line information from Textract response...")
     # This method ingests the Textract responses in JSON format, parses it and returns the line information
@@ -79,20 +89,20 @@ def getLineInformation(collection_of_textract_responses, response_filename):
             item = {}
             running_sequence_number += 1
             logger.info(f"Line block found. Sequence number: {running_sequence_number}")
-            print(f"Line block found. Sequence number: {running_sequence_number}")
+            #print(f"Line block found. Sequence number: {running_sequence_number}")
             # 1. Extract identifier: everything but the last digits before underscore
             # Example: "fchs_1950_001_015_001" -> "fchs_1950_001_015"
             item['id'] =str(uuid.uuid4())  # Use the same UUID
             identifier_full=response_filename
             logger.info(f"Original identifier from JSON: {identifier_full}")
-            print(f"Original identifier from JSON: {identifier_full}")
+            #print(f"Original identifier from JSON: {identifier_full}")
             identifier_parts = identifier_full.split('_')
             if len(identifier_parts) > 1:
                 item['identifier'] = '_'.join(identifier_parts[:-1])
             else:
                 item['identifier'] = identifier_full
             logger.info(f"Processed identifier (without last digits): {item['identifier']}")
-            print(f"Processed identifier (without last digits): {item['identifier']}")
+            #print(f"Processed identifier (without last digits): {item['identifier']}")
 
             # 2. Set identifier_page to the whole identifier
 
@@ -139,25 +149,29 @@ def getLineInformation(collection_of_textract_responses, response_filename):
             # Scan for existing item with same output_id
             item['unique_key'] = f"{item['identifier_page']}_{item['line_no']}"  # or line_no for lines
             logger.info(f"Scanning DynamoDB for existing item with unique_key: {item['unique_key']}")
-            print(f"Scanning DynamoDB for existing item with unique_key: {item['unique_key']}")
+            #print(f"Scanning DynamoDB for existing item with unique_key: {item['unique_key']}")
             response = line_table.query(
-                IndexName='unique_key-index',  # Replace with your actual index name
+                IndexName='unique_key-index',
                 KeyConditionExpression=Key('unique_key').eq(item['unique_key'])
             )
             if response['Items']:
-                # Item exists
-                print(f"\033[91m❗ WARNING: Item with unique_key {item['unique_key']} already exists in DynamoDB. Skipping line insert/update.\033[0m", file=sys.stderr)
+                skipped_lines.append(item['unique_key'])
                 logger.warning(f"Item with unique_key {item['unique_key']} already exists in DynamoDB. Skipping line insert/update.")
-                print(f"Item with unique_key {item['unique_key']} already exists in DynamoDB. Skipping line insert/update.")
-                continue  # Skip updating/inserting this item
+                continue
             else:
-                print("No existing item found. Adding new item to DynamoDB.")
+                inserted_lines.append(item['unique_key'])
                 logger.info("No existing item found. Adding new item to DynamoDB.")
                 line_table.put_item(Item=convert_floats(item))
             total_text_with_info.append(item)
+    if inserted_lines:
+        print(f"\033[94mINFO: The following line unique_keys for {response_filename} did not exist in the line table and were inserted:\n{', '.join(inserted_lines)}\033[0m")
+    if skipped_lines:
+        print(f"\033[91mWARNING: The following line unique_keys for {response_filename} already exist in the line table and were skipped:\n{', '.join(skipped_lines)}\033[0m")
     return total_text_with_info
 
 def getWordInformation(collection_of_textract_responses, response_filename):
+    inserted_words = []
+    skipped_words = []
     logger.info("Parsing word information from Textract response...")
     print("Parsing word information from Textract response...")
     # This method ingests the texteact responses in JSON format, parses it and returns the word information
@@ -225,21 +239,25 @@ def getWordInformation(collection_of_textract_responses, response_filename):
             item['visibility'] = True
 
             # Scan for existing item with same output_id
-            #logger.info(f"Scanning DynamoDB for existing item with output_id: {item['output_id']}")
+            logger.info(f"Scanning DynamoDB for existing item with output_id in word table: {item['output_id']}")
             item['unique_key'] = f"{item['identifier_page']}_{item['word_no']}"  # or line_no for lines
             response = word_table.query(
                 IndexName='unique_key-index',
                 KeyConditionExpression=Key('unique_key').eq(item['unique_key'])
             )
             if response['Items']:
-                logger.warning(f"Item with unique_key {item['unique_key']} already exists. Skipping word insert/update.")
-                print(f"\033[91m❗ WARNING: Item with unique_key {item['unique_key']} already exists. Skipping word insert/update.\033[0m", file=sys.stderr)
-                continue  # Skip updating/inserting this item
+                skipped_words.append(item['unique_key'])
+                logger.warning(f"Item with unique_key {item['unique_key']} already exists in DynamoDB. Skipping word insert/update.")
+                continue
             else:
+                inserted_words.append(item['unique_key'])
                 logger.info(f"No existing item found. Adding new item to DynamoDB. {item}")
-                print(f"No existing item found. Adding new item to DynamoDB. {item}")
                 word_table.put_item(Item=convert_floats(item))
             total_text_with_info.append(item)
+    if inserted_words:
+        print(f"\033[94mINFO: The following word unique_keys for {response_filename} did not exist in the word table and were inserted:\n{', '.join(inserted_words)}\033[0m")
+    if skipped_words:
+        print(f"\033[91mWARNING: The following word unique_keys for {response_filename} already exist in the word table and were skipped:\n{', '.join(skipped_words)}\033[0m")
     return total_text_with_info
 
 def parseJSON(jsonObject, response_filename):
@@ -326,12 +344,34 @@ def preprocess_image_for_textract(s3, source_bucket, image, output_path, respons
         }
     return image_document
 
+def get_Text_Percentage_Images(imagePath):
+    tessdata_file = '/tmp/tessdata/eng.traineddata'
+    if not os.path.exists(tessdata_file):
+        raise RuntimeError(f"Missing tessdata file: {tessdata_file}")
+    images = Image.open(imagePath)
+    page = 0
+    with_text = 0
+    text = pytesseract.image_to_string(images)
+    if len(text) > 0:
+        with_text += 1
+    page += 1
+    percent_of_pages_with_text = (with_text / page) * 100
+    return percent_of_pages_with_text
+
+
+def download_tessdata_from_s3(bucket, key, download_path):
+    s3 = boto3.client('s3')
+    os.makedirs(os.path.dirname(download_path), exist_ok=True)
+    try:
+        s3.download_file(bucket, key, download_path)
+        print(f"Downloaded {key} from {bucket} to {download_path}")
+    except Exception as e:
+        print(f"Failed to download {key} from {bucket}: {e}")
+        raise
+
 # Remove call_textract from lambda_handler signature and logic (keep comments/prints)
 def lambda_handler(event, context):
-    print("Lambda handler started. Processing event...")
-    logger.info("Lambda handler started. Processing event...")
-
-    # Skip cleaning /tmp for local run
+    # Clean /tmp only once, before downloading tessdata
     if os.environ.get("AWS_EXECUTION_ENV") is not None:
         # Running in AWS Lambda
         clean_tmp()
@@ -339,6 +379,18 @@ def lambda_handler(event, context):
     else:
         print("Skipping /tmp cleanup for local run.")
         logger.info("Skipping /tmp cleanup for local run.")
+
+    # Download eng.traineddata from S3 to /tmp/tessdata/
+    tessdata_bucket = 'opencvambdalay'
+    tessdata_key = 'tessdata/eng.traineddata'
+    tessdata_local_path = '/tmp/tessdata/eng.traineddata'
+    download_tessdata_from_s3(tessdata_bucket, tessdata_key, tessdata_local_path)
+    print("Files in /tmp/tessdata:", os.listdir('/tmp/tessdata'))
+    print("Does /tmp/tessdata/eng.traineddata exist?", os.path.exists('/tmp/tessdata/eng.traineddata'))
+    os.environ['TESSDATA_PREFIX'] = '/tmp/tessdata'
+
+    print("Lambda handler started. Processing event...")
+    logger.info("Lambda handler started. Processing event...")
 
     print(f"Event received: {event}")
     logger.info(f"Event received: {event}")
@@ -365,11 +417,12 @@ def lambda_handler(event, context):
         logger.info(f'output_path: {output_path}')
         # Extract collection name from the S3 key path (assumes a specific folder structure)
         # Use passed collection_identifier if present, else fallback to extraction
-        collectionname = res.get("collection_identifier")
-        if not collectionname:
-            parts = filename.split('/')[-4]
-            collectionname = parts[0] if len(parts) > 1 else "unknown"
-        logger.info(f"Collection name: {collectionname}")
+        collection_identifier = os.getenv("COLLECTION_IDENTIFIER") or res.get("collection_identifier")
+        if not collection_identifier:
+            collection_identifier = extract_collection_identifier(res)
+        if not collection_identifier:
+            raise ValueError("COLLECTION_IDENTIFIER is not set in the environment, event payload, or could not be inferred from the S3 key.")
+        logger.info(f"Collection identifier: {collection_identifier}")
         try:
             print("Starting image validation and preprocessing...")
             logger.info("Starting image validation and preprocessing...")
@@ -381,13 +434,28 @@ def lambda_handler(event, context):
                 raise ValueError("Invalid image source")
             logger.info(f"Image to process: {image}")
 
+            # Download image from source bucket to /tmp for analysis
+            local_image_path = f'/tmp/{os.path.basename(image)}'
+            s3.download_file(source_bucket, image, local_image_path)
+
+            # --- Skip if <=10% text in the image ---
+            percent_text = get_Text_Percentage_Images(local_image_path)
+            print(f"Text percentage in image: {percent_text:.2f}%")
+            logger.info(f"Text percentage in image: {percent_text:.2f}%")
+            if percent_text <= 10:
+                logger.info(f"Image has {percent_text:.2f}% text. Skipping Textract and DynamoDB processing.")
+                print(f"\033[91mImage has {percent_text:.2f}% text. Skipping Textract and DynamoDB processing.\033[0m")
+                continue
+            print(f"\033[94mImage has {percent_text:.2f}% text. Proceeding with Textract processing.\033[0m")
+            logger.info(f"Image has {percent_text:.2f}% text. Proceeding with Textract processing.")            
             # Always check and save responses in textract bucket
             existing_response_key = output_path + '/textractResponse/' + str(response_filename) + '.json'
             try:
                 response_obj = s3.get_object(Bucket=textract_bucket, Key=existing_response_key)
                 response = json.loads(response_obj['Body'].read())
-                print("Loaded existing Textract response from S3.")
-                logger.info("Loaded existing Textract response and image from S3.")
+                print(f"\033[91mWARNING: Textract response already exists in the textract bucket.\033[0m")
+                print(f"\033[94mLoaded existing Textract response from S3.\033[0m")
+                logger.info(f"\033[94mLoaded existing Textract response from S3.\033[0m")
                 image_document = {
                     'S3Object': {
                         'Bucket': textract_bucket,
@@ -412,7 +480,7 @@ def lambda_handler(event, context):
                 Bucket=textract_bucket,
                 Key=output_path + '/textractResponse/' + str(response_filename) + '.json',
                 Body=json.dumps(response),
-                Metadata={'collectionname': collectionname}
+                Metadata={'collection_identifier': collection_identifier}
             )
             logger.info('Successfully saved textract responses')
             print('Successfully saved textract responses')
@@ -425,12 +493,12 @@ def lambda_handler(event, context):
             logger.info(f"Line info: {line_info}")
             logger.info("Saving line information to S3...")
             print("Saving line information to S3...")
-            s3.put_object(Bucket= textract_bucket, Key=output_path+'/textractResponse/'+ str(response_filename)+'_line_information.json', Body=json.dumps(line_info),Metadata={'collectionname':collectionname})
+            s3.put_object(Bucket= textract_bucket, Key=output_path+'/textractResponse/'+ str(response_filename)+'_line_information.json', Body=json.dumps(line_info),Metadata={'collection_identifier':collection_identifier})
             logger.info('Line information successfully saved!')
             print('Line information successfully saved!')
             logger.info("Saving word information to S3...")
             print("Saving word information to S3...")
-            s3.put_object(Bucket= textract_bucket, Key=output_path+'/textractResponse/'+ str(response_filename)+'_word_information.json', Body=json.dumps(word_info),Metadata={'collectionname':collectionname})
+            s3.put_object(Bucket= textract_bucket, Key=output_path+'/textractResponse/'+ str(response_filename)+'_word_information.json', Body=json.dumps(word_info),Metadata={'collection_identifier':collection_identifier})
             logger.info('Word information successfully saved!')
             print('Word information successfully saved!')
 
@@ -445,6 +513,34 @@ def lambda_handler(event, context):
         'statusCode': 200,
         'body': json.dumps('Success!')
     }
+
+
+def extract_collection_identifier(res):
+    # Try environment variable or event payload first
+    collection_identifier = os.getenv("COLLECTION_IDENTIFIER") or res.get("collection_identifier")
+    if not collection_identifier:
+        filename = res["s3"]["object"]["key"]
+        parts = filename.split('/')
+
+        # Try to extract as folder below 'federated'
+        if 'federated' in parts:
+            federated_idx = parts.index('federated')
+            if len(parts) > federated_idx + 1:
+                collection_identifier = parts[federated_idx + 1]
+
+        # If not found, try two folders above 'Access'
+        if (not collection_identifier or collection_identifier == "unknown") and 'Access' in parts:
+            access_idx = parts.index('Access')
+            if access_idx >= 2:
+                collection_identifier = parts[access_idx - 2]
+
+        # Fallback to previous logic
+        if not collection_identifier or collection_identifier == "unknown":
+            collection_identifier = parts[1] if len(parts) >= 2 else "unknown"
+
+    if not collection_identifier:
+        raise ValueError("COLLECTION_IDENTIFIER is not set in the environment, event payload, or could not be inferred from the S3 key.")
+    return collection_identifier
 
 
 if __name__ == "__main__":

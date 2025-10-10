@@ -269,3 +269,5 @@ test_event.json
 run_vtdlp-ingest_testextract.sh
 run_vtdlp-testextract.sh
 run_vtdlp-ingest_testss.sh
+python/
+requirements.txt

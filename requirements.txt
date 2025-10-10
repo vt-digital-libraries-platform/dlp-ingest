@@ -8,3 +8,5 @@ pytest-cov
 pytest-env
 pytest-mock
 requests
+opencv-python
+numpy
