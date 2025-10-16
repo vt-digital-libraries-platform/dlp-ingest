@@ -1,38 +1,71 @@
-**The title of this pull-request should be a brief description of what the pull-request fixes/improves/changes. Ideally 50 characters or less.**
-* * *
+## Title of Pull Request(PR) [REQUIRED]   
+The title of this pull-request should briefly summarize what it fixes or improves. Ideally 50 characters or less.
 
-**JIRA Ticket**: (link) (:star:)
 
-* Other Relevant Links (Meeting note, project page, related pull requests, etc.)
 
-# What does this Pull Request do? (:star:)
-A brief description of what the intended result of the PR will be and/or what problem it solves.
+## 🔗 Asana, 4Help, and Related Links [REQUIRED]  
+**Asana Ticket**: [Insert link]  
+**4Help Ticket (if applicable)**: [Insert link]  
+**Other References**: [PRs, notes, design files, docs]  
 
-# What's the changes? (:star:)
-A in-depth description of the changes made by this PR. Technical details and possible side effects.
 
-Example:
-* Changes x feature to such that y
-* Added new feature x
-* Removed y to fix z
 
-# How should this be tested?
+## ✨ What Does This Pull Request Do?  [REQUIRED]
+**Briefly describe the goal of this PR and what problem it solves.**  
+**For Example:**  
+HotFix, DLP need/issue/bugfix, 4Help ticket request, etc.  
 
-A description of what steps someone could take to:
-* Outline the steps to test or reproduce the PR here.
-* Please be as detailed as possible.
 
-# Additional Notes:
-Any additional information that you think would be helpful when reviewing this PR.
+   
+## 🛠️ Summary of Changes [REQUIRED]
+**Provide an overview of the technical changes and any relevant details. 
+List key updates, features added/removed, or issues addressed.**   
+**For Example:**  
+*Refactored component (X) to improve reusability  
+*Added feature (X) for functionality  
+*Removed (X) to fix (Y)  
 
-Example:
-* What branch to be used for testing this PR?
-* Does this change require documentation to be updated?
-* Does this change add any new dependencies?
-* Does this change require any other modifications to be made to the repository?
-* Could this change impact execution of existing code?
 
-# Interested parties
-Tag (@ mention) interested parties
+   
+## 🧪 How Should PR Be Tested? [REQUIRED]
+**Provide detailed steps for how reviewers can test or reproduce the changes.**  
+*Step 1: ...*  
+*Step 2: ...*    
+*Expected behavior: ...*  
 
-(:star:) Required fields
+
+   
+## ♿ Accessibility Testing [REQUIRED]
+**Complete standard accessibility testing and provide additional test steps/details, if applicable:**  
+- [ ] Does this PR change anything in the front-end? This includes backend-only changes that may affect front end components (data schema changes, global configs, package version updates, etc.)
+
+**If "Yes", provide test environment details and complete or mark N/A all of the following tests:**
+
+OS/Browser/Screen reader details: *For Example: macOS Tahoe 26.0.1, Google Chrome v141.0.7390.55, VoiceOver v10*
+
+- [ ] [axe DevTools full/partial page scans]())
+- [ ] Keyboard navigability: Focus ring showing on all focusable/interactive elements in expected order, standard interaction present ([keyboard testing basics](https://knowbility.org/blog/2018/keyboard-testing-basics/))
+- [ ] Screen reader comprehension: No elements hidden from screen reader, alt text, no repeated text ([screen reader keyboard shortcuts](https://dequeuniversity.com/screenreaders/)) 
+- [ ] Color contrast at least WCAG AA ([contrast checker](https://webaim.org/resources/contrastchecker/))
+- [ ] Accessible markup used (e.g., proper heading levels, labels, roles, and semantic HTML as much as possible)  
+- [ ] Other accessibility testing (please describe):  
+
+
+   
+## 📝 Additional Notes 
+**Any extra context that would help reviewers. Consider the following:**  
+*What branch should be used for testing?  
+*Does this introduce new dependencies?  
+*Are documentation updates required?  
+*Could this impact existing functionality?  
+
+
+   
+## 👥 Interested Parties  
+
+Tag any reviewers or stakeholders you'd like to include in the discussion:   
+@username
+
+---
+
+🚨[REQUIRED] -  Required fields/information in the pull request
