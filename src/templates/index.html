@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VTDLP Ingest</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+    <div class="header-bar">
+        <img src="{{ url_for('static', filename='img/logo.png') }}" alt="App Logo" class="app-logo">
+        <h1>VTDLP Ingest</h1>
+    </div>
+    <p>This tool ingests media/metadata into the VTDLP Archive system.</p>
+    <p>Record type is determined by the metadata filename selected below (*_archive.csv | *_collection.csv)</p>
+    <p>1. Ingest Collection metadata file first</p>
+    <p>2. Ingest Archive metadata file after Collection</p>
+
+    <div>
+        <form action="/submit" method="post" enctype="multipart/form-data">
+            <!-- Select DynamoDB Table -->
+            <div>
+                <label for="dynamodb_table_select">Select DynamoDB Table:</label>
+                <select id="dynamodb_table_select" name="DYNAMODB_TABLE_SELECT">
+                    <option value="">Loading...</option>
+                </select>
+            </div>
+            <div>
+                <label for="dynamodb_table_suffix">DynamoDB Table Suffix:</label>
+                <input type="text" id="dynamodb_table_suffix" name="DYNAMODB_TABLE_SUFFIX" placeholder="Enter table suffix">
+                <span id="env_message" style="color: #007bff; margin-left: 12px;"></span>
+            </div>
+            <!-- Environment Selection -->
+            <div>
+                <label>
+                    <input type="checkbox" id="env_dev" name="ENV_DEV" value="true"> Dev
+                </label>
+                <label>
+                    <input type="checkbox" id="env_preprod" name="ENV_PREPROD" value="true"> Preprod
+                </label>
+                <label>
+                    <input type="checkbox" id="env_prod" name="ENV_PROD" value="true"> Prod
+                </label>
+            </div>
+            <!-- Collection Identifier SECOND (populated based on suffix) -->
+            <div id="collection-identifier-section">
+                <span id="collection-identifier-status" class="section-status incomplete">Incomplete</span>
+                <label for="collection_identifier">Collection Identifier:</label>
+                <input list="collection_identifiers" id="collection_identifier" name="COLLECTION_IDENTIFIER" autocomplete="off" placeholder="Select or enter identifier" required>
+                <datalist id="collection_identifiers">
+                    <!-- Options will be filled dynamically by JavaScript -->
+                </datalist>
+            </div>
+            
+            
+            <!-- AWS Configuration Section -->
+            <div class="form-section" id="aws-section">
+                <h3>AWS Configuration</h3>
+                <div id="aws-section-status" class="section-status incomplete">Incomplete</div>
+                <div>
+                    <label for="aws_src_bucket">AWS Source Bucket:</label>
+                    <input type="text" id="aws_src_bucket" name="AWS_SRC_BUCKET" placeholder="Source bucket name">
+                </div>
+                <div>
+                    <label for="aws_dest_bucket">AWS Destination Bucket:</label>
+                    <input type="text" id="aws_dest_bucket" name="AWS_DEST_BUCKET" placeholder="Destination bucket name">
+                </div>
+                <div>
+                    <label for="region">AWS Region:</label>
+                    <select id="region" name="REGION">
+                        <option value="us-east-1" selected>us-east-1</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Collection Configuration Section -->
+            <div class="form-section" id="collection-section">
+                <h3>Collection Configuration</h3>
+                <div id="collection-section-status" class="section-status incomplete">Incomplete</div>
+                <div>
+                    <label for="collection_category">Collection Category:</label>
+                    <input type="text" id="collection_category" name="COLLECTION_CATEGORY" placeholder="Category name">
+                </div>
+                <div>
+                    <label for="collection_subdirectory">Collection Subdirectory:</label>
+                    <input type="text" id="collection_subdirectory" name="COLLECTION_SUBDIRECTORY" placeholder="Subdirectory path">
+                </div>
+                <div>
+                    <label for="item_subdirectory">Item Subdirectory:</label>
+                    <input type="text" id="item_subdirectory" name="ITEM_SUBDIRECTORY" placeholder="Item subdirectory path">
+                </div>
+            </div>
+
+            <!-- DynamoDB Configuration Section -->
+            <div class="form-section" id="dynamodb-section">
+                <h3>DynamoDB Configuration</h3>
+                <div id="dynamodb-section-status" class="section-status incomplete">Incomplete</div>
+                <div>
+                    <label for="dynamodb_noid_table">DynamoDB NOID Table:</label>
+                    <input type="text" id="dynamodb_noid_table" name="DYNAMODB_NOID_TABLE" placeholder="NOID table name">
+                </div>
+                <div>
+                    <label for="dynamodb_file_char_table">DynamoDB File Character Table:</label>
+                    <input type="text" id="dynamodb_file_char_table" name="DYNAMODB_FILE_CHAR_TABLE" placeholder="File character table name">
+                </div>
+            </div>
+
+            <!-- Path Configuration Section -->
+            <div class="form-section" id="path-section">
+                <h3>Path Configuration</h3>
+                <div id="path-section-status" class="section-status incomplete">Incomplete</div>
+                <div>
+                    <label for="app_img_root_path">App Image Root Path:</label>
+                    <input type="text" id="app_img_root_path" name="APP_IMG_ROOT_PATH" placeholder="Root path for images">
+                </div>
+                <div>
+                    <label for="long_url_path">Long URL Path:</label>
+                    <input type="text" id="long_url_path" name="LONG_URL_PATH" placeholder="Long URL path">
+                </div>
+                <div>
+                    <label for="short_url_path">Short URL Path:</label>
+                    <input type="text" id="short_url_path" name="SHORT_URL_PATH" placeholder="Short URL path">
+                </div>
+            </div>
+
+            <!-- NOID Configuration Section -->
+            <div class="form-section" id="noid-section">
+                <h3>NOID Configuration</h3>
+                <div id="noid-section-status" class="section-status incomplete">Incomplete</div>
+                <div>
+                    <label for="noid_scheme">NOID Scheme:</label>
+                    <input type="text" id="noid_scheme" name="NOID_SCHEME" value="ark:/" placeholder="ark:/">
+                </div>
+                <div>
+                    <label for="noid_naa">NOID NAA:</label>
+                    <input type="text" id="noid_naa" name="NOID_NAA" placeholder="NOID NAA identifier">
+                </div>
+            </div>
+
+            <!-- Media Configuration Section -->
+            <div class="form-section" id="media-section">
+                <h3>Media Configuration</h3>
+                <div id="media-section-status" class="section-status incomplete">Incomplete</div>
+                <div>
+                    <label for="media_type">Media Type:</label>
+                    <select id="media_type" name="MEDIA_TYPE">
+                        <option value="iiif" selected>
+                            IIIF: image-based digital objects using International Image Interoperability Framework standard
+                        </option>
+                        <option value="pdf">
+                            PDF: document-based digital objects in PDF format
+                        </option>
+                        <option value="3d_2diiif">
+                            3D_2DIIIF: digital objects that combine 3D models with associated IIIF images
+                        </option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Boolean Options -->
+            <div>
+                <label for="verbose">
+                    <input type="checkbox" id="verbose" name="VERBOSE" value="true" checked> 
+                    Verbose Output
+                </label>
+            </div>
+            <div>
+                <label for="media_ingest">
+                    <input type="checkbox" id="media_ingest" name="MEDIA_INGEST" value="true"> 
+                    Media Ingest
+                </label>
+            </div>
+            <div>
+                <label for="metadata_ingest">
+                    <input type="checkbox" id="metadata_ingest" name="METADATA_INGEST" value="true" checked> 
+                    Metadata Ingest
+                </label>
+            </div>
+            <div>
+                <label for="generate_thumbnails">
+                    <input type="checkbox" id="generate_thumbnails" name="GENERATE_THUMBNAILS" value="true"> 
+                    Generate Thumbnails
+                </label>
+            </div>
+            <div>
+                <label for="dry_run">
+                    <input type="checkbox" id="dry_run" name="DRY_RUN" value="true"> 
+                    Dry Run (Test Mode)
+                </label>
+            </div>
+            <div>
+                <label for="update_metadata">
+                    <input type="checkbox" id="update_metadata" name="UPDATE_METADATA" value="true"> 
+                    Update Existing Metadata
+                </label>
+            </div>
+            <div>
+                <label for="is_lambda">
+                    <input type="checkbox" id="is_lambda" name="IS_LAMBDA" value="true"> 
+                    Lambda Environment
+                </label>
+            </div>
+            
+            <div>
+                <label for="metadata_input">Metadata CSV:</label>
+                <input type="file" id="metadata_input" name="metadata_input">
+            </div>           
+         
+            <!-- Progress Bar -->
+            <div id="progress-container" style="margin: 16px 0;">
+                <label for="progress-bar">Progress:</label>
+                <progress id="progress-bar" value="0" max="100" style="width: 100%;"></progress>
+                <span id="progress-text"></span>
+            </div>
+            
+            <div>
+                <button type="submit" id="ingest_button">Run Ingest</button>
+            </div>
+        </form>
+    </div>
+    <script src="{{ url_for('static', filename='js/index.js') }}"></script>
+</body>
+</html>

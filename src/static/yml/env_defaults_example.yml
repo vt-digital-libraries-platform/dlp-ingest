@@ -1,0 +1,35 @@
+dev:
+  aws_src_bucket: ""
+  aws_dest_bucket: ""
+  collection_category: ""
+  dynamodb_noid_table: ""
+  dynamodb_file_char_table: ""
+  app_img_root_path: ""
+  long_url_path: ""
+  short_url_path: ""
+  noid_scheme: ""
+  noid_naa: ""
+
+preprod:
+  aws_src_bucket: ""
+  aws_dest_bucket: ""
+  collection_category: ""
+  dynamodb_noid_table: ""
+  dynamodb_file_char_table: ""
+  app_img_root_path: ""
+  long_url_path: ""
+  short_url_path: ""
+  noid_scheme: ""
+  noid_naa: ""
+
+prod:
+  aws_src_bucket: ""
+  aws_dest_bucket: ""
+  collection_category: ""
+  dynamodb_noid_table: ""
+  dynamodb_file_char_table: ""
+  app_img_root_path: ""
+  long_url_path: ""
+  short_url_path: ""
+  noid_scheme: ""
+  noid_naa:

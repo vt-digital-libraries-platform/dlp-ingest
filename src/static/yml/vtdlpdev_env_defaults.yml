@@ -1,0 +1,22 @@
+VERBOSE: true
+AWS_SRC_BUCKET: ingest-dev-vtlib-store
+AWS_DEST_BUCKET: ingest-dev.img.cloud.lib.vt.edu
+COLLECTION_CATEGORY: federated
+COLLECTION_SUBDIRECTORY: 
+ITEM_SUBDIRECTORY: 
+REGION: us-east-1
+DYNAMODB_TABLE_SUFFIX: bxbkjhe235e3jcwcjcji5txvlm-vtdlpdev
+DYNAMODB_NOID_TABLE: dlp-pprd-mint_table
+DYNAMODB_FILE_CHAR_TABLE: ingest-fileCharacterization
+APP_IMG_ROOT_PATH: https://d21nnzi4oh5qvs.cloudfront.net
+NOID_SCHEME: ark:/
+NOID_NAA: "53696"
+LONG_URL_PATH: https://dev.d1n265krqy0ld3.amplifyapp.com/
+SHORT_URL_PATH:  https://ssxezg5su1.execute-api.us-east-1.amazonaws.com/
+MEDIA_INGEST: false
+MEDIA_TYPE: iiif
+METADATA_INGEST: true
+GENERATE_THUMBNAILS: false
+DRY_RUN: false
+UPDATE_METADATA: false
+IS_LAMBDA: false

@@ -1,0 +1,37 @@
+<!doctype html>
+    <meta charset="UTF-8">
+    <title>VTDLP Ingest - Submit</title>
+
+    <h1>VTDLP Ingest - Submit</h1>
+    <div>
+        {% for mesg in get_flashed_messages() %}
+            <p>{{ mesg }}</p>
+        {% endfor %}
+    </div>
+    <p>
+        <a href="/">Return to Ingest form</a>
+    </p>
+    <h2>Ingest Results</h2>
+
+    <div>
+        <a href="/results/ingested.csv" download>
+            <button>Download Ingested Items ({{ ingested_count }})</button>
+        </a>
+    </div>
+    <div>
+        <a href="/results/updated.csv" download>
+            <button>Download Updated Items ({{ updated_count }})</button>
+        </a>
+    </div>
+    <div>
+        <a href="/results/summary.csv" download>
+            <button>Download Summary Sheet ({{ summary_count }})</button>
+        </a>
+    </div>
+    <div>
+        <a href="/results/errors.csv" download>
+            <button>Download Error List ({{ errors_count }})</button>
+        </a>
+    </div>
+    <script src="{{ url_for('static', filename='js/submit.js') }}"></script>
+</html>
