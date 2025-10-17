@@ -1,0 +1,22 @@
+VERBOSE: true
+AWS_SRC_BUCKET: ingest-dev-vtlib-store
+AWS_DEST_BUCKET: vtdlp-pprd.img.cloud.lib.vt.edu
+COLLECTION_CATEGORY: federated
+COLLECTION_SUBDIRECTORY: 
+ITEM_SUBDIRECTORY:
+REGION: us-east-1
+DYNAMODB_TABLE_SUFFIX: 77eik3yv7rbdbjhjemas6h7dmi-vtdlppprd
+DYNAMODB_NOID_TABLE: dlp-pprd-mint_table
+DYNAMODB_FILE_CHAR_TABLE: ingest-fileCharacterization
+APP_IMG_ROOT_PATH: https://d4qp6z580yvb5.cloudfront.net/
+NOID_SCHEME: ark:/
+NOID_NAA: "53696"
+LONG_URL_PATH: https://federated-pprd.dlp.cloud.lib.vt.edu/
+SHORT_URL_PATH:  https://ssxezg5su1.execute-api.us-east-1.amazonaws.com/
+MEDIA_INGEST: false
+MEDIA_TYPE: 3d_gltf
+METADATA_INGEST: true
+GENERATE_THUMBNAILS: false
+DRY_RUN: false
+UPDATE_METADATA: false
+IS_LAMBDA: false

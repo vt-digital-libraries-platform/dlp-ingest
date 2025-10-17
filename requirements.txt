@@ -1,10 +1,6 @@
 boto3
-botocore
-moto[dynamodb,s3,apigateway]
-noid-mint
+flask
+Flask-Assets
+gunicorn
 pandas
-pytest
-pytest-cov
-pytest-env
-pytest-mock
-requests
+pyyaml
