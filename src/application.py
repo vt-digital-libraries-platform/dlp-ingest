@@ -2,7 +2,7 @@ import os, shutil, sys, yaml
 from datetime import datetime
 from flask import flash, Flask, render_template, request, jsonify, send_from_directory
 import boto3
-from src.dlp_ingest.lambda_function import main as dlp_ingest_main
+from src.ingest import main as dlp_ingest_main
 
 
 application = Flask(__name__)
@@ -96,6 +96,17 @@ def set_environment(env_values):
             application.config[str(key).upper()] = value
 
 
+def environment_json(env):
+    print(env)
+    envs = ["dev", "pprd"]
+    env_json = {}
+    for key in envs:
+        env_json[key] = {}
+        for field in env[key]:
+            env_json[key] = env[field]
+    return env_json
+
+
 def set_environment_defaults():
     defaults = None
     env_file = os.path.join(application.config['APPLICATION_ROOT'], 'static', 'yml', os.getenv('INGEST_ENV_YAML'))
@@ -110,6 +121,14 @@ def set_environment_defaults():
 
 def set_environment_overrides():
     set_environment(request.form.items())
+
+def filterTableNames(table_names):
+    envs = []
+    for table in table_names:
+        if table.startswith('Collection-'):
+            if table not in envs:
+                envs.append(table)
+    return sorted(envs)
 
 
 @application.route('/api/identifiers')
@@ -131,14 +150,16 @@ def get_identifiers():
 def get_tables():
     dynamodb = boto3.client('dynamodb', region_name='us-east-1')
     response = dynamodb.list_tables()
-    return jsonify({'tables': response.get('TableNames', [])})
+    tables = filterTableNames(response.get('TableNames', []))
+    return jsonify({'tables': tables})
 
 
 @application.route('/api/env_defaults')
 def env_defaults():
-    env_file = os.path.join(application.config['APPLICATION_ROOT'], 'static', 'yml', 'env_defaults.yml')
+    env_file = os.path.join(application.config['APPLICATION_ROOT'], 'static', 'yml', os.getenv('INGEST_ENV_YAML'))
     with open(env_file, 'r') as f:
         defaults = yaml.safe_load(f)
+
     return jsonify(defaults)
 
 
@@ -223,6 +244,7 @@ def submit():
 
 @application.route('/')
 def index():
+    set_environment_defaults()
     return render_template('index.html')
 
 
