@@ -1,3 +1,0 @@
-identifier,title,description,provenance,language,visibility,rights,parent_collection_identifier
-whunter_tests,tests,"moar tests",,en,TRUE,"rights and stuff",
-whunter_sub_tests,sub tests,sub tests,,en,TRUE,"rights and stuff",whunter_tests
