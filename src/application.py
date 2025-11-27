@@ -4,14 +4,26 @@ from flask import flash, Flask, render_template, request, jsonify, send_from_dir
 import boto3
 from src.ingest import main as dlp_ingest_main
 
-
-application = Flask(__name__)
-application.config['APPLICATION_ROOT'] = os.path.dirname(os.path.abspath(__file__))
-application.config['STATIC'] = os.path.join(application.config['APPLICATION_ROOT'], 'static')
+app_root = os.path.dirname(os.path.abspath(__file__))
+application = Flask(__name__, template_folder=os.path.join(app_root, 'templates'))
+application.config['APPLICATION_ROOT'] = app_root
+application.config['STATIC'] = os.path.join(app_root, 'static')
 application.config['DEBUG'] = True
 application.config['SECRET_KEY'] = os.urandom(24)
-application.config['UPLOADS'] = os.path.join(application.config['APPLICATION_ROOT'], 'uploads')
+application.config['UPLOADS'] = os.path.join(app_root, 'uploads')
 application.config['ALLOWED_EXTENSIONS'] = {'csv'}
+
+
+# empty directory (mostly for uploads)
+def cleanup(directory):
+    try:
+        shutil.rmtree(directory, ignore_errors=True)
+        os.makedirs(directory)
+    except:
+        pass
+# and run it on startup
+cleanup(application.config['UPLOADS'])
+
 
 env_vars = [
     'VERBOSE',
@@ -35,17 +47,9 @@ env_vars = [
     'METADATA_INGEST',
     'GENERATE_THUMBNAILS',
     'DRY_RUN',
-    'UPDATE_METADATA'
+    'UPDATE_METADATA',
+    '3D_CONFIG'
 ]
-
-def cleanup(directory):
-    try:
-        shutil.rmtree(directory, ignore_errors=True)
-        os.makedirs(directory)
-    except:
-        pass
-
-cleanup(application.config['UPLOADS'])
     
 
 def get_identifier():
@@ -109,7 +113,7 @@ def environment_json(env):
 
 def set_environment_defaults():
     defaults = None
-    env_file = os.path.join(application.config['APPLICATION_ROOT'], 'static', 'yml', os.getenv('INGEST_ENV_YAML'))
+    env_file = os.path.join(application.config['APPLICATION_ROOT'], 'config', os.getenv('INGEST_ENV_YAML'))
     with open(env_file, 'r') as f:
         defaults = yaml.safe_load(f)
     if defaults:
@@ -122,12 +126,21 @@ def set_environment_defaults():
 def set_environment_overrides():
     set_environment(request.form.items())
 
+
+def get_available_envs():
+    env_file = os.path.join(application.config['APPLICATION_ROOT'], "config", "available_envs.yml")
+    with open(env_file, 'r') as f:
+        envs = yaml.safe_load(f)
+
+    return envs or []
+
 def filterTableNames(table_names):
     envs = []
     for table in table_names:
         if table.startswith('Collection-'):
             if table not in envs:
                 envs.append(table)
+
     return sorted(envs)
 
 
@@ -156,7 +169,7 @@ def get_tables():
 
 @application.route('/api/env_defaults')
 def env_defaults():
-    env_file = os.path.join(application.config['APPLICATION_ROOT'], 'static', 'yml', os.getenv('INGEST_ENV_YAML'))
+    env_file = os.path.join(application.config['APPLICATION_ROOT'], 'config', os.getenv('INGEST_ENV_YAML'))
     with open(env_file, 'r') as f:
         defaults = yaml.safe_load(f)
 
@@ -244,8 +257,9 @@ def submit():
 
 @application.route('/')
 def index():
+    envs = get_available_envs()
     set_environment_defaults()
-    return render_template('index.html')
+    return render_template('index.html', envs=envs)
 
 
 @application.route('/success')
@@ -262,6 +276,7 @@ def download_result(filename):
 
 
 if __name__ == "__main__":
+    cleanup(application.config['UPLOADS'])
     set_environment_defaults()
 
     application.run(host='0.0.0.0', port=8000)
