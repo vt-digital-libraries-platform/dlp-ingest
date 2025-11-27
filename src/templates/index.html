@@ -32,17 +32,15 @@
             </div>
 
 
-
             <!-- Environment Selection -->
             <div>
                 <span class="section-text">Select the environment to ingest to. Form fields will be populated based on your selection, but can be changed</span>
                 <div class="env-radios">
-                    <label for="env_dev">
-                        <input type="radio" id="env_dev" name="ENV_SELECTION" value="dev"> Development (vtdlpdev)
-                    </label>
-                    <label for="env_pprd">
-                        <input type="radio" id="env_pprd" name="ENV_SELECTION" value="pprd" checked> Pre-production (vtdlppprd)
-                    </label>
+                    {% for env in envs %}
+                        <label for="env_{{env.value}}">
+                            <input type="radio" id="env_{{env.value}}" name="ENV_SELECTION" value="{{env.value}}" {% if env.selected %} checked {% endif %}> {{env.label}} ({{env.name}})
+                        </label>
+                    {% endfor %}
                     <label for="env_other">
                         <input type="radio" id="env_other" name="ENV_SELECTION" value="other"> Other (select below)
                     </label>
@@ -89,6 +87,7 @@
                 </div>
             </div>
 
+
             <!-- Collection Configuration Section -->
             <div class="form-section" id="collection-section">
                 <h3>Collection Configuration</h3>
@@ -106,6 +105,7 @@
                     <input type="text" id="item_subdirectory" name="ITEM_SUBDIRECTORY" placeholder="Item subdirectory path">
                 </div>
             </div>
+
 
             <!-- DynamoDB Configuration Section -->
             <div class="form-section" id="dynamodb-section">
@@ -177,6 +177,23 @@
                         </option>
                     </select>
                 </div>
+                <div id="3d-options" class="hidden form-section">
+                    <h4>3D Options</h4>
+                    <div>
+                        <span>Rotation:</span>
+                        <label for="3d-rotation-x">
+                            x: <input class="short" type="number" name="3d-rotation-x" id="3d-rotation-x" placeholder="Rotation X (radians)">
+                        </label>
+                        <label for="3d-rotation-y">
+                            y: <input class="short" type="number" name="3d-rotation-y" id="3d-rotation-y" placeholder="Rotation Y (radians)">
+                        </label>
+                    </div> 
+                    <div>
+                        <span>Scale:</span>
+                        <label for="3d-scale">
+                            <input class="short" type="number" name="3d-scale" id="3d-scale" placeholder="Scale">
+                        </label>
+                    </div>
             </div>
             
             <!-- Boolean Options -->

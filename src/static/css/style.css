@@ -211,6 +211,10 @@ input::placeholder {
     font-style: italic;
 }
 
+input.short {
+    width: 25%;
+}
+
 /* Responsive design */
 @media (max-width: 600px) {
     body {

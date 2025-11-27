@@ -35,7 +35,41 @@ const handleRadioChange = async (event) => {
     }
 }
 
+
+const resetMediaTypes = () => {
+    document.getElementById("3d-options").classList.add("hidden");
+    document.getElementById("3d-options").querySelectorAll("input").forEach(input => {
+        input.value = "";
+    });
+}
+
+
+const _3dSelected = () => {
+    document.getElementById("3d-options").classList.remove("hidden");
+}
+
+
+const handleMediaTypeChange = (event) => {
+    const mediaType = document.getElementById("media_type").value;
+    switch (mediaType) {
+        case "3d":
+            _3dSelected();
+            break;
+        case "3d_2diif":
+            _3dSelected();
+            break;
+        default:
+            // Reset to default state
+            resetMediaTypes();
+            break;
+    }
+}
+
 const addListeners = async () => {
+    // Add event listener for media type selection
+    document.getElementById("media_type").addEventListener("change", (event) => {
+        handleMediaTypeChange();
+    });
     
     // Add event listeners for environment selection (radio buttons)
     for (let elem of document.querySelectorAll('input[type="radio"][name="ENV_SELECTION"]')) {

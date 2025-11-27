@@ -1,0 +1,44 @@
+dev:
+  verbose: true
+  aws_src_bucket: ingest-dev-vtlib-store
+  aws_dest_bucket: ingest-dev.img.cloud.lib.vt.edu
+  collection_category: federated
+  collection_subdirectory: 
+  item_subdirectory: 
+  region: us-east-1
+  dynamodb_table_suffix: bxbkjhe235e3jcwcjcji5txvlm-vtdlpdev
+  dynamodb_noid_table: dlp-pprd-mint_table
+  dynamodb_file_char_table: ingest-fileCharacterization
+  app_img_root_path: https://d21nnzi4oh5qvs.cloudfront.net
+  noid_scheme: ark:/
+  noid_naa: "53696"
+  long_url_path: https://dev.d1n265krqy0ld3.amplifyapp.com/
+  short_url_path:  https://ssxezg5su1.execute-api.us-east-1.amazonaws.com/
+  media_ingest: false
+  media_type: 3D
+  metadata_ingest: true
+  generate_thumbnails: false
+  dry_run: false
+  update_metadata: true
+pprd:
+  verbose: true
+  aws_src_bucket: ingest-dev-vtlib-store
+  aws_dest_bucket: vtdlp-pprd.img.cloud.lib.vt.edu
+  collection_category: federated
+  collection_subdirectory: 
+  item_subdirectory: 
+  region: us-east-1
+  dynamodb_table_suffix: 77eik3yv7rbdbjhjemas6h7dmi-vtdlppprd
+  dynamodb_noid_table: dlp-pprd-mint_table
+  dynamodb_file_char_table: ingest-fileCharacterization
+  app_img_root_path: https://d4qp6z580yvb5.cloudfront.net
+  noid_scheme: ark:/
+  noid_naa: "53696"
+  long_url_path: https://federated-pprd.dlp.cloud.lib.vt.edu/
+  short_url_path:  https://ssxezg5su1.execute-api.us-east-1.amazonaws.com/
+  media_ingest: false
+  media_type: 3d
+  metadata_ingest: true
+  generate_thumbnails: false
+  dry_run: false
+  update_metadata: true
