@@ -177,83 +177,100 @@
                         </option>
                     </select>
                 </div>
-                <div id="3d-options" class="hidden form-section">
+                <div id="3d_options" class="hidden form-section">
                     <h4>3D Options</h4>
-                    <div>
+                    <div class="form-section">
                         <span>Rotation:</span>
-                        <label for="3d-rotation-x">
-                            x: <input class="short" type="number" name="3d-rotation-x" id="3d-rotation-x" placeholder="Rotation X (radians)">
+                        <label for="3d_options-rotation-x">
+                            x: <input class="short" type="number" name="3d_options-rotation-x" id="3d_options-rotation-x" placeholder="Rotation X (radians)">
                         </label>
-                        <label for="3d-rotation-y">
-                            y: <input class="short" type="number" name="3d-rotation-y" id="3d-rotation-y" placeholder="Rotation Y (radians)">
+                        <label for="3d_options-rotation-y">
+                            y: <input class="short" type="number" name="3d_options-rotation-y" id="3d_options-rotation-y" placeholder="Rotation Y (radians)">
                         </label>
                     </div> 
-                    <div>
-                        <span>Scale:</span>
-                        <label for="3d-scale">
-                            <input class="short" type="number" name="3d-scale" id="3d-scale" placeholder="Scale">
+
+                    <div class="form-section"> 
+                        <label for="3d_options-scale">
+                            <span>Scale:</span> <input class="short" type="number" name="3d_options-scale" id="3d_options-scale" placeholder="Scale">
                         </label>
                     </div>
+
+                    <div class="3d_options-addOns form-section">
+                        <div>
+                            <label for="3d_options-addOns-select">
+                                <span>Add-ons:</span>
+                                <select id="3d_options-addOns-select" name="3d_options-addOns-select">
+                                    <option value="" disabled selected>Select add-on</option>
+                                    <option value="3d_options-flash_card">Flash card</option>
+                                </select>
+                            </label>
+                        </div>
+                        <div id="3d_options-flash_card-options" class="hidden form-section">
+                            <span>Flash Card Text:</span>
+                            <label for="3d_options-flash_card-options-text-front">
+                                <span>Front:</span>
+                                <input type="text" id="3d_options-flash_card-options-text-front" name="3d_options-flash_card-options-text-front" placeholder="Text for flash card front">
+                            </label>
+                            <label for="3d_options-flash_card-options-text-back">
+                                <span>Back:</span>
+                                <input type="text" id="3d_options-flash_card-options-text-back" name="3d_options-flash_card-options-text-back" placeholder="Metadata field to populate back">
+                            </label>
+                        </div>
+                    </div>        
+                </div>
             </div>
             
             <!-- Boolean Options -->
-            <div>
+            <div class="form-section" id="options-section">
+                <h3>Options</h3>
                 <label for="verbose">
                     <input type="checkbox" id="verbose" name="VERBOSE" value="true" checked> 
                     Verbose Output
                 </label>
-            </div>
-            <div>
+            
                 <label for="media_ingest">
                     <input type="checkbox" id="media_ingest" name="MEDIA_INGEST" value="true"> 
                     Media Ingest
                 </label>
-            </div>
-            <div>
+            
                 <label for="metadata_ingest">
                     <input type="checkbox" id="metadata_ingest" name="METADATA_INGEST" value="true" checked> 
                     Metadata Ingest
                 </label>
-            </div>
-            <div>
+            
                 <label for="generate_thumbnails">
                     <input type="checkbox" id="generate_thumbnails" name="GENERATE_THUMBNAILS" value="true"> 
                     Generate Thumbnails
                 </label>
-            </div>
-            <div>
+            
                 <label for="dry_run">
                     <input type="checkbox" id="dry_run" name="DRY_RUN" value="true"> 
                     Dry Run (Test Mode)
                 </label>
-            </div>
-            <div>
+            
                 <label for="update_metadata">
                     <input type="checkbox" id="update_metadata" name="UPDATE_METADATA" value="true"> 
                     Update Existing Metadata
                 </label>
-            </div>
-            <div>
-                <label for="is_lambda">
-                    <input type="checkbox" id="is_lambda" name="IS_LAMBDA" value="true"> 
-                    Lambda Environment
-                </label>
+            
             </div>
             
-            <div>
-                <label for="metadata_input">Metadata CSV:</label>
-                <input type="file" id="metadata_input" name="metadata_input">
-            </div>           
-         
-            <!-- Progress Bar -->
-            <div id="progress-container" style="margin: 16px 0;">
-                <label for="progress-bar">Progress:</label>
-                <progress id="progress-bar" value="0" max="100" style="width: 100%;"></progress>
-                <span id="progress-text"></span>
-            </div>
+            <div class="form-section">
+                <div>
+                    <label for="metadata_input">Metadata CSV:</label>
+                    <input type="file" id="metadata_input" name="metadata_input">
+                </div>           
             
-            <div>
-                <button type="submit" id="ingest_button">Run Ingest</button>
+                <!-- Progress Bar -->
+                <div id="progress-container" style="margin: 16px 0;">
+                    <label for="progress-bar">Progress:</label>
+                    <progress id="progress-bar" value="0" max="100" style="width: 100%;"></progress>
+                    <span id="progress-text"></span>
+                </div>
+                
+                <div>
+                    <button type="submit" id="ingest_button">Run Ingest</button>
+                </div>
             </div>
         </form>
     </div>
