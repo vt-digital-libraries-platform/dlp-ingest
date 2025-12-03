@@ -37,15 +37,24 @@ const handleRadioChange = async (event) => {
 
 
 const resetMediaTypes = () => {
-    document.getElementById("3d-options").classList.add("hidden");
-    document.getElementById("3d-options").querySelectorAll("input").forEach(input => {
+    hide3dOptions();
+    document.getElementById("3d_options").querySelectorAll("input").forEach(input => {
+        input.value = "";
+    });
+    document.getElementById("3d_options").querySelectorAll("select").forEach(input => {
         input.value = "";
     });
 }
 
 
-const _3dSelected = () => {
-    document.getElementById("3d-options").classList.remove("hidden");
+const show3dOptions = () => {
+    document.getElementById("3d_options").classList.remove("hidden");
+}
+
+
+const hide3dOptions = () => {
+    document.getElementById("3d_options").classList.add("hidden");
+    hideFlashCardOptions();
 }
 
 
@@ -53,10 +62,10 @@ const handleMediaTypeChange = (event) => {
     const mediaType = document.getElementById("media_type").value;
     switch (mediaType) {
         case "3d":
-            _3dSelected();
+            show3dOptions();
             break;
-        case "3d_2diif":
-            _3dSelected();
+        case "3d_2diiif":
+            show3dOptions();
             break;
         default:
             // Reset to default state
@@ -65,7 +74,28 @@ const handleMediaTypeChange = (event) => {
     }
 }
 
+const showFlashCardOptions = () => {
+    document.getElementById("3d_options-flash_card-options").classList.remove("hidden");
+}
+
+
+const hideFlashCardOptions = () => {
+    document.getElementById("3d_options-flash_card-options").classList.add("hidden");
+}
+
 const addListeners = async () => {
+    document.getElementById("3d_options-addOns-select").addEventListener("change", (event) => {
+        const selectedValue = event.target.value;
+        switch (selectedValue) {
+            case "3d_options-flash_card":
+                showFlashCardOptions();
+                break;
+            default:
+                hideFlashCardOptions();
+                break;
+        }
+    });
+
     // Add event listener for media type selection
     document.getElementById("media_type").addEventListener("change", (event) => {
         handleMediaTypeChange();
@@ -202,42 +232,6 @@ const fetchIdentifiers = async () => {
 }
 
 
-// --- Section checker logic ---
-const sections = [
-    {
-        id: "aws-section",
-        statusId: "aws-section-status",
-        fields: ["aws_src_bucket", "aws_dest_bucket"]
-    },
-    {
-        id: "collection-section",
-        statusId: "collection-section-status",
-        // Only check collection_category for completion
-        fields: ["collection_category"]
-    },
-    {
-        id: "dynamodb-section",
-        statusId: "dynamodb-section-status",
-        fields: ["dynamodb_noid_table", "dynamodb_file_char_table"]
-    },
-    {
-        id: "path-section",
-        statusId: "path-section-status",
-        fields: ["app_img_root_path", "long_url_path", "short_url_path"]
-    },
-    {
-        id: "noid-section",
-        statusId: "noid-section-status",
-        fields: ["noid_scheme", "noid_naa"]
-    },
-    {
-        id: "media-section",
-        statusId: "media-section-status",
-        fields: ["media_type"]
-    }
-];
-
-
 const checkSection = (section) => {
     let filled = 0;
     section.fields.forEach(id => {
@@ -306,15 +300,52 @@ const setEnvFields = (defaults, env) => {
     document.getElementById("noid_naa").value = envDefaults.noid_naa || "";
 }
 
-const init = async () => {
+// --- Section checker logic ---
+const sections = [
+    {
+        id: "aws-section",
+        statusId: "aws-section-status",
+        fields: ["aws_src_bucket", "aws_dest_bucket"]
+    },
+    {
+        id: "collection-section",
+        statusId: "collection-section-status",
+        // Only check collection_category for completion
+        fields: ["collection_category"]
+    },
+    {
+        id: "dynamodb-section",
+        statusId: "dynamodb-section-status",
+        fields: ["dynamodb_noid_table", "dynamodb_file_char_table"]
+    },
+    {
+        id: "path-section",
+        statusId: "path-section-status",
+        fields: ["app_img_root_path", "long_url_path", "short_url_path"]
+    },
+    {
+        id: "noid-section",
+        statusId: "noid-section-status",
+        fields: ["noid_scheme", "noid_naa"]
+    },
+    {
+        id: "media-section",
+        statusId: "media-section-status",
+        fields: ["media_type"]
+    }
+];
+
+const _3dAddOns = [];
+
+async function init() {
     // Fetch dynamoDB tables from aws
     await getTables();
 
     // Fetch environment defaults and set fields
     await getDefaults().then((def) => {
-        setEnvFields(def,"pprd");
+        setEnvFields(def, "pprd");
         checkAllSections();
-    })
+    });
 
     // Fetch identifiers for the collection identifier field, based on table
     fetchIdentifiers();
