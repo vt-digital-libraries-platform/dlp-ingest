@@ -23,7 +23,7 @@ const getDefaults = async () => {
     return defaults;
 }
 
-const handleRadioChange = async (event) => {  
+const handleEnvRadioChange = async (event) => {  
     const defaults = await getDefaults();
     if (event.target.value === "other") {
         document.getElementById("db-table-select").classList.remove("hidden");
@@ -31,6 +31,27 @@ const handleRadioChange = async (event) => {
     else {
         await setEnvFields(defaults,event.target.value);
         await fetchIdentifiers();
+        checkAllSections();
+    }
+}
+
+
+const handleIngestTypeChange = async (event) => {  
+    const subCollectionOptions = document.getElementById("sub_collection-options");
+    const msgArchive = document.getElementById("msg-archive");
+    const msgCollection = document.getElementById("msg-collection");
+    if (event.target.value === "collection") {
+        subCollectionOptions.classList.remove("hidden");
+        // Show the collection message, hide the archive message
+        msgArchive.classList.add("hidden");
+        msgCollection.classList.remove("hidden");
+        checkAllSections();
+    }
+    else {
+        subCollectionOptions.classList.add("hidden");
+        // Show the archive message, hide the collection message
+        msgArchive.classList.remove("hidden");
+        msgCollection.classList.add("hidden");
         checkAllSections();
     }
 }
@@ -84,10 +105,17 @@ const hideFlashCardOptions = () => {
 }
 
 const addListeners = async () => {
-    document.getElementById("3d_options-addOns-select").addEventListener("change", (event) => {
+    // Add event listeners for ingest type selection (radio buttons)
+    for (let elem of document.querySelectorAll('input[type="radio"][name="INGEST_TYPE"]')) {
+        elem.addEventListener("change", handleIngestTypeChange);
+    };
+
+
+
+    document.getElementById("3d_options-addOns").addEventListener("change", (event) => {
         const selectedValue = event.target.value;
         switch (selectedValue) {
-            case "3d_options-flash_card":
+            case "flash_card":
                 showFlashCardOptions();
                 break;
             default:
@@ -103,7 +131,7 @@ const addListeners = async () => {
     
     // Add event listeners for environment selection (radio buttons)
     for (let elem of document.querySelectorAll('input[type="radio"][name="ENV_SELECTION"]')) {
-        elem.addEventListener("change", handleRadioChange);
+        elem.addEventListener("change", handleEnvRadioChange);
     };
 
 
