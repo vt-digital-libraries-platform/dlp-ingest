@@ -19,22 +19,23 @@
     <div>
         <form action="/submit" method="post" enctype="multipart/form-data">
             <!-- Environment Selection -->
-            <div>
-                <span class="section-text">Select the type of ingest to perform</span>
+            <div class="form-section">
+                <div class="section-text">Select the type of ingest to perform</div>
                 <div class="ingest_type-radios">
-                    <label for="ingest_type-collection">
-                        <input type="radio" id="ingest_type-collection" name="INGEST_TYPE" value="collection" checked> Collection
-                    </label>
                     <label for="ingest_type-archive">
-                        <input type="radio" id="ingest_type-archive" name="INGEST_TYPE" value="archive"> Archive
+                        <input type="radio" id="ingest_type-archive" name="INGEST_TYPE" value="archive" checked> Items/Archives
+                    </label>
+                    <label for="ingest_type-collection">
+                        <input type="radio" id="ingest_type-collection" name="INGEST_TYPE" value="collection"> Collection(s)
                     </label>
                 </div>
+                
             </div>
 
 
             <!-- Environment Selection -->
-            <div>
-                <span class="section-text">Select the environment to ingest to. Form fields will be populated based on your selection, but can be changed</span>
+            <div class="form-section">
+                <div class="section-text">Select the environment to ingest to. Form fields will be populated based on your selection, but can be changed</div>
                 <div class="env-radios">
                     {% for env in envs %}
                         <label for="env_{{env.value}}">
@@ -51,19 +52,26 @@
                 </div>
             </div>
 
-            <hr />
-            
-            <!-- Collection Identifier -->
-            <div id="collection-identifier-section">
-                <div class="section-text">Select an existing collection to ingest to by identifier, or type in a new collection identifier</div>
-                <span id="collection-identifier-status" class="section-status incomplete">Incomplete</span>
-                <label for="collection_identifier">Collection Identifier:</label>
-                <input list="collection_identifiers" id="collection_identifier" name="COLLECTION_IDENTIFIER" autocomplete="off" placeholder="Type or select collection identifier" required>
-                <datalist id="collection_identifiers">
-                    <!-- Options will be filled dynamically by JavaScript -->
-                </datalist>
-            </div>
+            <div class="form-section">
+                <h3>Collection Configuration</h3>
+                <!-- Collection Identifier -->
+                <div class="form-section" id="collection-identifier-section">
+                    <div class="section-text" id="msg-archive">Select the collection to ingest items/archives into by the collection's identifier</div>
+                    <div class="section-text hidden" id="msg-collection">Select an existing collection to update by it's identifier, or enter a new identifier to create a new collection</div>
+                    
+                    <span id="collection-identifier-status" class="section-status incomplete">Incomplete</span>
+                    <label for="collection_identifier">Collection Identifier:</label>
+                    <input list="collection_identifiers" id="collection_identifier" name="COLLECTION_IDENTIFIER" autocomplete="off" placeholder="Type or select collection identifier" required>
+                    <datalist id="collection_identifiers">
+                        <!-- Options will be filled dynamically by JavaScript -->
+                    </datalist>
+                </div>
 
+                <div id="sub_collection-options" class="form-section hidden">
+                    <div class="section-text">Is this collection a sub-collection (part of a larger collection)? Add the identifier of the collection's PARENT collection to create the relationship.</div>
+                    <input type="text" id="parent_collection_identifier" name="PARENT_COLLECTION_IDENTIFIER" placeholder="Parent collection identifier (optional)">
+                </div>
+            </div>
             <hr />
             
             
@@ -180,40 +188,40 @@
                 <div id="3d_options" class="hidden form-section">
                     <h4>3D Options</h4>
                     <div class="form-section">
-                        <span>Rotation:</span>
+                        <div class="section-text">Rotation:</div>
                         <label for="3d_options-rotation-x">
-                            x: <input class="short" type="number" name="3d_options-rotation-x" id="3d_options-rotation-x" placeholder="Rotation X (radians)">
+                            x: <input class="short" type="number" name="3D_OPTIONS-ROTATION-X" id="3d_options-rotation-x" placeholder="Rotation X (radians)">
                         </label>
                         <label for="3d_options-rotation-y">
-                            y: <input class="short" type="number" name="3d_options-rotation-y" id="3d_options-rotation-y" placeholder="Rotation Y (radians)">
+                            y: <input class="short" type="number" name="3D_OPTIONS-ROTATION-Y" id="3d_options-rotation-y" placeholder="Rotation Y (radians)">
                         </label>
                     </div> 
 
                     <div class="form-section"> 
                         <label for="3d_options-scale">
-                            <span>Scale:</span> <input class="short" type="number" name="3d_options-scale" id="3d_options-scale" placeholder="Scale">
+                            <span>Scale:</span> <input class="short" type="number" name="3D_OPTIONS-SCALE" id="3d_options-scale" placeholder="Scale">
                         </label>
                     </div>
 
                     <div class="3d_options-addOns form-section">
                         <div>
-                            <label for="3d_options-addOns-select">
+                            <label for="3d_options-addOns">
                                 <span>Add-ons:</span>
-                                <select id="3d_options-addOns-select" name="3d_options-addOns-select">
+                                <select id="3d_options-addOns" name="3D_OPTIONS-ADDONS">
                                     <option value="" disabled selected>Select add-on</option>
-                                    <option value="3d_options-flash_card">Flash card</option>
+                                    <option value="flash_card">Flash card</option>
                                 </select>
                             </label>
                         </div>
                         <div id="3d_options-flash_card-options" class="hidden form-section">
-                            <span>Flash Card Text:</span>
+                            <div class="section-text">Flash Card Text:</div>
                             <label for="3d_options-flash_card-options-text-front">
-                                <span>Front:</span>
-                                <input type="text" id="3d_options-flash_card-options-text-front" name="3d_options-flash_card-options-text-front" placeholder="Text for flash card front">
+                                <span>Front (string):</span>
+                                <input type="text" id="3d_options-flash_card-options-text-front" name="3D_OPTIONS-FLASH_CARD-OPTIONS-TEXT-FRONT" placeholder="Text for flash card front">
                             </label>
                             <label for="3d_options-flash_card-options-text-back">
-                                <span>Back:</span>
-                                <input type="text" id="3d_options-flash_card-options-text-back" name="3d_options-flash_card-options-text-back" placeholder="Metadata field to populate back">
+                                <span>Back (metadata field):</span>
+                                <input type="text" id="3d_options-flash_card-options-text-back" name="3D_OPTIONS-FLASH_CARD-OPTIONS-TEXT-BACK" placeholder="Metadata field to populate back">
                             </label>
                         </div>
                     </div>        

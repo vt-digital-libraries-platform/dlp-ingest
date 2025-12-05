@@ -12,6 +12,7 @@ application.config['DEBUG'] = True
 application.config['SECRET_KEY'] = os.urandom(24)
 application.config['UPLOADS'] = os.path.join(app_root, 'uploads')
 application.config['ALLOWED_EXTENSIONS'] = {'csv'}
+ingestConfig = {}
 
 
 # empty directory (mostly for uploads)
@@ -26,29 +27,38 @@ cleanup(application.config['UPLOADS'])
 
 
 env_vars = [
-    'VERBOSE',
+    'APP_IMG_ROOT_PATH',
     'AWS_SRC_BUCKET',
     'AWS_DEST_BUCKET',
     'COLLECTION_CATEGORY',
     'COLLECTION_IDENTIFIER',
     'COLLECTION_SUBDIRECTORY',
-    'ITEM_SUBDIRECTORY',
-    'REGION',
+    'DRY_RUN',
     'DYNAMODB_TABLE_SUFFIX',
     'DYNAMODB_NOID_TABLE',
     'DYNAMODB_FILE_CHAR_TABLE',
-    'APP_IMG_ROOT_PATH',
-    'NOID_SCHEME',
-    'NOID_NAA',
+    'ENV_SELECTION',
+    'GENERATE_THUMBNAILS',
+    'INGEST_TYPE',
+    'ITEM_SUBDIRECTORY',
     'LONG_URL_PATH',
-    'SHORT_URL_PATH',
     'MEDIA_INGEST',
     'MEDIA_TYPE',
     'METADATA_INGEST',
-    'GENERATE_THUMBNAILS',
-    'DRY_RUN',
+    'NOID_SCHEME',
+    'NOID_NAA',
+    'MEDIA_TYPE',
+    'PARENT_COLLECTION_IDENTIFIER',
+    'REGION',
+    'SHORT_URL_PATH',
     'UPDATE_METADATA',
-    '3D_CONFIG'
+    'VERBOSE',
+    '3D_OPTIONS-ROTATION-X',
+    '3D_OPTIONS-ROTATION-Y',
+    '3D_OPTIONS-SCALE',
+    '3D_OPTIONS-ADDONS',
+    '3D_OPTIONS-FLASH_CARD-OPTIONS-TEXT-FRONT',
+    '3D_OPTIONS-FLASH_CARD-OPTIONS-TEXT-BACK',
 ]
     
 
@@ -97,12 +107,11 @@ def save_uploads(identifier, num_files):
 def set_environment(env_values):
     for key, value in env_values:
         if str(key).upper() in env_vars:
-            application.config[str(key).upper()] = value
+            ingestConfig[str(key).upper()] = value
 
 
 def environment_json(env):
-    print(env)
-    envs = ["dev", "pprd"]
+    envs = ["dev", "pprd", "prod"]
     env_json = {}
     for key in envs:
         env_json[key] = {}
@@ -125,6 +134,14 @@ def set_environment_defaults():
 
 def set_environment_overrides():
     set_environment(request.form.items())
+
+    # ingestConfig["VERBOSE"] = request.form.get("VERBOSE", "false") == "true"
+    # ingestConfig["MEDIA_INGEST"] = request.form.get("MEDIA_INGEST", "false") == "true"
+    # ingestConfig["METADATA_INGEST"] = request.form.get("METADATA_INGEST", "false") == "true"
+    # ingestConfig["GENERATE_THUMBNAILS"] = request.form.get("GENERATE_THUMBNAILS", "false") == "true"
+    # ingestConfig["DRY_RUN"] = request.form.get("DRY_RUN", "false") == "true"
+    # ingestConfig["UPDATE_METADATA"] = request.form.get("UPDATE_METADATA", "false") == "true"
+    # ingestConfig["IS_LAMBDA"] = request.form.get("IS_LAMBDA", "false") == "true"
 
 
 def get_available_envs():
@@ -194,21 +211,15 @@ def submit():
     if files_exist():
         set_environment_overrides()
 
-        application.config["VERBOSE"] = request.form.get("VERBOSE", "false") == "true"
-        application.config["MEDIA_INGEST"] = request.form.get("MEDIA_INGEST", "false") == "true"
-        application.config["METADATA_INGEST"] = request.form.get("METADATA_INGEST", "false") == "true"
-        application.config["GENERATE_THUMBNAILS"] = request.form.get("GENERATE_THUMBNAILS", "false") == "true"
-        application.config["DRY_RUN"] = request.form.get("DRY_RUN", "false") == "true"
-        application.config["UPDATE_METADATA"] = request.form.get("UPDATE_METADATA", "false") == "true"
-        application.config["IS_LAMBDA"] = request.form.get("IS_LAMBDA", "false") == "true"
-
         # Do the ingest
         metadata_filepath = os.path.join(application.config['UPLOADS'], uploaded[0])
         print(f"DEBUG: Calling dlp_ingest_main with file: {metadata_filepath}")
-        result = dlp_ingest_main(None, None, metadata_filepath, application.config)
-        print(f"DEBUG: Result returned by dlp_ingest_main: {result}")
+        print(ingestConfig)
 
+        result = None
+        # result = dlp_ingest_main(None, None, metadata_filepath, application.config)
         if result:
+            print(f"DEBUG: Result returned by dlp_ingest_main: {result}")
             ingested_items = result.get('ingested', [])
             updated_items = result.get('updated', [])
             errors = result.get('errors', [])

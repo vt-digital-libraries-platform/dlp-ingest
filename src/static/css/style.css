@@ -267,6 +267,12 @@ h3 {
 .section-status.incomplete { background: #ffe0e0; color: #b30000; }
 .section-status.complete { background: #e0ffe0; color: #008000; }
 
+.section-text {
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
 #collection_identifier:invalid {
     border: 2px solid #b00000;
     background: #fff;
