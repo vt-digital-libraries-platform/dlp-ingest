@@ -188,6 +188,10 @@ button {
 button:hover {
     background-color: #45a049;
 }
+button.disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
 
 button:active {
     transform: translateY(1px);
@@ -196,13 +200,15 @@ button:active {
 /* File input styling */
 input[type="file"] {
     padding: 10px;
-    background-color: #f9f9f9;
-    border: 2px dashed #ddd;
+    border-color: #45a049;
+    background-color: white;
+}
+input#metadata_input.incomplete {
+    border: 2px solid #b00;
 }
 
 input[type="file"]:hover {
-    border-color: #4CAF50;
-    background-color: #f0f8f0;
+    border-color: #000;
 }
 
 /* Placeholder text styling */

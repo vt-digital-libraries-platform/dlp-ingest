@@ -13,7 +13,3 @@ class IIIFDigitalObject(GenericDigitalObject):
         super().__init__(
             env, filename, bucket, assets, self.s3_client, self.s3_resource
         )
-
-    def import_digital_objects(self):
-        print("import_digital_objects called from IIIFTypeDigitalObjects")
-        return None

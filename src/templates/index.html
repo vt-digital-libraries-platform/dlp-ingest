@@ -263,10 +263,11 @@
             
             </div>
             
-            <div class="form-section">
+            <div class="form-section" id="metadata-section">
+                <div id="metadata-section-status" class="section-status incomplete">Incomplete</div>
                 <div>
                     <label for="metadata_input">Metadata CSV:</label>
-                    <input type="file" id="metadata_input" name="metadata_input">
+                    <input type="file" id="metadata_input" class="incomplete" name="metadata_input">
                 </div>           
             
                 <!-- Progress Bar -->
@@ -277,7 +278,7 @@
                 </div>
                 
                 <div>
-                    <button type="submit" id="ingest_button">Run Ingest</button>
+                    <button type="submit" id="ingest_button" class="disabled" disabled>Run Ingest</button>
                 </div>
             </div>
         </form>
