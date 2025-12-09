@@ -104,7 +104,17 @@ const hideFlashCardOptions = () => {
     document.getElementById("3d_options-flash_card-options").classList.add("hidden");
 }
 
+// Add event listeners for all the form elements
 const addListeners = async () => {
+
+    // File input
+    document.getElementById("metadata_input").addEventListener("change", function(event) {
+        const fileInput = event.target;
+        if(fileInput.files?.length > 0){
+            document.getElementById("metadata_input").classList.remove("incomplete");
+        }
+    });
+
     // Add event listeners for ingest type selection (radio buttons)
     for (let elem of document.querySelectorAll('input[type="radio"][name="INGEST_TYPE"]')) {
         elem.addEventListener("change", handleIngestTypeChange);
@@ -273,25 +283,35 @@ const checkSection = (section) => {
         }
     });
     const status = document.getElementById(section.statusId);
-    if (!status) return;
+    if (!status) return false;
     if (filled === section.fields.length) {
         status.textContent = "Complete";
         status.classList.remove("incomplete");
         status.classList.add("complete");
         // Do NOT hide the section
         document.getElementById(section.id).classList.remove("closed");
+
+        return true;
     } else {
         status.textContent = `Incomplete (${filled}/${section.fields.length})`;
         status.classList.remove("complete");
         status.classList.add("incomplete");
         document.getElementById(section.id).classList.remove("closed");
+        return false;
     }
 }
 
 
 const checkAllSections = () => {
+    let allComplete = true;
     for (const section of sections) {
-        checkSection(section);
+      if(!checkSection(section)) {
+        allComplete = false;
+      }
+    }
+    if (allComplete) {
+        document.getElementById("ingest_button").classList.remove("disabled");
+        document.getElementById("ingest_button").disabled = false;
     }
 }
 
@@ -360,6 +380,11 @@ const sections = [
         id: "media-section",
         statusId: "media-section-status",
         fields: ["media_type"]
+    },
+    {
+        id: "metadata-section",
+        statusId: "metadata-section-status",
+        fields: ["metadata_input"]
     }
 ];
 

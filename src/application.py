@@ -27,6 +27,7 @@ cleanup(application.config['UPLOADS'])
 
 
 env_vars = [
+    'APPLICATION_ROOT',
     'APP_IMG_ROOT_PATH',
     'AWS_SRC_BUCKET',
     'AWS_DEST_BUCKET',
@@ -127,6 +128,7 @@ def set_environment_defaults():
         defaults = yaml.safe_load(f)
     if defaults:
         set_environment(defaults.items())
+        set_environment({'APPLICATION_ROOT': application.config['APPLICATION_ROOT']}.items())
     else:
         print(f"Error loading environment defaults from {env_file}")
         sys.exit(1)
@@ -134,14 +136,19 @@ def set_environment_defaults():
 
 def set_environment_overrides():
     set_environment(request.form.items())
+    set_environment_booleans()
 
-    # ingestConfig["VERBOSE"] = request.form.get("VERBOSE", "false") == "true"
-    # ingestConfig["MEDIA_INGEST"] = request.form.get("MEDIA_INGEST", "false") == "true"
-    # ingestConfig["METADATA_INGEST"] = request.form.get("METADATA_INGEST", "false") == "true"
-    # ingestConfig["GENERATE_THUMBNAILS"] = request.form.get("GENERATE_THUMBNAILS", "false") == "true"
-    # ingestConfig["DRY_RUN"] = request.form.get("DRY_RUN", "false") == "true"
-    # ingestConfig["UPDATE_METADATA"] = request.form.get("UPDATE_METADATA", "false") == "true"
-    # ingestConfig["IS_LAMBDA"] = request.form.get("IS_LAMBDA", "false") == "true"
+
+
+def set_environment_booleans():
+    for key in env_vars:
+        if key not in ingestConfig.keys():
+            set_environment({key: False}.items())
+        # Convert string values to booleans
+        if key in ingestConfig and isinstance(ingestConfig[key], str) and ingestConfig[key].lower() == "true":
+            ingestConfig[key] = True
+        elif key in ingestConfig and isinstance(ingestConfig[key], str) and ingestConfig[key].lower() == "false":
+            ingestConfig[key] = False
 
 
 def get_available_envs():
@@ -217,7 +224,7 @@ def submit():
         print(ingestConfig)
 
         result = None
-        # result = dlp_ingest_main(None, None, metadata_filepath, application.config)
+        result = dlp_ingest_main(None, None, metadata_filepath, ingestConfig)
         if result:
             print(f"DEBUG: Result returned by dlp_ingest_main: {result}")
             ingested_items = result.get('ingested', [])
