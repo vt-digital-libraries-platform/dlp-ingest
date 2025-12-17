@@ -257,6 +257,7 @@ run_*.sh
 lambda_local.sh
 results_files/
 src/static/yml/env_defaults.yml
+src/uploads/
 
 bin/
 examples/

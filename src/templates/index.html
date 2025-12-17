@@ -63,14 +63,19 @@
                     <label for="collection_identifier">Collection Identifier:</label>
                     <input list="collection_identifiers" id="collection_identifier" name="COLLECTION_IDENTIFIER" autocomplete="off" placeholder="Type or select collection identifier" required>
                     <datalist id="collection_identifiers">
-                        <!-- Options will be filled dynamically by JavaScript -->
+                        <!-- Options will be filled dynamically -->
                     </datalist>
                 </div>
 
                 <div id="sub_collection-options" class="form-section hidden">
                     <div class="section-text">Is this collection a sub-collection (part of a larger collection)? Add the identifier of the collection's PARENT collection to create the relationship.</div>
-                    <input type="text" id="parent_collection_identifier" name="PARENT_COLLECTION_IDENTIFIER" placeholder="Parent collection identifier (optional)">
+                    <input list="parent_collection_identifiers" id="parent_collection_identifier" name="PARENT_COLLECTION_IDENTIFIER" placeholder="Parent collection identifier (optional)">
+                    <datalist id="parent_collection_identifiers">
+                        <!-- Options will be filled dynamically -->
+                    </datalist>  
                 </div>
+
+                <div id="collection_parent_match" class="hidden">Collection identifier and Parent Collection identifier cannot match.</div>
             </div>
             <hr />
             

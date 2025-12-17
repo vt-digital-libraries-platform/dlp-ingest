@@ -104,9 +104,29 @@ const hideFlashCardOptions = () => {
     document.getElementById("3d_options-flash_card-options").classList.add("hidden");
 }
 
+const checkCollectionAndParentIdentifiers = (selected, other) => {
+    const selectedElement = document.getElementById(selected);
+    const selected_identifier = selectedElement.value;
+    const other_identifier = document.getElementById(other).value;
+    const match = document.getElementById("collection_parent_match");
+
+        if(selected_identifier === other_identifier) {
+            match.classList.remove("hidden");
+            selectedElement.value = "";
+            window.setTimeout(() => {
+                match.classList.add("hidden");
+            }, 5000);
+        }
+}
+
 // Add event listeners for all the form elements
 const addListeners = async () => {
 
+    // parent collection identifier
+    document.getElementById("parent_collection_identifier").addEventListener("change", function(event) {
+        checkCollectionAndParentIdentifiers("parent_collection_identifier", "collection_identifier");
+    });
+    
     // File input
     document.getElementById("metadata_input").addEventListener("change", function(event) {
         const fileInput = event.target;
@@ -149,9 +169,6 @@ const addListeners = async () => {
     document.getElementById("dynamodb_table_suffix").addEventListener("change", function(event) {
         const envDev = document.getElementById("env_dev");
         const envPprd = document.getElementById("env_pprd");
-
-        // Remove all hardcoded value assignments here
-        // (No document.getElementById(...).value = "..." lines)
 
         // Environment detection logic remains, but field population will be handled by setEnvFields(env)
         if (event.target.value.endsWith("vtdlpdev")) {
@@ -227,7 +244,6 @@ const addListeners = async () => {
     const select = document.getElementById("collection_identifier");
     select.addEventListener("change", checkCollectionIdentifier);
     select.addEventListener("input", checkCollectionIdentifier); // For manual typing if supported
-    window.addEventListener("DOMContentLoaded", checkCollectionIdentifier);
 
 
     document.getElementById("ingest_button").addEventListener("click", function(e) {
@@ -259,12 +275,21 @@ const fetchIdentifiers = async () => {
     fetch(`/api/identifiers?suffix=${encodeURIComponent(suffix)}`)
         .then(response => response.json())
         .then(data => {
-            const datalist = document.getElementById("collection_identifiers");
-            datalist.innerHTML = "";
-            data.identifiers.forEach(id => {
+            const collection_datalist = document.getElementById("collection_identifiers");
+            const parent_collection_datalist = document.getElementById("parent_collection_identifiers");
+            // Clear existing options
+            collection_datalist.innerHTML = "";
+            parent_collection_datalist.innerHTML = "";
+            collection_datalist.innerHTML = "";
+
+            const selected_collection = document.getElementById("collection_identifier").value;
+            data.identifiers.forEach(identifier => {
                 const option = document.createElement("option");
-                option.value = id;
-                datalist.appendChild(option);
+                option.value = identifier;
+                collection_datalist.appendChild(option);
+                if (!selected_collection || identifier !== selected_collection) {
+                    parent_collection_datalist.appendChild(option.cloneNode(true));
+                }
             });
         });
 }
@@ -317,6 +342,7 @@ const checkAllSections = () => {
 
 
 const checkCollectionIdentifier = () => {
+    checkCollectionAndParentIdentifiers("collection_identifier", "parent_collection_identifier");
     const select = document.getElementById("collection_identifier");
     const status = document.getElementById("collection-identifier-status");
     // For a select menu, check if a value is selected
@@ -388,7 +414,6 @@ const sections = [
     }
 ];
 
-const _3dAddOns = [];
 
 async function init() {
     // Fetch dynamoDB tables from aws
