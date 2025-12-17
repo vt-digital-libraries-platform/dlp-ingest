@@ -1,4 +1,5 @@
 import sys
+import time
 import boto3, http, io, json, os, uuid, urllib.request
 import pandas as pd
 from datetime import datetime, timezone
@@ -21,6 +22,7 @@ class GenericMetadata:
 
         try:
             self.dyndb = boto3.resource("dynamodb", region_name=self.env["REGION"])
+            self.dyndb_client = boto3.client("dynamodb")
             self.env["archive_table"] = self.dyndb.Table(self.get_table_name("Archive"))
             self.env["collection_table"] = self.dyndb.Table(
                 self.get_table_name("Collection")
@@ -58,8 +60,8 @@ class GenericMetadata:
         elif "INGEST_TYPE" in self.env and self.env['INGEST_TYPE'] == "archive":
             self.batch_import_archives(metadata_stream)
 
-        print("Results: ===================================================")
-        print("Total records processed: ", len(self.results))
+        print("===================================")
+        print("Ingest process completed.")
         return {"statusCode": 200, "body": json.dumps("Finish metadata import.")}
     
  
@@ -75,6 +77,7 @@ class GenericMetadata:
                 print(f"Error: Collection {idx+1} has failed to be imported.")
                 return False
             identifier = collection_dict["identifier"]
+
             if "thumbnail_path" not in collection_dict or not collection_dict["thumbnail_path"]:
                 collection_dict["thumbnail_path"] = os.path.join(
                     self.env["APP_IMG_ROOT_PATH"],
@@ -82,18 +85,41 @@ class GenericMetadata:
                     identifier,
                     "representative.jpg",
                 )
+                
+            if "id" not in collection_dict:
+                collection_dict["id"] = str(uuid.uuid4())
             
             if "heirarchy_path" not in collection_dict:
-                collection_dict["heirarchy_path"] = self.create_heirarchy_path()
+                collection_dict["heirarchy_path"] = self.create_heirarchy_path(collection_dict)
+                if len(collection_dict['heirarchy_path']) > 1:
+                    collection_dict["parent_collection"] = [collection_dict['heirarchy_path'][-2]] 
             
-            new_collection_id = self.create_item_in_table(self.env["collection_table"], collection_dict, "Collection", idx)
+            self.create_item_in_table(self.env["collection_table"], collection_dict, "Collection", idx)
 
-            #Revisit the collection map update logic
             if "heirarchy_path" in collection_dict:
                 self.update_collection_map(collection_dict["heirarchy_path"][0])
-                
+
             print(f"Collection {idx+1} ({identifier}) has been imported.")
 
+
+    def create_heirarchy_path(self, collection_dict):
+        heirarchy_path = []
+        parent = None
+        parent_identifier = None
+        if "parent_collection_identifier" in collection_dict:
+            parent_identifier = collection_dict["parent_collection_identifier"]
+        elif "PARENT_COLLECTION_IDENTIFIER" in self.env and self.env["PARENT_COLLECTION_IDENTIFIER"] != "":
+            parent_identifier = self.env["PARENT_COLLECTION_IDENTIFIER"]
+        
+        if parent_identifier:
+            parent = self.query_by_index(self.env["collection_table"], "Identifier", parent_identifier)
+
+        if parent and "heirarchy_path" in parent:
+            heirarchy_path = parent["heirarchy_path"] 
+            
+        heirarchy_path.append(collection_dict["id"])    
+            
+        return heirarchy_path
 
 
     def batch_import_archives(self, response):
@@ -118,7 +144,7 @@ class GenericMetadata:
                     )
                     archive_dict["thumbnail_path"] = self.get_thumbnail_path_for_archive(archive_dict, collection)
                     
-                    if self.archive_exists(self.env["archive_table"] ,archive_dict["identifier"]):
+                    if self.archive_exists(self.env["archive_table"],archive_dict["identifier"]):
                         if self.env["UPDATE_METADATA"]:
                             self.update_item_in_table(self.env["archive_table"], archive_dict, "Archive", idx)
                         else:
@@ -149,7 +175,6 @@ class GenericMetadata:
             encoding="utf-8",
             dtype={"Start Date": str, "End Date": str},
         )
-        df = self.header_update(df)
         return df
     
 
@@ -265,8 +290,8 @@ class GenericMetadata:
             return False  # Indicate failure
 
     def create_item_in_table(self, table, attr_dict, item_type, index):
-        attr_id = str(uuid.uuid4())
-        attr_dict["id"] = attr_id
+        if "id" not in attr_dict:
+            attr_dict["id"] = str(uuid.uuid4())
 
         short_id = self.mint_NOID()
         if short_id:
@@ -302,7 +327,7 @@ class GenericMetadata:
                 self.create_NOID_record(short_id, attr_dict, long_url, short_url, utc_now)
             else:
                 self.delete_NOID_record(short_id)
-        return attr_id
+        return attr_dict["id"]
 
 
     def utcformat(self, dt, timespec="milliseconds"):
@@ -347,7 +372,7 @@ class GenericMetadata:
         if item_type == "Collection":
             attr_dict["collection_category"] = self.env["COLLECTION_CATEGORY"]
             if "parent_collection_identifier" not in attr_dict.keys() and len(self.env["PARENT_COLLECTION_IDENTIFIER"]) > 0:
-                attr_dict["parent_collection_identifier"] = self.env["PARENT_COLLECTION_IDENTIFIER"]
+                attr_dict["parent_collection_identifier"] = [self.env["PARENT_COLLECTION_IDENTIFIER"]]
         
         elif item_type == "Archive":
             attr_dict["item_category"] = self.env["COLLECTION_CATEGORY"]
@@ -443,22 +468,38 @@ class GenericMetadata:
 
 
     def query_by_index(self, table, index_name, value):
+
+        if not table or not index_name or not value:
+            print(f"Error: arg is None for query_by_index()")
+            print(f"table: {table or 'None'}, index_name: {index_name or 'None'}, value: {value or 'None'}")
+            return None
         index_key = index_name.lower()
+        response = None
         ret_val = None
+
+        if type(value) is list:
+            value = value[0]
+
         try:
-            if str(index_key) == "id":
+            found = []
+            indexes = table.global_secondary_indexes
+            for index in indexes:
+                found.append(index["IndexName"])
+            if index_name in found:
                 response = table.query(
-                    KeyConditionExpression=Key(index_key).eq(value), Limit=1
+                    IndexName=index_name,
+                    KeyConditionExpression=Key(index_key).eq(value),
+                    Limit=1,
                 )
             else:
                 response = table.query(
-                    IndexName=index_name,
                     KeyConditionExpression=Key(index_key).eq(value),
                     Limit=1,
                 )
             if "Items" in response and len(response["Items"]) == 1:
                 ret_val = response["Items"][0]
         except Exception as e:
+            print(f"Error querying {table} by {index_name}: {str(e)}")
             pass
         return ret_val
 

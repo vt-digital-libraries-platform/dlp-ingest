@@ -220,8 +220,6 @@ def submit():
 
         # Do the ingest
         metadata_filepath = os.path.join(application.config['UPLOADS'], uploaded[0])
-        print(f"DEBUG: Calling dlp_ingest_main with file: {metadata_filepath}")
-        print(ingestConfig)
 
         result = None
         result = dlp_ingest_main(None, None, metadata_filepath, ingestConfig)

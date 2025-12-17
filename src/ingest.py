@@ -69,6 +69,7 @@ def new_media_type_handler(env, filename, bucket):
 
 
 def main(event, context, csv_file=None, app_config=None):
+    print("Starting ingest process at src.ingest.main...")
     set_environment(app_config)
     filename = None
     if event:

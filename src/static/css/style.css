@@ -54,11 +54,17 @@ div#db-table-select {
     margin: 2rem 0;
 }
 
+#collection_parent_match {
+    color: #b00000;
+    font-weight: bold;
+    margin-top: 10px;
+}
 
 
 input[type="text"], 
 input[type="file"],
 input#collection_identifier,
+input#parent_collection_identifier,
 select {
     width: 100%;
     padding: 8px 12px;
