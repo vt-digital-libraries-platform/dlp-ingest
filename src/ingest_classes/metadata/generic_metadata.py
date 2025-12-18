@@ -379,6 +379,13 @@ class GenericMetadata:
         
         if "visibility" not in attr_dict.keys():
             attr_dict["visibility"] = True
+
+        self.handle_options(attr_dict)
+
+
+
+    def handle_options(self, attr_dict):
+        return
         
 
 

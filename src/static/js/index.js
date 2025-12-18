@@ -69,7 +69,10 @@ const resetMediaTypes = () => {
 
 
 const show3dOptions = () => {
-    document.getElementById("3d_options").classList.remove("hidden");
+    const ingestType = document.getElementById("ingest_type-archive")
+    if(ingestType.checked) {
+        document.getElementById("3d_options").classList.remove("hidden");
+    }
 }
 
 
