@@ -19,23 +19,11 @@ class ThreeDMetadata(GenericMetadata):
             archive_dict = self.process_csv_metadata(row, "Archive")
             if not archive_dict:
                 print(f"Error: Archive {idx+1} has failed to be imported.")
-                self.log_result(
-                    False,
-                    idx,
-                    1,
-                    False,
-                )
                 break
             else:
                 collection = self.get_collection(archive_dict)
                 if not collection:
                     print(f"Error: Collection not found for Archive {idx+1} in dynamo.")
-                    self.log_result(
-                        archive_dict,
-                        idx,
-                        3,
-                        False,
-                    )
                     break
                 collection_identifier = (
                     collection["identifier"]
@@ -44,17 +32,13 @@ class ThreeDMetadata(GenericMetadata):
                 )
                 if collection_identifier is None:
                     print(f"Error: Collection not found for Archive {idx+1}. in env.")
-                    self.log_result(
-                        archive_dict,
-                        idx,
-                        3,
-                        False,
-                    )
                     break
                 else:
                     archive_dict["collection"] = collection["id"]
                     archive_dict["parent_collection"] = [collection["id"]]
                     archive_dict["heirarchy_path"] = collection["heirarchy_path"]
+                    
+                    # try to load iiif manifest and get thumbnail, in case it's a 3d + iiif record
                     archive_dict["manifest_url"] = os.path.join(
                         self.env["APP_IMG_ROOT_PATH"],
                         self.env["COLLECTION_CATEGORY"],
@@ -64,15 +48,14 @@ class ThreeDMetadata(GenericMetadata):
                     )
                     try:
                         json_url = urllib.request.urlopen(archive_dict["manifest_url"])
-                        archive_dict["thumbnail_path"] = json.loads(json_url.read())[
-                            "thumbnail"
-                        ]["@id"]
+                        archive_dict["thumbnail_path"] = json.loads(json_url.read())["thumbnail"]["@id"]
                     except Exception as e:
-                        print(f"{archive_dict['manifest_url']} not found.")
+                        print(f"Manifest not found for {archive_dict['identifier']}, url: {archive_dict['manifest_url']}")
                         archive_dict["thumbnail_path"] = None
                         archive_dict["manifest_url"] = None
 
-                    self.archive_option_additions = self.set_archive_option_additions(
+                    # set archive options
+                    self.archive_option_additions = self.set_archive_options(
                         archive_dict
                     )
                     if archive_dict["thumbnail_path"] is None:
@@ -95,32 +78,17 @@ class ThreeDMetadata(GenericMetadata):
                         archive_dict["archiveOptions"] = self.archive_option_additions
 
                     try:
-                        if archive_dict["archiveOptions"]["assets"]["x3d_config"] and archive_dict["archiveOptions"]["assets"]["x3d_src_img"]:
-                            self.create_or_update(
-                                self.env["archive_table"],
-                                archive_dict,
-                                "Archive",
-                                idx,
-                                existing_item,
-                            )
+                        self.create_or_update(
+                            self.env["archive_table"],
+                            archive_dict,
+                            "Archive",
+                            idx,
+                            existing_item,
+                        )
                     except Exception as e:
                         print(f"Error: Archive {idx+1}:{archive_dict['identifier']} has failed to be imported.")
-                        self.log_result(
-                            archive_dict,
-                            idx,
-                            1,
-                            False,
-                        )
-                        try:
-                            print("Config")
-                            print(archive_dict["archiveOptions"]["assets"]["x3d_config"])
-                        except Exception as e:
-                            print("Nope")
-                        try:
-                            print("Src Img")
-                            print(archive_dict["archiveOptions"]["assets"]["x3d_src_img"])
-                        except Exception as e:
-                            print("Nope")
+
+
 
     def key_by_asset_path(self, asset_path):
         matching_key = None
@@ -136,8 +104,10 @@ class ThreeDMetadata(GenericMetadata):
                     matching_key = key
         return matching_key
 
-    def set_archive_option_additions(self, archive_dict):
-        archive_option_additions = {}
+
+    def set_archive_options(self, archive_dict):
+        archive_assets = {}
+        archive_config = {}
         collection_path = os.path.join(
             self.env["COLLECTION_CATEGORY"],
             self.env["COLLECTION_IDENTIFIER"],
@@ -168,7 +138,7 @@ class ThreeDMetadata(GenericMetadata):
                         )
                         asset_list.append(asset_full_path)
 
-                archive_option_additions[asset] = asset_list
+                archive_assets[asset] = asset_list
             else:
                 asset_path = os.path.join(
                     adjusted_path,
@@ -179,11 +149,43 @@ class ThreeDMetadata(GenericMetadata):
                 asset_path = asset_path.replace(self.env["APP_IMG_ROOT_PATH"], "")
                 key = self.key_by_asset_path(asset_path)
                 if key:
-                    archive_option_additions[asset] = os.path.join(
+                    archive_assets[asset] = os.path.join(
                         self.env["APP_IMG_ROOT_PATH"], key
                     )
-        archive_option_additions["media_type"] = self.env["MEDIA_TYPE"]
-        return {"assets": archive_option_additions}
+        archive_assets["media_type"] = self.env["MEDIA_TYPE"]
+
+        # start config
+        archive_config["_3d"] = {}
+        archive_config["_3d"]["rotation"] = {}
+        
+        if "3D_OPTIONS-ROTATION-X" in self.env:
+            archive_config["_3d"]["rotation"]["x"] = self.env["3D_OPTIONS-ROTATION-X"]
+        if "3D_OPTIONS-ROTATION-Y" in self.env:
+            archive_config["_3d"]["rotation"]["y"] = self.env["3D_OPTIONS-ROTATION-Y"]
+
+        if "3D_OPTIONS-SCALE" in self.env:
+            archive_config["_3d"]["scale_factor"] = self.env["3D_OPTIONS-SCALE"]
+
+        if "3D_OPTIONS-ADDONS" in self.env and self.env["3D_OPTIONS-ADDONS"]:
+            archive_config["_3d"]["addOns"] = []
+            if self.env["3D_OPTIONS-ADDONS"] == "flash_card":
+                flash_card = {}
+                flash_card["type"] = "flash_card"
+                if "3D_OPTIONS-FLASH_CARD-OPTIONS-TEXT-BACK" in self.env:
+                    flash_card["back"] = {
+                        "type": "metadata",
+                        "value": self.env["3D_OPTIONS-FLASH_CARD-OPTIONS-TEXT-BACK"]
+                    }
+                if "3D_OPTIONS-FLASH_CARD-OPTIONS-TEXT-FRONT" in self.env:
+                    flash_card["front"] = {
+                        "type": "string",
+                        "value": self.env["3D_OPTIONS-FLASH_CARD-OPTIONS-TEXT-FRONT"]
+                    }
+                archive_config["_3d"]["addOns"].append(flash_card)
+ 
+        return {"assets": archive_assets, "config": archive_config}
+
+
 
     def create_or_update(self, table, attr_dict, item_type, idx, existing_item=None):
         if existing_item is None or len(existing_item) == 0:
@@ -239,17 +241,5 @@ class ThreeDMetadata(GenericMetadata):
                     ReturnValues="UPDATED_NEW",
                 )
 
-                self.log_result(
-                    response["Attributes"],
-                    idx,
-                    2,
-                    True,
-                )
             except Exception as e:
                 print(e)
-                self.log_result(
-                    attr_dict,
-                    idx,
-                    2,
-                    False,
-                )
