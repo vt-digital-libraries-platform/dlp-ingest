@@ -67,9 +67,9 @@ media_types_map = {
                 ],
             },
             "item": {
-                "3d_obj": "3D/GLB/<item_identifier>.glb",
-                "3d_env": "3D/GLB/<item_identifier>_env.glb",
-                "thumbnail": "<item_identifier>_thumbnail.png",
+                "gltf_config": "3D/GLB/<item_identifier>.glb",
+                "env_config": "studio.env",
+                "thumbnail": "<item_identifier>_thumbnail.jpg",
             },
         },
         "extensions": ["glb, gltf"],
