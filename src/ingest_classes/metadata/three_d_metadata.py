@@ -50,9 +50,11 @@ class ThreeDMetadata(GenericMetadata):
                         json_url = urllib.request.urlopen(archive_dict["manifest_url"])
                         archive_dict["thumbnail_path"] = json.loads(json_url.read())["thumbnail"]["@id"]
                     except Exception as e:
-                        print(f"Manifest not found for {archive_dict['identifier']}, url: {archive_dict['manifest_url']}")
+                        print(f"INFO: Manifest not found for {archive_dict['identifier']}, url: {archive_dict['manifest_url']}")
                         archive_dict["thumbnail_path"] = None
-                        archive_dict["manifest_url"] = None
+                        archive_dict.pop("manifest_url", None)
+                        
+
 
                     # set archive options
                     self.archive_option_additions = self.set_archive_options(
@@ -62,7 +64,16 @@ class ThreeDMetadata(GenericMetadata):
                         try:
                             archive_dict["thumbnail_path"] = self.archive_option_additions["assets"]["morpho_thumb"]
                         except Exception as e:
-                            print(f"No thumbnail found for archive. {archive_dict['identifier']}")
+                            pass
+                    if archive_dict["thumbnail_path"] is None:
+                        archive_dict["thumbnail_path"] = os.path.join(
+                            self.env["APP_IMG_ROOT_PATH"],
+                            self.env["COLLECTION_CATEGORY"],
+                            collection_identifier,
+                            archive_dict["identifier"],
+                            "3d",
+                            f"{archive_dict['identifier']}_thumbnail.jpg",
+                        )
 
                     existing_item = self.query_by_index(
                         self.env["archive_table"],
@@ -76,7 +87,6 @@ class ThreeDMetadata(GenericMetadata):
                         }
                     else:
                         archive_dict["archiveOptions"] = self.archive_option_additions
-
                     try:
                         self.create_or_update(
                             self.env["archive_table"],
@@ -92,7 +102,16 @@ class ThreeDMetadata(GenericMetadata):
 
     def key_by_asset_path(self, asset_path):
         matching_key = None
-        for key in get_matching_s3_keys(self.env["AWS_DEST_BUCKET"], asset_path):
+        keys = None
+        if self.env["AWS_DEST_BUCKET"] is None or asset_path is None:
+            return
+        try:
+            keys = get_matching_s3_keys(self.env["AWS_DEST_BUCKET"], asset_path)
+        except:
+            pass
+        if keys is None:
+            return
+        for key in keys:
             matching_key = key
         if matching_key is None:
             # try ignoring the filename case
@@ -131,7 +150,8 @@ class ThreeDMetadata(GenericMetadata):
                         ),
                     )
                     asset_path = asset_path.replace(self.env["APP_IMG_ROOT_PATH"], "")
-                    key = self.key_by_asset_path(asset_path)
+                    if asset_path:
+                        key = self.key_by_asset_path(asset_path)
                     if key:
                         asset_full_path = os.path.join(
                             self.env["APP_IMG_ROOT_PATH"], key
@@ -147,12 +167,18 @@ class ThreeDMetadata(GenericMetadata):
                     ),
                 )
                 asset_path = asset_path.replace(self.env["APP_IMG_ROOT_PATH"], "")
-                key = self.key_by_asset_path(asset_path)
+                if asset_path:
+                    key = self.key_by_asset_path(asset_path)
                 if key:
                     archive_assets[asset] = os.path.join(
                         self.env["APP_IMG_ROOT_PATH"], key
                     )
-        archive_assets["media_type"] = self.env["MEDIA_TYPE"]
+                archive_assets["env_config"] = os.path.join(
+                        self.env["APP_IMG_ROOT_PATH"], "federated/3d/gltf/studio.env"
+                    )
+                archive_assets["scale_factor"] = "75"
+
+        archive_assets["media_type"] = "3d-model/gltf"
 
         # start config
         archive_config["_3d"] = {}

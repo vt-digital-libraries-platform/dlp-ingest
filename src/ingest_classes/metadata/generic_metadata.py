@@ -457,7 +457,6 @@ class GenericMetadata:
         # Check if the value is a year-only format (e.g., "2023")
         if re.fullmatch(r"\d{4}", value):
             attr_dict[attr] = value
-            print(f"Year-only date, attr_dict[{attr}]: {attr_dict[attr]}")
             return
         try:
             parsed_date = parse(value)

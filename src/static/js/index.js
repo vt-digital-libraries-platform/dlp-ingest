@@ -363,18 +363,34 @@ const checkCollectionIdentifier = () => {
 
 const setEnvFields = (defaults, env) => {
     const envDefaults = defaults[env];
-    if (!envDefaults) return;
-    document.getElementById("aws_src_bucket").value = envDefaults.aws_src_bucket || "";
-    document.getElementById("aws_dest_bucket").value = envDefaults.aws_dest_bucket || "";
-    document.getElementById("collection_category").value = envDefaults.collection_category || "";
-    document.getElementById("dynamodb_table_suffix").value = envDefaults.dynamodb_table_suffix || "";
-    document.getElementById("dynamodb_noid_table").value = envDefaults.dynamodb_noid_table || "";
-    document.getElementById("dynamodb_file_char_table").value = envDefaults.dynamodb_file_char_table || "";
-    document.getElementById("app_img_root_path").value = envDefaults.app_img_root_path || "";
-    document.getElementById("long_url_path").value = envDefaults.long_url_path || "";
-    document.getElementById("short_url_path").value = envDefaults.short_url_path || "";
-    document.getElementById("noid_scheme").value = envDefaults.noid_scheme || "";
-    document.getElementById("noid_naa").value = envDefaults.noid_naa || "";
+
+    if (!envDefaults) {
+        alert("Default values not found for environment")
+        document.getElementById("aws_src_bucket").value = "";
+        document.getElementById("aws_dest_bucket").value = "";
+        document.getElementById("collection_category").value = "";
+        document.getElementById("dynamodb_table_suffix").value = "";
+        document.getElementById("dynamodb_noid_table").value = "";
+        document.getElementById("dynamodb_file_char_table").value = "";
+        document.getElementById("app_img_root_path").value = "";
+        document.getElementById("long_url_path").value = "";
+        document.getElementById("short_url_path").value = "";
+        document.getElementById("noid_scheme").value = "";
+        document.getElementById("noid_naa").value = "";
+    }
+    else {
+        document.getElementById("aws_src_bucket").value = envDefaults.aws_src_bucket || "";
+        document.getElementById("aws_dest_bucket").value = envDefaults.aws_dest_bucket || "";
+        document.getElementById("collection_category").value = envDefaults.collection_category || "";
+        document.getElementById("dynamodb_table_suffix").value = envDefaults.dynamodb_table_suffix || "";
+        document.getElementById("dynamodb_noid_table").value = envDefaults.dynamodb_noid_table || "";
+        document.getElementById("dynamodb_file_char_table").value = envDefaults.dynamodb_file_char_table || "";
+        document.getElementById("app_img_root_path").value = envDefaults.app_img_root_path || "";
+        document.getElementById("long_url_path").value = envDefaults.long_url_path || "";
+        document.getElementById("short_url_path").value = envDefaults.short_url_path || "";
+        document.getElementById("noid_scheme").value = envDefaults.noid_scheme || "";
+        document.getElementById("noid_naa").value = envDefaults.noid_naa || "";
+    }
 }
 
 // --- Section checker logic ---
