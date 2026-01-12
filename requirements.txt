@@ -4,3 +4,6 @@ Flask-Assets
 gunicorn
 pandas
 pyyaml
+authlib
+werkzeug
+requests

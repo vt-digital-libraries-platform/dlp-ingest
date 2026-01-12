@@ -265,3 +265,6 @@ examples/
 lib64/
 pyvenv.cfg
 lib64*
+
+
+dev_startup.sh
