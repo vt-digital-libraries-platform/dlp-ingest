@@ -1,18 +1,29 @@
-import os, shutil, sys, yaml
+import boto3, os, shutil, sys, yaml
 from datetime import datetime
-from flask import flash, Flask, render_template, request, jsonify, send_from_directory
-import boto3
+from flask import flash, Flask, jsonify, redirect, render_template, request, send_from_directory, session, url_for
+from authlib.integrations.flask_client import OAuth
 from src.ingest import main as dlp_ingest_main
 
 app_root = os.path.dirname(os.path.abspath(__file__))
 application = Flask(__name__, template_folder=os.path.join(app_root, 'templates'))
+application.secret_key = os.urandom(24)
+application.config['SECRET_KEY'] = application.secret_key
 application.config['APPLICATION_ROOT'] = app_root
 application.config['STATIC'] = os.path.join(app_root, 'static')
 application.config['DEBUG'] = True
-application.config['SECRET_KEY'] = os.urandom(24)
 application.config['UPLOADS'] = os.path.join(app_root, 'uploads')
 application.config['ALLOWED_EXTENSIONS'] = {'csv'}
 ingestConfig = {}
+
+oauth = OAuth(application)
+oauth.register(
+  name='oidc',
+  authority='https://cognito-idp.us-east-1.amazonaws.com/us-east-1_wy1lPpMYt',
+  client_id='4qicbtth4a9rhq6jrat24ic3oi',
+  client_secret=os.environ.get('COGNITO_APP_CLIENT_SECRET'),
+  server_metadata_url='https://cognito-idp.us-east-1.amazonaws.com/us-east-1_wy1lPpMYt/.well-known/openid-configuration',
+  client_kwargs={'scope': 'email openid'}
+)
 
 
 # empty directory (mostly for uploads)
@@ -139,7 +150,6 @@ def set_environment_overrides():
     set_environment_booleans()
 
 
-
 def set_environment_booleans():
     for key in env_vars:
         if key not in ingestConfig.keys():
@@ -157,6 +167,7 @@ def get_available_envs():
         envs = yaml.safe_load(f)
 
     return envs or []
+
 
 def filterTableNames(table_names):
     envs = []
@@ -273,9 +284,21 @@ def submit():
 
 @application.route('/')
 def index():
-    envs = get_available_envs()
-    set_environment_defaults()
-    return render_template('index.html', envs=envs)
+    user = session.get('user')
+    if not user:
+        return render_template("login_page.html")
+    else:
+        envs = get_available_envs()
+        set_environment_defaults()
+        return render_template('index.html', envs=envs)
+    
+
+@application.route('/login')
+def login():
+    # Alternate option to redirect to /authorize
+    # redirect_uri = url_for('authorize', _external=True)
+    # return oauth.oidc.authorize_redirect(redirect_uri)
+    return oauth.oidc.authorize_redirect('https://d84l1y8p4kdic.cloudfront.net')
 
 
 @application.route('/success')
@@ -288,6 +311,12 @@ def download_result(filename):
     results_dir = os.path.join(application.config['APPLICATION_ROOT'], 'results')
     print("Serving file:", os.path.join(results_dir, filename))
     return send_from_directory(results_dir, filename, as_attachment=True)
+
+
+@application.route('/logout')
+def logout():
+    session.pop('user', None)
+    return redirect(url_for('index'))
 
 
 
