@@ -22,7 +22,7 @@ oauth.register(
   client_id='4qicbtth4a9rhq6jrat24ic3oi',
   client_secret=os.environ.get('COGNITO_APP_CLIENT_SECRET'),
   server_metadata_url='https://cognito-idp.us-east-1.amazonaws.com/us-east-1_wy1lPpMYt/.well-known/openid-configuration',
-  client_kwargs={'scope': 'email openid'}
+  client_kwargs={'scope': 'openid email'}
 )
 
 
@@ -285,6 +285,7 @@ def submit():
 @application.route('/')
 def index():
     user = session.get('user')
+    print("user", user)
     if not user:
         return render_template("login_page.html")
     else:
@@ -295,10 +296,20 @@ def index():
 
 @application.route('/login')
 def login():
-    # Alternate option to redirect to /authorize
-    # redirect_uri = url_for('authorize', _external=True)
-    # return oauth.oidc.authorize_redirect(redirect_uri)
-    return oauth.oidc.authorize_redirect('https://d84l1y8p4kdic.cloudfront.net')
+    redirect_uri = url_for('authorize', _external=True)
+    return oauth.oidc.authorize_redirect(f"{redirect_uri}/")
+    # return oauth.oidc.authorize_redirect("http://localhost:8000/authorize/")
+
+
+@application.route('/authorize')
+def authorize():
+    token = oauth.oidc.authorize_access_token()
+    print("token", token)
+    user = token['userinfo']
+    print(user)
+    session['user'] = user
+    print(session)
+    return redirect(url_for('index'))
 
 
 @application.route('/success')
@@ -315,6 +326,7 @@ def download_result(filename):
 
 @application.route('/logout')
 def logout():
+    print("logout")
     session.pop('user', None)
     return redirect(url_for('index'))
 
