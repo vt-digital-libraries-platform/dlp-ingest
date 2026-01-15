@@ -3,8 +3,7 @@ from authlib.integrations.flask_client import OAuth
 import os
 
 application = Flask(__name__)
-application.secret_key = os.environ.get('FLASK_SECRET')
-print(f"Starting with {application.secret_key}")
+application.secret_key = os.environ.get('FLASK_SECRET') or "94e7f486-36f6-4fdb-b2c3-83a486ac69b1"
 
 oauth = OAuth(application)
 oauth.register(
@@ -23,20 +22,22 @@ def index():
     if user:
         return  f'Hello, {user["email"]}. <a href="/logout">Logout</a>'
     else:
-        return f'Welcome! Please <a href="/login">Login</a>.'
+        redirect_uri = url_for('authorize', _external=True)
+        markup = '<p>Welcome! Please <a href="/login">Login</a>.</p>'
+        markup += f"Auth route: {redirect_uri}"
+        return markup
     
 
 @application.route('/login')
 def login():
     # Alternate option to redirect to /authorize
-    redirect_uri = url_for('authorize', _external=True, _scheme="https")
+    redirect_uri = url_for('authorize', _external=True)
     return oauth.oidc.authorize_redirect(redirect_uri)
     # return oauth.oidc.authorize_redirect('http://localhost:8000/')
 
 
 @application.route('/authorize')
 def authorize():
-    print("authorize")
     try:
         token = oauth.oidc.authorize_access_token()
         user = token['userinfo']
@@ -52,4 +53,4 @@ def logout():
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
-    application.run(debug=True,host='0.0.0.0', port=8000)
+    application.run()

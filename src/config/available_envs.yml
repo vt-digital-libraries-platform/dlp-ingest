@@ -6,6 +6,6 @@
   value: pprd
   label: Pre-production
   selected: true
-- name: vtdlpprod
-  value: prod
-  label: Production
+# - name: vtdlpprod
+#   value: prod
+#   label: Production
