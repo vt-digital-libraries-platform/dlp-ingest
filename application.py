@@ -287,6 +287,7 @@ def submit():
 @application.route('/')
 def index():
     user = session.get('user')
+    print("user", user)
     if user:
         envs = get_available_envs()
         set_environment_defaults()
@@ -309,12 +310,10 @@ def logout():
 
 @application.route('/authorize')
 def authorize():
-    try:
-        token = oauth.oidc.authorize_access_token()
-        user = token['userinfo']
-        session['user'] = user
-    except Exception as e:
-        print(e)
+    token = oauth.oidc.authorize_access_token()
+    user = token['userinfo']
+    session['user'] = user
+    
     return redirect(url_for('index'))
 
 
