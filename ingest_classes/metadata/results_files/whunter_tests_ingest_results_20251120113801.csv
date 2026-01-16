@@ -1,0 +1,3 @@
+row_in_metadata,identifier,succeeded,message
+2,whunter_tests,True,Row 2: whunter_tests has been successfully imported. Succeeded: True
+3,whunter_sub_tests,True,Row 3: whunter_sub_tests has been successfully imported. Succeeded: True
