@@ -2,15 +2,22 @@ from flask import Flask, redirect, url_for, session
 from authlib.integrations.flask_client import OAuth
 import os
 
+
+flask_secret = os.environ.get('FLASK_SECRET')
+cognito_app_client_secret = os.environ.get('COGNITO_APP_CLIENT_SECRET')
+
+print("flask_secret", flask_secret)
+print("cognito secret", cognito_app_client_secret)
+
 application = Flask(__name__)
-application.secret_key = os.environ.get('FLASK_SECRET') or "94e7f486-36f6-4fdb-b2c3-83a486ac69b1"
+application.secret_key = flask_secret
 
 oauth = OAuth(application)
 oauth.register(
   name='oidc',
   authority='https://cognito-idp.us-east-1.amazonaws.com/us-east-1_wy1lPpMYt',
   client_id='4qicbtth4a9rhq6jrat24ic3oi',
-  client_secret='163q19s9uqsqdus627mbhg4m6ajnpeepheonacflg17q180volbn',
+  client_secret=cognito_app_client_secret,
   server_metadata_url='https://cognito-idp.us-east-1.amazonaws.com/us-east-1_wy1lPpMYt/.well-known/openid-configuration',
   client_kwargs={'scope': 'email openid'}
 )
