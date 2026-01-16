@@ -1,13 +1,10 @@
-from flask import Flask, redirect, url_for, session
+from flask import Flask, redirect, render_template, url_for, session
 from authlib.integrations.flask_client import OAuth
 import os
 
 
 flask_secret = os.environ.get('FLASK_SECRET')
 cognito_app_client_secret = os.environ.get('COGNITO_APP_CLIENT_SECRET')
-
-print("flask_secret", flask_secret)
-print("cognito secret", cognito_app_client_secret)
 
 application = Flask(__name__)
 application.secret_key = flask_secret
@@ -29,10 +26,13 @@ def index():
     if user:
         return  f'Hello, {user["email"]}. <a href="/logout">Logout</a>'
     else:
-        redirect_uri = url_for('authorize', _external=True)
-        markup = '<p>Welcome! Please <a href="/login">Login</a>.</p>'
-        markup += f"Auth route: {redirect_uri}"
-        return markup
+        return render_template("login_page.html")
+        # redirect_uri = url_for('authorize', _external=True)
+        # markup = '<p>Welcome! Please <a href="/login">Login</a>.</p>'
+        # markup += f"<p>Auth route: {redirect_uri}</p>"
+        # markup += f"<p>flask secret: {flask_secret}</p>"
+        # markup += f"<p>cognito secret: {cognito_app_client_secret}</p>"
+        # return markup
     
 
 @application.route('/login')
