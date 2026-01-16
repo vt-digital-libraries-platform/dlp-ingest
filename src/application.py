@@ -287,7 +287,6 @@ def submit():
 @application.route('/')
 def index():
     user = session.get('user')
-    print("user", user)
     if user:
         envs = get_available_envs()
         set_environment_defaults()
