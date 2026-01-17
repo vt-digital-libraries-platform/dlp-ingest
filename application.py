@@ -16,6 +16,10 @@ oauth = auth.init(application, app_secret)
 application.add_url_rule('/', view_func=pages.index)
 application.add_url_rule('/ingest_form', view_func=pages.ingest_form)
 
+@application.route('/submit', methods=['GET', 'POST'])
+def submit():
+    pages.submit(application)
+
 
 #auth
 @application.route('/login')
