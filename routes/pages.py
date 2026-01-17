@@ -9,6 +9,6 @@ def index():
         return render_template("login_page.html")
     
 
-def ingestForm():
+def ingest_form():
     user = session.get('user')
     return render_template("form.html", user=user)

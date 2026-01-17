@@ -14,7 +14,7 @@ oauth = auth.init(application, app_secret)
 
 # pages
 application.add_url_rule('/', view_func=pages.index)
-application.add_url_rule('/ingest-form', view_func=pages.ingestForm)
+application.add_url_rule('/ingest_form', view_func=pages.ingestForm)
 
 
 #auth
