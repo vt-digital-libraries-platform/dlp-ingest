@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VTDLP Ingest</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+    <div class="header-bar">
+        <img src="{{ url_for('static', filename='img/logo.png') }}" alt="App Logo" class="app-logo">
+        <h1>VTDLP Ingest</h1>
+    </div>
+    <p>This tool ingests media/metadata into the VTDLP Archive system.</p>
+    <div>
+        <p>Hi {{user["email"]}}!</p>
+    </div>
+    <p>Please <a href="{{url_for('ingest-form')}}">click here</a> to ingest Collection/Item records</p>
+    
+
+    
+</body>
+</html>

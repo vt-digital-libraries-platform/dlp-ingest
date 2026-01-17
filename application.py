@@ -26,20 +26,19 @@ def index():
         return  f'Hello, {user["email"]}. <a href="/logout">Logout</a>'
     else:
         return render_template("login_page.html")
-        # redirect_uri = url_for('authorize', _external=True)
-        # markup = '<p>Welcome! Please <a href="/login">Login</a>.</p>'
-        # markup += f"<p>Auth route: {redirect_uri}</p>"
-        # markup += f"<p>flask secret: {flask_secret}</p>"
-        # markup += f"<p>cognito secret: {cognito_app_client_secret}</p>"
-        # return markup
     
 
+@application.route('/ingest-form')
+def ingestForm():
+    user = session.get('user')
+    return render_template("form.html", user=user)
+    
+# //////////////////// Auth Routes ////////////////////////////////
+    
 @application.route('/login')
 def login():
-    # Alternate option to redirect to /authorize
     redirect_uri = url_for('authorize', _external=True)
     return oauth.oidc.authorize_redirect(redirect_uri)
-    # return oauth.oidc.authorize_redirect('http://localhost:8000/')
 
 
 @application.route('/authorize')
@@ -57,6 +56,11 @@ def authorize():
 def logout():
     session.pop('user', None)
     return redirect(url_for('index'))
+
+
+# ////////////////////////////////////////////////////
+
+
 
 if __name__ == '__main__':
     application.run()
