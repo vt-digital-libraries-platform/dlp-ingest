@@ -3,18 +3,17 @@ from authlib.integrations.flask_client import OAuth
 import os
 
 
-flask_secret = os.environ.get('FLASK_SECRET')
-cognito_app_client_secret = os.environ.get('COGNITO_APP_CLIENT_SECRET')
+app_secret = os.environ.get('APP_SECRET')
 
 application = Flask(__name__)
-application.secret_key = flask_secret
+application.secret_key = app_secret
 
 oauth = OAuth(application)
 oauth.register(
   name='oidc',
   authority='https://cognito-idp.us-east-1.amazonaws.com/us-east-1_wy1lPpMYt',
   client_id='4qicbtth4a9rhq6jrat24ic3oi',
-  client_secret=cognito_app_client_secret,
+  client_secret=app_secret,
   server_metadata_url='https://cognito-idp.us-east-1.amazonaws.com/us-east-1_wy1lPpMYt/.well-known/openid-configuration',
   client_kwargs={'scope': 'email openid'}
 )
