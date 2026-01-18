@@ -18,14 +18,284 @@
             <div><a href="{{url_for('logout')}}">Logout</a></div>
         </div>
     </div>
-    
-
 
     <div id="content">
-        <form action="/submit" method="post" enctype="multipart/form-data">
-            <input type="text" id="blah" name="blah" />
-            <button type="submit">Submit</button>
-        </form>
+        <p>This tool ingests media/metadata into the VTDLP Archive system.</p>
+        <p>1. Ingest Collection metadata file first</p>
+        <p>2. Ingest Archive metadata file after Collection</p>
+
+        <div>
+            <form action="/submit" method="post" enctype="multipart/form-data">
+                <!-- Environment Selection -->
+                <div class="form-section">
+                    <div class="section-text">Select the type of ingest to perform</div>
+                    <div class="ingest_type-radios">
+                        <label for="ingest_type-archive">
+                            <input type="radio" id="ingest_type-archive" name="INGEST_TYPE" value="archive" checked> Items/Archives
+                        </label>
+                        <label for="ingest_type-collection">
+                            <input type="radio" id="ingest_type-collection" name="INGEST_TYPE" value="collection"> Collection(s)
+                        </label>
+                    </div>
+                    
+                </div>
+
+
+                <!-- Environment Selection -->
+                <div class="form-section">
+                    <div class="section-text">Select the environment to ingest to. Form fields will be populated based on your selection, but can be changed</div>
+                    <div class="env-radios">
+                        {% for env in envs %}
+                            <label for="env_{{env.value}}">
+                                <input type="radio" id="env_{{env.value}}" name="ENV_SELECTION" value="{{env.value}}" {% if env.selected %} checked {% endif %}> {{env.label}} ({{env.name}})
+                            </label>
+                        {% endfor %}
+                        <label for="env_other">
+                            <input type="radio" id="env_other" name="ENV_SELECTION" value="other"> Other (select below)
+                        </label>
+                    </div>
+                    <div id="db-table-select" class="hidden">
+                        <label for="dynamodb_table_suffix">Select your Amplify backend environment:</label>
+                        <select id="dynamodb_table_suffix" name="DYNAMODB_TABLE_SUFFIX" placeholder="Select environment"></select>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Collection Configuration</h3>
+                    <!-- Collection Identifier -->
+                    <div class="form-section" id="collection-identifier-section">
+                        <div class="section-text" id="msg-archive">Select the collection to ingest items/archives into by the collection's identifier</div>
+                        <div class="section-text hidden" id="msg-collection">Select an existing collection to update by it's identifier, or enter a new identifier to create a new collection</div>
+                        
+                        <span id="collection-identifier-status" class="section-status incomplete">Incomplete</span>
+                        <label for="collection_identifier">Collection Identifier:</label>
+                        <input list="collection_identifiers" id="collection_identifier" name="COLLECTION_IDENTIFIER" autocomplete="off" placeholder="Type or select collection identifier" required>
+                        <datalist id="collection_identifiers">
+                            <!-- Options will be filled dynamically -->
+                        </datalist>
+                    </div>
+
+                    <div id="sub_collection-options" class="form-section hidden">
+                        <div class="section-text">Is this collection a sub-collection (part of a larger collection)? Add the identifier of the collection's PARENT collection to create the relationship.</div>
+                        <input list="parent_collection_identifiers" id="parent_collection_identifier" name="PARENT_COLLECTION_IDENTIFIER" placeholder="Parent collection identifier (optional)">
+                        <datalist id="parent_collection_identifiers">
+                            <!-- Options will be filled dynamically -->
+                        </datalist>  
+                    </div>
+
+                    <div id="collection_parent_match" class="hidden">Collection identifier and Parent Collection identifier cannot match.</div>
+                </div>
+                <hr />
+                
+                
+                <!-- AWS Configuration Section -->
+                <div class="form-section" id="aws-section">
+                    <h3>AWS Configuration</h3>
+                    <div id="aws-section-status" class="section-status incomplete">Incomplete</div>
+                    <div>
+                        <label for="aws_src_bucket">AWS Source Bucket:</label>
+                        <input type="text" id="aws_src_bucket" name="AWS_SRC_BUCKET" placeholder="Source bucket name">
+                    </div>
+                    <div>
+                        <label for="aws_dest_bucket">AWS Destination Bucket:</label>
+                        <input type="text" id="aws_dest_bucket" name="AWS_DEST_BUCKET" placeholder="Destination bucket name">
+                    </div>
+                    <div>
+                        <label for="region">AWS Region:</label>
+                        <select id="region" name="REGION">
+                            <option value="us-east-1" selected>us-east-1</option>
+                        </select>
+                    </div>
+                </div>
+
+
+                <!-- Collection Configuration Section -->
+                <div class="form-section" id="collection-section">
+                    <h3>Collection Configuration</h3>
+                    <div id="collection-section-status" class="section-status incomplete">Incomplete</div>
+                    <div>
+                        <label for="collection_category">Collection Category:</label>
+                        <input type="text" id="collection_category" name="COLLECTION_CATEGORY" placeholder="Category name">
+                    </div>
+                    <div>
+                        <label for="collection_subdirectory">Collection Subdirectory:</label>
+                        <input type="text" id="collection_subdirectory" name="COLLECTION_SUBDIRECTORY" placeholder="Subdirectory path">
+                    </div>
+                    <div>
+                        <label for="item_subdirectory">Item Subdirectory:</label>
+                        <input type="text" id="item_subdirectory" name="ITEM_SUBDIRECTORY" placeholder="Item subdirectory path">
+                    </div>
+                </div>
+
+
+                <!-- DynamoDB Configuration Section -->
+                <div class="form-section" id="dynamodb-section">
+                    <h3>DynamoDB Configuration</h3>
+                    <div id="dynamodb-section-status" class="section-status incomplete">Incomplete</div>
+                    <div>
+                        <label for="dynamodb_noid_table">DynamoDB NOID Table:</label>
+                        <input type="text" id="dynamodb_noid_table" name="DYNAMODB_NOID_TABLE" placeholder="NOID table name">
+                    </div>
+                    <div>
+                        <label for="dynamodb_file_char_table">DynamoDB File Character Table:</label>
+                        <input type="text" id="dynamodb_file_char_table" name="DYNAMODB_FILE_CHAR_TABLE" placeholder="File character table name">
+                    </div>
+                </div>
+
+                <!-- Path Configuration Section -->
+                <div class="form-section" id="path-section">
+                    <h3>Endpoints</h3>
+                    <div id="path-section-status" class="section-status incomplete">Incomplete</div>
+                    <div>
+                        <label for="app_img_root_path">Cloudfront endpoint (app_img_root_path):</label>
+                        <input type="text" id="app_img_root_path" name="APP_IMG_ROOT_PATH" placeholder="Root path for images">
+                    </div>
+                    <div>
+                        <label for="long_url_path">Site URL (long_url_path):</label>
+                        <input type="text" id="long_url_path" name="LONG_URL_PATH" placeholder="Long URL path">
+                    </div>
+                    <div>
+                        <label for="short_url_path">Ark link resolver (short_url_path):</label>
+                        <input type="text" id="short_url_path" name="SHORT_URL_PATH" placeholder="Short URL path">
+                    </div>
+                </div>
+
+                <!-- NOID Configuration Section -->
+                <div class="form-section" id="noid-section">
+                    <h3>NOID Configuration</h3>
+                    <div id="noid-section-status" class="section-status incomplete">Incomplete</div>
+                    <div>
+                        <label for="noid_scheme">NOID Scheme:</label>
+                        <input type="text" id="noid_scheme" name="NOID_SCHEME" value="ark:/" placeholder="ark:/">
+                    </div>
+                    <div>
+                        <label for="noid_naa">NOID NAA:</label>
+                        <input type="text" id="noid_naa" name="NOID_NAA" placeholder="NOID NAA identifier">
+                    </div>
+                </div>
+
+                <!-- Media Configuration Section -->
+                <div class="form-section" id="media-section">
+                    <h3>Media Configuration</h3>
+                    <div id="media-section-status" class="section-status incomplete">Incomplete</div>
+                    <div>
+                        <label for="media_type">Media Type:</label>
+                        <select id="media_type" name="MEDIA_TYPE">
+                            <option value="" disabled selected>
+                                Select media type for ingest
+                            </option>
+                            <option value="iiif">
+                                IIIF: image-based digital objects using International Image Interoperability Framework standard
+                            </option>
+                            <option value="pdf">
+                                PDF: document-based digital objects in PDF format
+                            </option>
+                            <option value="3d_2diiif">
+                                3D_2DIIIF: digital objects that combine 3D models with associated IIIF images
+                            </option>
+                            <option value="3d">
+                                3D: digital objects that represent 3D models
+                            </option>
+                        </select>
+                    </div>
+                    <div id="3d_options" class="hidden form-section">
+                        <h4>3D Options</h4>
+                        <div class="form-section">
+                            <div class="section-text">Rotation:</div>
+                            <label for="3d_options-rotation-x">
+                                x: <input class="short" type="number" name="3D_OPTIONS-ROTATION-X" id="3d_options-rotation-x" placeholder="Rotation X (radians)">
+                            </label>
+                            <label for="3d_options-rotation-y">
+                                y: <input class="short" type="number" name="3D_OPTIONS-ROTATION-Y" id="3d_options-rotation-y" placeholder="Rotation Y (radians)">
+                            </label>
+                        </div> 
+
+                        <div class="form-section"> 
+                            <label for="3d_options-scale">
+                                <span>Scale:</span> <input class="short" type="number" name="3D_OPTIONS-SCALE" id="3d_options-scale" placeholder="Scale">
+                            </label>
+                        </div>
+
+                        <div class="3d_options-addOns form-section">
+                            <div>
+                                <label for="3d_options-addOns">
+                                    <span>Add-ons:</span>
+                                    <select id="3d_options-addOns" name="3D_OPTIONS-ADDONS">
+                                        <option value="" disabled selected>Select add-on</option>
+                                        <option value="flash_card">Flash card</option>
+                                    </select>
+                                </label>
+                            </div>
+                            <div id="3d_options-flash_card-options" class="hidden form-section">
+                                <div class="section-text">Flash Card Text:</div>
+                                <label for="3d_options-flash_card-options-text-front">
+                                    <span>Front (string):</span>
+                                    <input type="text" id="3d_options-flash_card-options-text-front" name="3D_OPTIONS-FLASH_CARD-OPTIONS-TEXT-FRONT" placeholder="Text for flash card front">
+                                </label>
+                                <label for="3d_options-flash_card-options-text-back">
+                                    <span>Back (metadata field):</span>
+                                    <input type="text" id="3d_options-flash_card-options-text-back" name="3D_OPTIONS-FLASH_CARD-OPTIONS-TEXT-BACK" placeholder="Metadata field to populate back">
+                                </label>
+                            </div>
+                        </div>        
+                    </div>
+                </div>
+                
+                <!-- Boolean Options -->
+                <div class="form-section" id="options-section">
+                    <h3>Options</h3>
+                    <label for="verbose">
+                        <input type="checkbox" id="verbose" name="VERBOSE" value="true" checked> 
+                        Verbose Output
+                    </label>
+                
+                    <label for="media_ingest">
+                        <input type="checkbox" id="media_ingest" name="MEDIA_INGEST" value="true"> 
+                        Media Ingest
+                    </label>
+                
+                    <label for="metadata_ingest">
+                        <input type="checkbox" id="metadata_ingest" name="METADATA_INGEST" value="true" checked> 
+                        Metadata Ingest
+                    </label>
+                
+                    <label for="generate_thumbnails">
+                        <input type="checkbox" id="generate_thumbnails" name="GENERATE_THUMBNAILS" value="true"> 
+                        Generate Thumbnails
+                    </label>
+                
+                    <label for="dry_run">
+                        <input type="checkbox" id="dry_run" name="DRY_RUN" value="true"> 
+                        Dry Run (Test Mode)
+                    </label>
+                
+                    <label for="update_metadata">
+                        <input type="checkbox" id="update_metadata" name="UPDATE_METADATA" value="true"> 
+                        Update Existing Metadata
+                    </label>
+                
+                </div>
+                
+                <div class="form-section" id="metadata-section">
+                    <div id="metadata-section-status" class="section-status incomplete">Incomplete</div>
+                    <div>
+                        <label for="metadata_input">Metadata CSV:</label>
+                        <input type="file" id="metadata_input" class="incomplete" name="metadata_input">
+                    </div>           
+                
+                    <!-- Progress Bar -->
+                    <div id="progress-container" style="margin: 16px 0;">
+                        <label for="progress-bar">Progress:</label>
+                        <progress id="progress-bar" value="0" max="100" style="width: 100%;"></progress>
+                        <span id="progress-text"></span>
+                    </div>
+                    
+                    <div>
+                        <button type="submit" id="ingest_button" class="disabled" disabled>Run Ingest</button>
+                    </div>
+                </div>
+            </form>
+        </div>
     </div>
     <script src="{{ url_for('static', filename='js/index.js') }}"></script>
 </body>
