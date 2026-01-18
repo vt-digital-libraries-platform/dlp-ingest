@@ -15,7 +15,7 @@ def index():
 
 def ingest_form():
     user = session.get('user')
-    return render_template("form_full.html", user=user)
+    return render_template("form.html", user=user)
 
 
 def submit(application):

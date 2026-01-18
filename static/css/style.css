@@ -313,3 +313,7 @@ h3 {
     object-fit: contain;
     margin-right: 16px;
 }
+
+.header-bar .user-info {
+    float: right;
+}
