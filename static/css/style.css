@@ -299,6 +299,10 @@ h3 {
     display: none;
 }
 
+.header-bar {
+    height: 40px;
+}
+
 .header-bar .logo-title{
     display: block;
     float: left;
