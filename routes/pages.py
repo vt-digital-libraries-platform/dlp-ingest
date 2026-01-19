@@ -1,13 +1,15 @@
-import os
+import logging, os
 from flask import redirect, render_template, request, session, url_for
 
 from ingest import main as dlp_ingest_main
 import utils.web_utils as utils
 
+logging = logging.getLogger(__name__)
 
 def index():
     user = session.get('user')
     if user:
+        logging.info(user)
         return  redirect(url_for("ingest_form"))
     else:
         return render_template("login_page.html")
