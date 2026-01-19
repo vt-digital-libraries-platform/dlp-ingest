@@ -1,4 +1,4 @@
-import os
+import logging, os
 from flask import Flask
 
 import routes.pages as pages
@@ -11,6 +11,16 @@ application = Flask(__name__)
 application.secret_key = app_secret
 
 oauth = auth.init(application, app_secret)
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(
+    filename='/var/log/application.log', 
+    level=logging.INFO,
+    format='%(asctime)s %(levelname)-8s %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+logger.info("----------------------------------------")
+logger.info("Starting instance...")
 
 # pages
 application.add_url_rule('/', view_func=pages.index)
