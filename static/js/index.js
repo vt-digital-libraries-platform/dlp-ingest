@@ -1,37 +1,51 @@
 const getTables = async () => {
     // Populate table dropdown from AWS
-    const response = await fetch('/api/tables')
-        .then(response => response.json())
-        .then(data => {
-            const select = document.getElementById("dynamodb_table_suffix");
-            select.innerHTML = "";
-            data.tables.forEach(table => {
-                const env = table.split('-').pop(); // Get the last part of the table name
-                const value = table.replace("Collection-", ""); // Remove environment suffix for value
-                const option = document.createElement("option");
-                option.value = value;
-                option.textContent = env;
-                select.appendChild(option);
+    try {
+        const response = await fetch('/api/tables')
+
+        const data = await response.json()
+        const select = document.getElementById("dynamodb_table_suffix");
+        select.innerHTML = "";
+        data.tables.forEach(table => {
+            const env = table.split('-').pop(); // Get the last part of the table name
+            const value = table.replace("Collection-", ""); // Remove environment suffix for value
+            const option = document.createElement("option");
+            option.value = value;
+            option.textContent = env;
+            select.appendChild(option);
             });
-        });
+    }
+    catch(error) {
+        console.error(error)
+    }
 }
 
 // Fetch environment defaults from the server
 const getDefaults = async () => {
-    const response = await fetch('/api/env_defaults')
-    const defaults = await response.json();
+    try {
+        const response = await fetch('/api/env_defaults')
+        const defaults = await response.json();
+    }
+    catch(error) {
+        console.error(error)
+    }
     return defaults;
 }
 
 const handleEnvRadioChange = async (event) => {  
-    const defaults = await getDefaults();
     if (event.target.value === "other") {
         document.getElementById("db-table-select").classList.remove("hidden");
     }
     else {
-        await setEnvFields(defaults,event.target.value);
-        await fetchIdentifiers();
-        checkAllSections();
+        try {
+            const defaults = await getDefaults();
+            await setEnvFields(defaults, event.target.value);
+            await fetchIdentifiers();
+            checkAllSections();
+        }
+        catch(error){
+            console.error(error)
+        }
     }
 }
 
@@ -41,85 +55,135 @@ const handleIngestTypeChange = async (event) => {
     const msgArchive = document.getElementById("msg-archive");
     const msgCollection = document.getElementById("msg-collection");
     if (event.target.value === "collection") {
-        subCollectionOptions.classList.remove("hidden");
-        // Show the collection message, hide the archive message
-        msgArchive.classList.add("hidden");
-        msgCollection.classList.remove("hidden");
-        checkAllSections();
+        try {
+            subCollectionOptions.classList.remove("hidden");
+            // Show the collection message, hide the archive message
+            msgArchive.classList.add("hidden");
+            msgCollection.classList.remove("hidden");
+            checkAllSections();
+        }
+        catch(error) {
+            console.error(error)
+        }
     }
     else {
-        subCollectionOptions.classList.add("hidden");
-        // Show the archive message, hide the collection message
-        msgArchive.classList.remove("hidden");
-        msgCollection.classList.add("hidden");
-        checkAllSections();
+        try {
+            subCollectionOptions.classList.add("hidden");
+            // Show the archive message, hide the collection message
+            msgArchive.classList.remove("hidden");
+            msgCollection.classList.add("hidden");
+            checkAllSections();
+        }
+        catch(error) {
+            console.error(error)
+        }
     }
 }
 
 
 const resetMediaTypes = () => {
-    hide3dOptions();
-    document.getElementById("3d_options").querySelectorAll("input").forEach(input => {
-        input.value = "";
-    });
-    document.getElementById("3d_options").querySelectorAll("select").forEach(input => {
-        input.value = "";
-    });
+    try {
+        hide3dOptions();
+        document.getElementById("3d_options").querySelectorAll("input").forEach(input => {
+            input.value = "";
+        });
+        document.getElementById("3d_options").querySelectorAll("select").forEach(input => {
+            input.value = "";
+        });
+    }
+    catch(error) {
+        console.error(error)
+    }
 }
 
 
 const show3dOptions = () => {
     const ingestType = document.getElementById("ingest_type-archive")
-    if(ingestType.checked) {
-        document.getElementById("3d_options").classList.remove("hidden");
+    if(ingestType && ingestType.checked) {
+        try {
+            document.getElementById("3d_options").classList.remove("hidden");
+        }
+        catch(error) {
+            console.error(error)
+        }
     }
 }
 
 
 const hide3dOptions = () => {
-    document.getElementById("3d_options").classList.add("hidden");
-    hideFlashCardOptions();
+    try {
+        document.getElementById("3d_options").classList.add("hidden");
+        hideFlashCardOptions();
+    }
+    catch(error) {
+        console.error(error)
+    }
 }
 
 
 const handleMediaTypeChange = (event) => {
-    const mediaType = document.getElementById("media_type").value;
-    switch (mediaType) {
-        case "3d":
-            show3dOptions();
-            break;
-        case "3d_2diiif":
-            show3dOptions();
-            break;
-        default:
-            // Reset to default state
-            resetMediaTypes();
-            break;
+    let mediaType = null;
+    try {
+        mediaType = document.getElementById("media_type").value;
+    }
+    catch(error) {
+        console.error(error)
+    }
+    if(mediaType) {
+        switch (mediaType) {
+            case "3d":
+                show3dOptions();
+                break;
+            case "3d_2diiif":
+                show3dOptions();
+                break;
+            default:
+                // Reset to default state
+                resetMediaTypes();
+                break;
+        }
     }
 }
 
 const showFlashCardOptions = () => {
-    document.getElementById("3d_options-flash_card-options").classList.remove("hidden");
+    try {
+        document.getElementById("3d_options-flash_card-options").classList.remove("hidden");
+    }
+    catch(error) {
+        console.error(error)
+    }
 }
 
 
 const hideFlashCardOptions = () => {
-    document.getElementById("3d_options-flash_card-options").classList.add("hidden");
+    try {
+        document.getElementById("3d_options-flash_card-options").classList.add("hidden");
+    }
+    catch(error) {
+        console.error(error)
+    }
 }
 
 const checkCollectionAndParentIdentifiers = (selected, other) => {
     const selectedElement = document.getElementById(selected);
-    const selected_identifier = selectedElement.value;
-    const other_identifier = document.getElementById(other).value;
-    const match = document.getElementById("collection_parent_match");
+    if(selectedElement) {
+        const selected_identifier = selectedElement.value;
+        const other_identifier = document.getElementById(other).value;
+        const match = document.getElementById("collection_parent_match");
 
-        if(selected_identifier === other_identifier) {
-            match.classList.remove("hidden");
-            selectedElement.value = "";
-            window.setTimeout(() => {
-                match.classList.add("hidden");
-            }, 5000);
+        try {
+            if(selected_identifier === other_identifier) {
+                match.classList.remove("hidden");
+                selectedElement.value = "";
+                window.setTimeout(() => {
+                    match.classList.add("hidden");
+                }, 5000);
+            }
         }
+        catch(error) {
+            console.error(error)
+        }
+    }
 }
 
 // Add event listeners for all the form elements
@@ -274,27 +338,42 @@ const addListeners = async () => {
 
 
 const fetchIdentifiers = async () => {
-    const suffix = document.getElementById("dynamodb_table_suffix").value;
-    fetch(`/api/identifiers?suffix=${encodeURIComponent(suffix)}`)
-        .then(response => response.json())
-        .then(data => {
-            const collection_datalist = document.getElementById("collection_identifiers");
-            const parent_collection_datalist = document.getElementById("parent_collection_identifiers");
-            // Clear existing options
-            collection_datalist.innerHTML = "";
-            parent_collection_datalist.innerHTML = "";
-            collection_datalist.innerHTML = "";
+    try {
+        const suffix = document.getElementById("dynamodb_table_suffix").value;
+        const response = fetch(`/api/identifiers?suffix=${encodeURIComponent(suffix)}`)
+        const data = response.json()
+    }
+    catch(error) {
+        console.error(error)
+    }
 
-            const selected_collection = document.getElementById("collection_identifier").value;
-            data.identifiers.forEach(identifier => {
-                const option = document.createElement("option");
-                option.value = identifier;
-                collection_datalist.appendChild(option);
-                if (!selected_collection || identifier !== selected_collection) {
-                    parent_collection_datalist.appendChild(option.cloneNode(true));
-                }
-            });
+        
+    try {
+        const collection_datalist = document.getElementById("collection_identifiers");
+        const parent_collection_datalist = document.getElementById("parent_collection_identifiers");
+        // Clear existing options
+        collection_datalist.innerHTML = "";
+        parent_collection_datalist.innerHTML = "";
+        collection_datalist.innerHTML = "";
+    }
+    catch(error) {
+        console.error(error)
+    }
+
+    try {
+        const selected_collection = document.getElementById("collection_identifier").value;
+        data.identifiers.forEach(identifier => {
+            const option = document.createElement("option");
+            option.value = identifier;
+            collection_datalist.appendChild(option);
+            if (!selected_collection || identifier !== selected_collection) {
+                parent_collection_datalist.appendChild(option.cloneNode(true));
+            }
         });
+    }
+    catch(error) {
+        console.error(error)
+    }
 }
 
 
@@ -312,20 +391,31 @@ const checkSection = (section) => {
     });
     const status = document.getElementById(section.statusId);
     if (!status) return false;
-    if (filled === section.fields.length) {
-        status.textContent = "Complete";
-        status.classList.remove("incomplete");
-        status.classList.add("complete");
-        // Do NOT hide the section
-        document.getElementById(section.id).classList.remove("closed");
+    if (filled === section?.fields?.length) {
+        try {
+            status.textContent = "Complete";
+            status.classList.remove("incomplete");
+            status.classList.add("complete");
+            // Do NOT hide the section
+            document.getElementById(section.id).classList.remove("closed");
 
-        return true;
+            return true;
+        }
+        catch(error){
+            console.error(error)
+        }
     } else {
-        status.textContent = `Incomplete (${filled}/${section.fields.length})`;
-        status.classList.remove("complete");
-        status.classList.add("incomplete");
-        document.getElementById(section.id).classList.remove("closed");
-        return false;
+        try {
+            status.textContent = `Incomplete (${filled}/${section.fields.length})`;
+            status.classList.remove("complete");
+            status.classList.add("incomplete");
+            document.getElementById(section.id).classList.remove("closed");
+
+            return false;
+        }
+        catch(error) {
+            console.error(error)
+        }
     }
 }
 
@@ -338,8 +428,13 @@ const checkAllSections = () => {
       }
     }
     if (allComplete) {
-        document.getElementById("ingest_button").classList.remove("disabled");
-        document.getElementById("ingest_button").disabled = false;
+        try {
+            document.getElementById("ingest_button").classList.remove("disabled");
+            document.getElementById("ingest_button").disabled = false;
+        }
+        catch(error) {
+            console.error(error)
+        }
     }
 }
 
@@ -349,14 +444,25 @@ const checkCollectionIdentifier = () => {
     const select = document.getElementById("collection_identifier");
     const status = document.getElementById("collection-identifier-status");
     // For a select menu, check if a value is selected
-    if (select.value && select.value.trim() !== "") {
-        status.textContent = "Complete";
-        status.classList.remove("incomplete");
-        status.classList.add("complete");
+    if (select?.value && select?.value?.trim() !== "") {
+        try {        
+            status.textContent = "Complete";
+            status.classList.remove("incomplete");
+            status.classList.add("complete");
+        }
+        catch(error) {
+            console.error(error)
+        }
     } else {
-        status.textContent = "Incomplete";
-        status.classList.remove("complete");
-        status.classList.add("incomplete");
+        try {
+            status.textContent = "Incomplete";
+            status.classList.remove("complete");
+            status.classList.add("incomplete");
+        }
+        catch(error) {
+            console.error(error)
+        }
+
     }
 }
 
@@ -365,31 +471,41 @@ const setEnvFields = (defaults, env) => {
     const envDefaults = defaults[env];
 
     if (!envDefaults) {
-        alert("Default values not found for environment")
-        document.getElementById("aws_src_bucket").value = "";
-        document.getElementById("aws_dest_bucket").value = "";
-        document.getElementById("collection_category").value = "";
-        document.getElementById("dynamodb_table_suffix").value = "";
-        document.getElementById("dynamodb_noid_table").value = "";
-        document.getElementById("dynamodb_file_char_table").value = "";
-        document.getElementById("app_img_root_path").value = "";
-        document.getElementById("long_url_path").value = "";
-        document.getElementById("short_url_path").value = "";
-        document.getElementById("noid_scheme").value = "";
-        document.getElementById("noid_naa").value = "";
+        console.error("Default values not found for environment")
+        try {
+            document.getElementById("aws_src_bucket").value = "";
+            document.getElementById("aws_dest_bucket").value = "";
+            document.getElementById("collection_category").value = "";
+            document.getElementById("dynamodb_table_suffix").value = "";
+            document.getElementById("dynamodb_noid_table").value = "";
+            document.getElementById("dynamodb_file_char_table").value = "";
+            document.getElementById("app_img_root_path").value = "";
+            document.getElementById("long_url_path").value = "";
+            document.getElementById("short_url_path").value = "";
+            document.getElementById("noid_scheme").value = "";
+            document.getElementById("noid_naa").value = "";
+        }
+        catch(error) {
+            console.error(error)
+        }
     }
     else {
-        document.getElementById("aws_src_bucket").value = envDefaults.aws_src_bucket || "";
-        document.getElementById("aws_dest_bucket").value = envDefaults.aws_dest_bucket || "";
-        document.getElementById("collection_category").value = envDefaults.collection_category || "";
-        document.getElementById("dynamodb_table_suffix").value = envDefaults.dynamodb_table_suffix || "";
-        document.getElementById("dynamodb_noid_table").value = envDefaults.dynamodb_noid_table || "";
-        document.getElementById("dynamodb_file_char_table").value = envDefaults.dynamodb_file_char_table || "";
-        document.getElementById("app_img_root_path").value = envDefaults.app_img_root_path || "";
-        document.getElementById("long_url_path").value = envDefaults.long_url_path || "";
-        document.getElementById("short_url_path").value = envDefaults.short_url_path || "";
-        document.getElementById("noid_scheme").value = envDefaults.noid_scheme || "";
-        document.getElementById("noid_naa").value = envDefaults.noid_naa || "";
+        try {
+            document.getElementById("aws_src_bucket").value = envDefaults.aws_src_bucket || "";
+            document.getElementById("aws_dest_bucket").value = envDefaults.aws_dest_bucket || "";
+            document.getElementById("collection_category").value = envDefaults.collection_category || "";
+            document.getElementById("dynamodb_table_suffix").value = envDefaults.dynamodb_table_suffix || "";
+            document.getElementById("dynamodb_noid_table").value = envDefaults.dynamodb_noid_table || "";
+            document.getElementById("dynamodb_file_char_table").value = envDefaults.dynamodb_file_char_table || "";
+            document.getElementById("app_img_root_path").value = envDefaults.app_img_root_path || "";
+            document.getElementById("long_url_path").value = envDefaults.long_url_path || "";
+            document.getElementById("short_url_path").value = envDefaults.short_url_path || "";
+            document.getElementById("noid_scheme").value = envDefaults.noid_scheme || "";
+            document.getElementById("noid_naa").value = envDefaults.noid_naa || "";
+        }
+        catch(error) {
+            console.error(error)
+        }
     }
 }
 
@@ -440,8 +556,13 @@ async function init() {
 
     // Fetch environment defaults and set fields
     await getDefaults().then((def) => {
-        setEnvFields(def, "pprd");
-        checkAllSections();
+        try {
+            setEnvFields(def, "pprd");
+            checkAllSections();
+        }
+        catch(error) {
+            console.error(error)
+        }
     });
 
     // Fetch identifiers for the collection identifier field, based on table
