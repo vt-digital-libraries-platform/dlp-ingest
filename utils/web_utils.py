@@ -120,3 +120,7 @@ def set_environment_booleans(ingestConfig):
             ingestConfig[key] = True
         elif key in ingestConfig and isinstance(ingestConfig[key], str) and ingestConfig[key].lower() == "false":
             ingestConfig[key] = False
+
+
+def user_is_admin(user):
+    return 'cognito:groups' in user and "admin" in user['cognito:groups']

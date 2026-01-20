@@ -11,12 +11,15 @@ def index():
     if user:
         return  redirect(url_for("ingest_form"))
     else:
-        return render_template("login_page.html")
+        return render_template("index.html")
     
 
 def ingest_form():
     user = session.get('user')
-    return render_template("form.html", user=user)
+    if(utils.user_is_admin(user)):
+        return render_template("form.html", user=user)
+    else:
+        return redirect(url_for("index"))
 
 
 def submit(application):
