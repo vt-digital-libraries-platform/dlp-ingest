@@ -146,7 +146,7 @@ class GenericMetadata:
                     
                     if self.archive_exists(self.env["archive_table"],archive_dict["identifier"]):
                         if self.env["UPDATE_METADATA"]:
-                            self.update_item_in_table(self.env["archive_table"], archive_dict, "Archive", idx)
+                            self.update_item_in_table(self.env["archive_table"], archive_dict["identifier"], archive_dict, idx, archive_dict["identifier"])
                         else:
                             print(f"Error: Archive {archive_dict['identifier']} already exists in the database. Use UPDATE_METADATA option to update existing records.")
                             continue
@@ -181,7 +181,7 @@ class GenericMetadata:
     def get_thumbnail_path_for_archive(self, archive_dict, collection):
         match self.env["MEDIA_TYPE"]:
             case "iiif": 
-                return self.get_thumbnail_path_for_iiif(self, archive_dict, collection)
+                return self.get_thumbnail_path_for_iiif(archive_dict)
             case _:
                 return os.path.join(
                     self.env["APP_IMG_ROOT_PATH"],
