@@ -16,7 +16,7 @@ def index():
 
 def ingest_form():
     user = session.get('user')
-    if(utils.user_is_admin(user)):
+    if(user and utils.user_is_admin(user)):
         return render_template("form.html", user=user)
     else:
         return redirect(url_for("index"))
