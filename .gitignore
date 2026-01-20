@@ -269,5 +269,14 @@ test_event.json
 run_vtdlp-ingest_testextract.sh
 run_vtdlp-testextract.sh
 run_vtdlp-ingest_testss.sh
+run_vtdlp-ingest_update_dates.sh
+run_vtdlp-ingest_testss.sh
+*.sh
 python/
 requirements.txt
+*.txt
+
+# Untracked files
+.vscode/settings.json
+dlp-dpla-xml-export.py
+*:Zone.Identifier

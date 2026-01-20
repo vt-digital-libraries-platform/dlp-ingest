@@ -729,16 +729,44 @@ class GenericMetadata:
         return collection
 
     def extract_attribute(self, header, value):
+        # Normalize date for both single and multi-value headers
+        def normalize_date(val):
+            val = val.strip()
+            if not val:
+                return ""
+            if re.fullmatch(r"\d{4}", val):
+                return val
+            try:
+                parsed_date = parse(val)
+                return parsed_date.strftime("%Y-%m-%d")
+            except Exception:
+                return val
+
         if header in self.single_value_headers:
+            if header == "date":
+                return normalize_date(value)
             return value
         elif header in self.multi_value_headers:
-            # If the value is empty or only whitespace, return an empty string (so it can be picked up for removal using the update_items_in_table method)        
-            if not value.strip():
-                return ""  # or return None
-            values = value.split("||")
-            for idx, val in enumerate(values):
-                values[idx] = val.strip()
-            return values
+            # Only treat as multi-value if '/' is not a valid date separator
+            def is_date(val):
+                try:
+                    parse(val, fuzzy=False)
+                    return True
+                except Exception:
+                    return False
+
+            if isinstance(value, str) and '/' in value and not is_date(value):
+                value = value.replace('/', '||')
+            values = [v.strip() for v in value.split('||') if v.strip()]
+            if header == "date":
+                normalized = [normalize_date(v) for v in values if v]
+                if not normalized:
+                    return ""  # <--- Return empty string if no valid dates
+                return normalized
+            else:
+                if not values:
+                    return ""  # <--- Return empty string if no values
+                return values
 
     def create_sub_collections(self, parent_collections):
         parent_id = None
