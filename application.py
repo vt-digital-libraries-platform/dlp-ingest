@@ -26,6 +26,12 @@ oauth = auth.init(application, app_secret)
 app_src_dir = os.path.dirname(os.path.abspath(__file__))
 application.config['APP_SRC_DIR'] = app_src_dir
 
+application.config['STATIC'] = os.path.join(app_src_dir, 'static')
+application.config['UPLOADS'] = os.path.join(app_src_dir, 'uploads')
+application.config['TEMPLATE_DIR'] = os.path.join(app_src_dir, 'templates')
+application.config['ALLOWED_EXTENSIONS'] = {'csv'}
+application.config['DEBUG'] = True
+
 
 # pages
 application.add_url_rule('/', view_func=pages.index)
