@@ -40,12 +40,12 @@ env_vars = [
 
 def set_environment_defaults(application, ingestConfig):
     defaults = None
-    env_file = os.path.join(application.config['APPLICATION_ROOT'], 'config', os.getenv('INGEST_ENV_YAML'))
+    env_file = os.path.join(application.config['APP_SRC_DIR'], 'config', os.getenv('INGEST_ENV_YAML'))
     with open(env_file, 'r') as f:
         defaults = yaml.safe_load(f)
     if defaults:
         ingestConfig = set_environment(defaults.items(), ingestConfig)
-        ingestConfig = set_environment({'APPLICATION_ROOT': application.config['APPLICATION_ROOT']}.items(), ingestConfig)
+        ingestConfig = set_environment({'APPLICATION_ROOT': application.config['APP_SRC_DIR']}.items(), ingestConfig)
     else:
         print(f"Error loading environment defaults from {env_file}")
         sys.exit(1)

@@ -62,7 +62,7 @@ def submit(application):
             print(f"DEBUG: summary: {summary}")
 
         # Write files for download
-        results_dir = os.path.join(application.config['APPLICATION_ROOT'], 'results')
+        results_dir = os.path.join(application.config['APP_SRC_DIR'], 'results')
         os.makedirs(results_dir, exist_ok=True)
 
         with open(os.path.join(results_dir, 'ingested.csv'), 'w') as f:

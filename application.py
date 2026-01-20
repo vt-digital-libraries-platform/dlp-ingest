@@ -23,8 +23,8 @@ application.secret_key = app_secret
 
 oauth = auth.init(application, app_secret)
 
-app_root = os.path.dirname(os.path.abspath(__file__))
-application.config['APPLICATION_ROOT'] = app_root
+app_src_dir = os.path.dirname(os.path.abspath(__file__))
+application.config['APP_SRC_DIR'] = app_src_dir
 
 
 # pages

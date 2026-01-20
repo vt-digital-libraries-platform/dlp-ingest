@@ -25,7 +25,7 @@ oauth.register(
 
 
 app_root = os.path.dirname(os.path.abspath(__file__))
-application.config['APPLICATION_ROOT'] = app_root
+application.config['APP_SRC_DIR'] = app_root
 application.config['STATIC'] = os.path.join(app_root, 'static')
 application.config['DEBUG'] = True
 application.config['UPLOADS'] = os.path.join(app_root, 'uploads')
@@ -142,12 +142,12 @@ def environment_json(env):
 
 def set_environment_defaults():
     defaults = None
-    env_file = os.path.join(application.config['APPLICATION_ROOT'], 'config', os.getenv('INGEST_ENV_YAML'))
+    env_file = os.path.join(application.config['APP_SRC_DIR'], 'config', os.getenv('INGEST_ENV_YAML'))
     with open(env_file, 'r') as f:
         defaults = yaml.safe_load(f)
     if defaults:
         set_environment(defaults.items())
-        set_environment({'APPLICATION_ROOT': application.config['APPLICATION_ROOT']}.items())
+        set_environment({'APPLICATION_ROOT': application.config['APP_SRC_DIR']}.items())
     else:
         print(f"Error loading environment defaults from {env_file}")
         sys.exit(1)
@@ -170,7 +170,7 @@ def set_environment_booleans():
 
 
 def get_available_envs():
-    env_file = os.path.join(application.config['APPLICATION_ROOT'], "config", "available_envs.yml")
+    env_file = os.path.join(application.config['APP_SRC_DIR'], "config", "available_envs.yml")
     with open(env_file, 'r') as f:
         envs = yaml.safe_load(f)
 
@@ -212,7 +212,7 @@ def get_tables():
 
 @application.route('/api/env_defaults')
 def env_defaults():
-    env_file = os.path.join(application.config['APPLICATION_ROOT'], 'config', os.getenv('INGEST_ENV_YAML'))
+    env_file = os.path.join(application.config['APP_SRC_DIR'], 'config', os.getenv('INGEST_ENV_YAML'))
     with open(env_file, 'r') as f:
         defaults = yaml.safe_load(f)
 
@@ -254,7 +254,7 @@ def submit():
             print(f"DEBUG: summary: {summary}")
 
         # Write files for download
-        results_dir = os.path.join(application.config['APPLICATION_ROOT'], 'results')
+        results_dir = os.path.join(application.config['APP_SRC_DIR'], 'results')
         os.makedirs(results_dir, exist_ok=True)
 
         with open(os.path.join(results_dir, 'ingested.csv'), 'w') as f:
@@ -327,7 +327,7 @@ def success():
 
 @application.route('/results/<filename>')
 def download_result(filename):
-    results_dir = os.path.join(application.config['APPLICATION_ROOT'], 'results')
+    results_dir = os.path.join(application.config['APP_SRC_DIR'], 'results')
     print("Serving file:", os.path.join(results_dir, filename))
     return send_from_directory(results_dir, filename, as_attachment=True)
 
