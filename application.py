@@ -3,6 +3,9 @@ from flask import Flask
 
 import routes.pages as pages
 import routes.auth as auth
+import routes.api as api
+
+import utils.web_utils as utils
 
 
 logger = logging.getLogger(__name__)
@@ -32,6 +35,10 @@ application.config['TEMPLATE_DIR'] = os.path.join(app_src_dir, 'templates')
 application.config['ALLOWED_EXTENSIONS'] = {'csv'}
 application.config['DEBUG'] = True
 
+# empty upload directory on startup
+utils.cleanup(application.config['UPLOADS'])
+
+
 # === Routes === 
 
 # pages
@@ -58,7 +65,17 @@ def logout():
 
 
 # api
+@application.route('/api/identifiers')
+def get_identifiers():
+    return api.get_identifiers(application)
 
+@application.route('/api/tables')
+def get_tables():
+    return api.get_tables()
+
+@application.route('/api/env_defaults')
+def env_defaults():
+    return api.env_defaults(application)
 
 
 if __name__ == '__main__':

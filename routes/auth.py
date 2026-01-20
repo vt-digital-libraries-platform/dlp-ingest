@@ -2,7 +2,7 @@ from flask import redirect, session, url_for
 from authlib.integrations.flask_client import OAuth
 import logging
 
-logging = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 def init(application, app_secret):
     oauth = OAuth(application)
@@ -28,7 +28,7 @@ def authorize(oauth):
         user = token['userinfo']
         session['user'] = user
     except Exception as e:
-        logging.info(f"authorize: {e}")
+        logger.info(f"authorize: {e}")
     return redirect(url_for('index'))
 
 
@@ -36,5 +36,5 @@ def logout():
     try:
         session.pop('user', None)
     except Exception as e:
-        logging.info(f"logout: {e}")
+        logger.info(f"logout: {e}")
     return redirect(url_for('index'))

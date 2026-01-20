@@ -1,6 +1,9 @@
-import os, shutil, sys, yaml
+import logging, os, shutil, sys, yaml
 from flask import request
 
+logger = logging.getLogger(__name__)
+
+ingestConfig = {}
 
 env_vars = [
     'APPLICATION_ROOT',
@@ -38,25 +41,15 @@ env_vars = [
     '3D_OPTIONS-FLASH_CARD-OPTIONS-TEXT-BACK',
 ]
 
-def set_environment_defaults(application, ingestConfig):
-    defaults = None
-    env_file = os.path.join(application.config['APP_SRC_DIR'], 'config', os.getenv('INGEST_ENV_YAML'))
-    with open(env_file, 'r') as f:
-        defaults = yaml.safe_load(f)
-    if defaults:
-        ingestConfig = set_environment(defaults.items(), ingestConfig)
-        ingestConfig = set_environment({'APPLICATION_ROOT': application.config['APP_SRC_DIR']}.items(), ingestConfig)
-    else:
-        print(f"Error loading environment defaults from {env_file}")
-        sys.exit(1)
+
+def get_ingestConfig():
     return ingestConfig
 
 
-def set_environment(env_values, ingestConfig):
+def set_environment(env_values):
     for key, value in env_values:
         if str(key).upper() in env_vars:
             ingestConfig[str(key).upper()] = value
-    return ingestConfig
 
 
 def environment_json(env):
@@ -67,6 +60,23 @@ def environment_json(env):
         for field in env[key]:
             env_json[key] = env[field]
     return env_json
+
+
+def set_environment_defaults(application):
+    defaults = None
+    env_file = os.path.join(application.config['APP_SRC_DIR'], 'config', os.getenv('INGEST_ENV_YAML'))
+    
+    try:
+        with open(env_file, 'r') as f:
+            defaults = yaml.safe_load(f)
+    except Exception as e:
+        logger.error(f"set_environment_defaults: {e}")
+
+    if defaults:
+        set_environment(defaults.items())
+        set_environment({'APPLICATION_ROOT': application.config['APP_SRC_DIR']}.items())
+    else:
+        logger.info(f"Error loading environment defaults from {env_file}")
 
 
 def get_identifier():
@@ -105,13 +115,13 @@ def get_files(application):
     return files
 
 
-def set_environment_overrides(ingestConfig):
+def set_environment_overrides():
     set_environment(request.form.items())
-    ingestConfig = set_environment_booleans(ingestConfig)
+    set_environment_booleans()
 
 
 
-def set_environment_booleans(ingestConfig):
+def set_environment_booleans():
     for key in env_vars:
         if key not in ingestConfig.keys():
             set_environment({key: False}.items())
@@ -137,3 +147,13 @@ def cleanup(directory):
         os.makedirs(directory)
     except:
         pass
+
+
+def filterTableNames(table_names):
+    envs = []
+    for table in table_names:
+        if table.startswith('Collection-'):
+            if table not in envs:
+                envs.append(table)
+
+    return sorted(envs)

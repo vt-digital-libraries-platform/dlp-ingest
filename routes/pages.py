@@ -4,7 +4,7 @@ from flask import redirect, render_template, request, session, url_for
 from ingest import main as dlp_ingest_main
 import utils.web_utils as utils
 
-logging = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 def index():
     user = session.get('user')
@@ -12,7 +12,7 @@ def index():
     try:
         msg = request.args.get('msg', None)
     except Exception as e:
-        logging.info(f"index: {e}")
+        logger.info(f"index: {e}")
     if user:
         if utils.user_is_admin(user):
             return  redirect(url_for("ingest_form"))
@@ -32,7 +32,6 @@ def ingest_form():
 
 
 def submit(application):
-    ingestConfig = {}
 
     uploaded = []
     ingested_items = []
@@ -40,20 +39,20 @@ def submit(application):
     errors = []
     summary = []
 
-    ingestConfig = utils.set_environment_defaults(application, ingestConfig)
+    utils.set_environment_defaults(application)
     collection_identifier = utils.get_identifier()
     if request.method == 'POST' and 'metadata_input' in request.files:
         uploaded = utils.save_uploads(application, collection_identifier, len(request.files.getlist('metadata_input')))
     
 
     if utils.files_exist(application):
-        ingestConfig = utils.set_environment_overrides(application, ingestConfig)
+        utils.set_environment_overrides(application)
 
         # Do the ingest
         metadata_filepath = os.path.join(application.config['UPLOADS'], uploaded[0])
 
         result = None
-        result = dlp_ingest_main(None, None, metadata_filepath, ingestConfig)
+        result = dlp_ingest_main(None, None, metadata_filepath, utils.get_ingestConfig())
         if result:
             print(f"DEBUG: Result returned by dlp_ingest_main: {result}")
             ingested_items = result.get('ingested', [])
