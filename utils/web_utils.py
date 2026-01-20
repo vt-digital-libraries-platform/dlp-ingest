@@ -123,4 +123,8 @@ def set_environment_booleans(ingestConfig):
 
 
 def user_is_admin(user):
-    return 'cognito:groups' in user and "admin" in user['cognito:groups']
+    return (
+        user and 
+        'cognito:groups' in user and 
+        "admin" in user['cognito:groups']
+    )

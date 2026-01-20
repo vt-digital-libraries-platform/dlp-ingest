@@ -8,18 +8,23 @@ logging = logging.getLogger(__name__)
 
 def index():
     user = session.get('user')
+    msg = None
+    try:
+        msg = request.args.get('msg', None)
+    except Exception as e:
+        logging.info(f"index: {e}")
     if user:
         return  redirect(url_for("ingest_form"))
     else:
-        return render_template("index.html")
+        return render_template("index.html", msg=msg)
     
 
 def ingest_form():
     user = session.get('user')
-    if(user and utils.user_is_admin(user)):
+    if(utils.user_is_admin(user)):
         return render_template("form.html", user=user)
     else:
-        return redirect(url_for("index"))
+        return redirect(url_for("index"), msg="Not authorized to access page. Please login.")
 
 
 def submit(application):
