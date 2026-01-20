@@ -1,21 +1,12 @@
-import http
-import json
-import urllib.parse
-import urllib.request
-import requests
-import boto3
-import io
+import boto3, http, io, json, os, uuid, urllib.request
 import pandas as pd
 from datetime import datetime, timezone
 from dateutil.parser import parse
-import uuid
-import os
-import sys
 from boto3.dynamodb.conditions import Key, Attr
 from botocore.response import StreamingBody
+import re
 
 DUPLICATED = "Duplicated"
-
 
 class GenericMetadata:
     def __init__(self, env, filename, bucket, assets):
@@ -28,7 +19,7 @@ class GenericMetadata:
         self.results = []
 
         try:
-            self.dyndb = boto3.resource("dynamodb", region_name=self.env["region_name"])
+            self.dyndb = boto3.resource("dynamodb", region_name=self.env["REGION"])
             self.env["archive_table"] = self.dyndb.Table(self.get_table_name("Archive"))
             self.env["collection_table"] = self.dyndb.Table(
                 self.get_table_name("Collection")
@@ -36,7 +27,7 @@ class GenericMetadata:
             self.env["collectionmap_table"] = self.dyndb.Table(
                 self.get_table_name("Collectionmap")
             )
-            self.env["mint_table"] = self.dyndb.Table(self.env["dynamodb_noid_table"])
+            self.env["mint_table"] = self.dyndb.Table(self.env["DYNAMODB_NOID_TABLE"])
         except Exception as e:
             print(f"An error occurred connecting to an AWS Dynamo resource: {str(e)}")
             raise e
@@ -49,9 +40,12 @@ class GenericMetadata:
             raise e
 
         try:
-            # headers_file = "/home/wlh/dev/dlp/ingest/metadata/dlp-ingest/src/data/20240702_headers_keys.json"
-            # /Users/whunter/dev/dlp/ingest/dlp-ingest/
-            headers_file = "./src/data/20240702_headers_keys.json"
+            headers_file = None
+            if os.getenv("GUI") is not None and os.getenv("GUI").lower() == "true":
+                headers_file = os.path.join(self.env['APPLICATION_ROOT'],'dlp_ingest','src','data','20240702_headers_keys.json')
+            else:
+                headers_file = "./src/data/20240702_headers_keys.json"
+            
             headers_json = os.path.join(headers_file)
             with open(headers_json) as f:
                 headers_keys = json.load(f)
@@ -63,7 +57,7 @@ class GenericMetadata:
 
     def ingest(self):
         metadata_stream = None
-        if "is_lambda" in self.env and self.env["is_lambda"]:
+        if "IS_LAMBDA" in self.env and self.env["IS_LAMBDA"]:
             metadata_stream = self.lambda_metadata(self.filename, self.bucket)
         else:
             metadata_stream = self.local_metadata(self.filename)
@@ -113,25 +107,17 @@ class GenericMetadata:
                 )
                 break
             identifier = collection_dict["identifier"]
-            items = self.query_by_index(
-                self.env["collection_table"], "Identifier", identifier
-            )
-            if items is not None and len(items) >= 1:
-                print(
-                    f"Error: Identifier ({identifier}) already exists in {self.env['collection_table']}."
-                )
-                # TODO: Update existing collection implementation.
-                break
-            else:
+            if "thumbnail_path" not in collection_dict or not collection_dict["thumbnail_path"]:
                 collection_dict["thumbnail_path"] = os.path.join(
-                    self.env["app_img_root_path"],
-                    self.env["collection_category"],
+                    self.env["APP_IMG_ROOT_PATH"],
+                    self.env["COLLECTION_CATEGORY"],
                     identifier,
                     "representative.jpg",
                 )
-                self.create(
-                    self.env["collection_table"], collection_dict, "Collection", idx
-                )
+            self.create(
+                self.env["collection_table"], collection_dict, "Collection", idx
+            )
+            #Revisit the collection map update logic
             if "heirarchy_path" in collection_dict:
                 self.update_collection_map(collection_dict["heirarchy_path"][0])
             print(f"Collection {idx+1} ({identifier}) has been imported.")
@@ -165,7 +151,7 @@ class GenericMetadata:
                 collection_identifier = (
                     collection["identifier"]
                     if collection
-                    else self.env["collection_identifier"]
+                    else self.env["COLLECTION_IDENTIFIER"]
                 )
                 if collection_identifier is None:
                     print(f"Error: Collection not found for Archive {idx+1}.")
@@ -182,8 +168,8 @@ class GenericMetadata:
                     archive_dict["parent_collection"] = [collection["id"]]
                     archive_dict["heirarchy_path"] = collection["heirarchy_path"]
                     archive_dict["manifest_url"] = os.path.join(
-                        self.env["app_img_root_path"],
-                        self.env["collection_category"],
+                        self.env["APP_IMG_ROOT_PATH"],
+                        self.env["COLLECTION_CATEGORY"],
                         collection_identifier,
                         archive_dict["identifier"],
                         "manifest.json",
@@ -228,7 +214,7 @@ class GenericMetadata:
                             # Log trying to create an item that already exists
 
     def get_table_name(self, table_name):
-        return f"{table_name}-{self.env['dynamodb_table_suffix']}"
+        return f"{table_name}-{self.env['DYNAMODB_TABLE_SUFFIX']}"
 
     def header_update(self, records):
         df = records.rename(
@@ -310,7 +296,7 @@ class GenericMetadata:
 
     def print_results(self):
         df = pd.DataFrame(self.results)
-        results_filename = f"{self.env['collection_identifier']}_ingest_results_{datetime.now().strftime('%Y%m%d%H%M%S')}.csv"
+        results_filename = f"{self.env['COLLECTION_IDENTIFIER']}_ingest_results_{datetime.now().strftime('%Y%m%d%H%M%S')}.csv"
         working_dir = os.path.abspath(os.path.dirname(__file__))
         results_path = os.path.join(working_dir, "results_files")
         if not os.path.exists(results_path):
@@ -319,8 +305,8 @@ class GenericMetadata:
         df.to_csv(results_filename, index=False)
         s3_response = None
         target = os.path.join(
-            self.env["collection_category"],
-            self.env["collection_identifier"],
+            self.env["COLLECTION_CATEGORY"],
+            self.env["COLLECTION_IDENTIFIER"],
             "metadata_import_results",
             results_filename,
         )
@@ -332,7 +318,7 @@ class GenericMetadata:
             s3_response = (
                 self.env["s3_resource"]
                 .Object(
-                    self.env["aws_dest_bucket"],
+                    self.env["AWS_DEST_BUCKET"],
                     target,
                 )
                 .put(Body=open(results_filename, "rb"))
@@ -342,7 +328,7 @@ class GenericMetadata:
             if status == 200:
                 print("")
                 print(
-                    f"Results file {os.path.join(self.env['app_img_root_path'],target)} has been uploaded to S3."
+                    f"Results file {os.path.join(self.env['APP_IMG_ROOT_PATH'],target)} has been uploaded to S3."
                 )
         os.chdir(working_dir)
 
@@ -350,23 +336,23 @@ class GenericMetadata:
         #create or update the items in the table based on update_metadata flag
         # If update_metadata is enabled, update the item that exists, otherwise create a new item if it doesn't exist
         identifier = attr_dict["identifier"] 
-        try:
-            # Query the table for existing items with the given identifier
-            items = self.query_by_index(table, "Identifier", identifier)
-            # Handle case where items already exist and update_metadata is disabled
-            if items and len(items) >= 1 and self.env["update_metadata"] == False:
-                print(f"Error: Identifier ({identifier}) already exists in {table}. Please update the metadata flag")
-                self.log_result(attr_dict,index,2,True)
-                return DUPLICATED
-            # Handle case where no items exist and update_metadata is disabled
-            if not items and self.env["update_metadata"] == False:
-                print(f"UPDATE_METADATA is not enabled. Directly creating the item for {identifier}.")
-                return self.create_item_in_table(table, attr_dict, item_type, index)  # Directly create the item if update_metadata is disabled
-            # Handle case where update_metadata is enabled
-            if self.env["update_metadata"]:
-                self.update(table, attr_dict, item_type, identifier,index)
-        except Exception as e:
-            print(f"Error scanning table for identifier '{identifier}': {str(e)}")
+        # try:
+        # Query the table for existing items with the given identifier
+        items = self.query_by_index(table, "Identifier", identifier)
+        # Handle case where items already exist and update_metadata is disabled
+        if items and len(items) >= 1 and self.env["UPDATE_METADATA"] == False:
+            print(f"Error: Identifier ({identifier}) already exists in {table}. Please update the metadata flag")
+            self.log_result(attr_dict,index,2,True)
+            return DUPLICATED
+        # Handle case where no items exist and update_metadata is disabled
+        if not items and self.env["UPDATE_METADATA"] == False:
+            print(f"UPDATE_METADATA is not enabled. Directly creating the item for {identifier}.")
+            return self.create_item_in_table(table, attr_dict, item_type, index)  # Directly create the item if update_metadata is disabled
+        # Handle case where update_metadata is enabled
+        if self.env["UPDATE_METADATA"]:
+            self.update(table, attr_dict, item_type, identifier,index)
+        # except Exception as e:
+        #     print(f"Error scanning table for identifier '{identifier}': {str(e)}")
 
 
     def update(self, table, attr_dict, item_type, identifier, index):
@@ -396,42 +382,74 @@ class GenericMetadata:
     def update_items_in_table(self, table, item_id, attr_dict, index, identifier):
         """
         Updates an existing item in the DynamoDB table with the provided attributes.
+        Removes attributes that are empty or None.
+        Uses protected keys to ensure certain attributes are not removed.
         Uses the 'id' as the partition key.
         Returns True if the update was successful, False otherwise.
         """
         try:
-            # Filter out keys that are not in the CSV file and exclude keys containing 'collection' and 'identifier' and None values
+        # Only allow valid DynamoDB attribute names for both update and remove
+            valid_key = lambda k: k and re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", k)
+
+            # Filter out keys that are not in the CSV file and exclude keys containing 'collection' and 'identifier'
             update_keys = {
                 key: value
                 for key, value in attr_dict.items()
-                if key != "identifier" and value is not None and "collection" not in key.lower()
+                if key != "identifier"
+                   and "collection" not in key.lower()
+                   and valid_key(key)
+                   and value not in [None, ""]
             }
-
-            if not update_keys:
-                print(f"No attributes to update for Identifier ({identifier}).")
-                return False  # no attributes to update
+            # Find keys to remove (those with empty string or None), but protect certain keys
+            protected_keys = {"identifier", "createdAt", "updatedAt", "createdat", "updatedat"}
+            remove_keys = [
+                key for key, value in attr_dict.items()
+                if key not in protected_keys
+                and "collection" not in key.lower()
+                and value in [None, ""]
+                and valid_key(key)
+            ]
+            # If there are no keys to update or remove, return False
+            if not update_keys and not remove_keys:
+                print(f"No attributes to update or remove for Identifier ({identifier}).")
+                return False  # no attributes to update or remove
 
             # Add updatedAt to the update keys and set it to the current time in utc format
             update_keys["updatedAt"] = self.utcformat(datetime.now())  
             #Initialize the update expression and attribute values
-            update_expression = "SET " 
             # 'update_expression_names' maps placeholders (e.g., #key) to actual attribute names. This is used to avoid conflicts with DynamoDB reserved keywords
             update_expression_names = {}
             # 'expression_attribute_values' maps placeholders (e.g., :value) to actual attribute values
             expression_attribute_values = {}
             # 'update_expression_string' will include all attributes to update
             update_expression_string = ""
+            remove_expression_string = ""
             #Iterate over the update keys and build the update expression
             for key, value in update_keys.items():
                 # Append each key-value pair to the update expression string
                 # Use placeholders for attribute names (#key) and values (:value)
-                update_expression_string = f"{update_expression_string}#{key} = :{key},"
+                update_expression_string += f"#{key} = :{key},"
                 # Add the attribute name to the expression names dictionary to ensure that reserved keywords are handled correctly
                 update_expression_names[f"#{key}"] = key
                 # Add the attribute value to the expression values dictionary
                 expression_attribute_values[f":{key}"] = value 
             # Remove the trailing comma from the update expression string
-            update_expression += update_expression_string.strip(",")
+
+            update_expression = ""
+            if update_expression_string:
+                update_expression = "SET " + update_expression_string.rstrip(",")
+
+            # Build the remove expression for valid keys
+            for key in remove_keys:
+                remove_expression_string += f"#{key},"
+                update_expression_names[f"#{key}"] = key
+            # Remove the trailing comma from the remove expression string
+            if remove_expression_string:
+                if update_expression:
+                    update_expression += " REMOVE " + remove_expression_string.rstrip(",") # If there are updates, append the remove expression
+                else:
+                    update_expression = "REMOVE " + remove_expression_string.rstrip(",") # If there are no updates, just remove the attributes
+
             # Perform the update using the 'id' as the partition key
             # This sends the update request to DynamoDB with the constructed update expression
             table.update_item(
@@ -441,7 +459,6 @@ class GenericMetadata:
                 ExpressionAttributeValues=expression_attribute_values # Placeholder mappings for attribute values
             )
 
-            print(f"Identifier ({identifier}) with ID ({item_id}) has been updated in {table}.")
             self.log_result(
                 attr_dict,
                 index,
@@ -470,14 +487,14 @@ class GenericMetadata:
         short_id = self.mint_NOID()
         if short_id:
             attr_dict["custom_key"] = os.path.join(
-                self.env["noid_scheme"], self.env["noid_naa"], short_id
+                self.env["NOID_SCHEME"], str(self.env["NOID_NAA"]), short_id
             )
         utc_now = self.utcformat(datetime.now())
         attr_dict["createdAt"] = utc_now  # Set createdAt to the current time
         attr_dict["updatedAt"] = utc_now  # Set updatedAt to the current time
         success = False
         try:
-            if self.env["dry_run"]:
+            if self.env["DRY_RUN"]:
                 print(f"PutItem SIMULATED: {attr_dict['identifier']}")
                 self.log_result(
                     attr_dict,
@@ -501,12 +518,12 @@ class GenericMetadata:
         if short_id:
             if success:
                 long_url = os.path.join(
-                    self.env["long_url_path"], item_type.lower(), short_id
+                    self.env["LONG_URL_PATH"], item_type.lower(), short_id
                 )
                 short_url = os.path.join(
-                    self.env["short_url_path"],
-                    self.env["noid_scheme"],
-                    self.env["noid_naa"],
+                    self.env["SHORT_URL_PATH"],
+                    self.env["NOID_SCHEME"],
+                    self.env["NOID_NAA"],
                     short_id,
                 )
                 self.create_NOID_record(short_id, attr_dict, long_url, short_url, utc_now)
@@ -523,31 +540,62 @@ class GenericMetadata:
     def process_csv_metadata(self, data_row, item_type):
         attr_dict = {}
         for item in data_row.items():
-            if item[0].strip() and str(item[1]).strip():
-                self.set_attribute(attr_dict, item[0].strip(), str(item[1]).strip().strip("\"").strip())
+            # Always set the attribute, even if value is empty
+            self.set_attribute(attr_dict, item[0].strip(), str(item[1]).strip().strip("\"").strip())
+        # Set embargo flag only after all attributes are processed, based on embargo dates only
+        embargo_start = attr_dict.get("embargo_start_date")
+        embargo_end = attr_dict.get("embargo_end_date")
+
+        # Add embargo date error checking if start date is after end date:
+        if embargo_start and embargo_end:
+            try:
+                start_dt = parse(str(embargo_start))
+                end_dt = parse(str(embargo_end))
+                if start_dt > end_dt:
+                    print(f"\033[91m⚠️  Error: Embargo start date ({embargo_start}) is after embargo end date ({embargo_end}) for identifier {attr_dict.get('identifier', 'N/A')}\033[0m")
+            except Exception as e:
+                print(f"Error parsing embargo dates for identifier {attr_dict.get('identifier', 'N/A')}: {e}")
+
+        if (embargo_start and str(embargo_start).strip()) or (embargo_end and str(embargo_end).strip()):
+            embargo = True
+        else:
+            embargo = False
         if ("identifier" not in attr_dict.keys()) or ("title" not in attr_dict.keys()):
             attr_dict = None
             print(f"Missing required attribute in this row!")
         else:
             self.set_attributes_from_env(attr_dict, item_type)
-        
+            # Visibility logic: show item only if visibility is True and embargo is False
+            visibility = attr_dict.get("visibility", True)
+            if visibility and not embargo:
+                attr_dict["visibility"] = True
+            else:
+                attr_dict["visibility"] = False
         return attr_dict
 
     def set_attributes_from_env(self, attr_dict, item_type):
         if item_type == "Collection":
-            attr_dict["collection_category"] = self.env["collection_category"]
+            attr_dict["collection_category"] = self.env["COLLECTION_CATEGORY"]
         elif item_type == "Archive":
-            attr_dict["item_category"] = self.env["collection_category"]
+            attr_dict["item_category"] = self.env["COLLECTION_CATEGORY"]
         if "visibility" not in attr_dict.keys():
+        
             attr_dict["visibility"] = True
 
     def set_attribute(self, attr_dict, attr, value):
         lower_attr = attr.lower().replace(" ", "_")
+    # Map 'Note' to 'embargo_note'
+        if lower_attr == "note":
+            lower_attr = "embargo_note"
         if attr == "visibility" or attr == "explicit_content" or attr == "explicit":
-            if str(value).lower() == "true":
+            if str(value).strip() == "":
+                attr_dict[lower_attr] = True
+            elif str(value).lower() == "true":
                 attr_dict[lower_attr] = True
             else:
                 attr_dict[lower_attr] = False
+        elif attr == "embargo_start_date" or attr == "embargo_end_date":
+            self.print_index_date(attr_dict, value, lower_attr)
         elif attr == "start_date" or attr == "end_date":
             self.print_index_date(attr_dict, value, lower_attr)
         elif attr == "parent_collection_identifier":
@@ -561,30 +609,30 @@ class GenericMetadata:
                 attr_dict["parent_collection_identifier"] = [value]
         elif attr == "thumbnail_path":
             attr_dict[lower_attr] = os.path.join(
-                self.env["app_img_root_path"],
-                self.env["collection_category"],
+                self.env["APP_IMG_ROOT_PATH"],
+                self.env["COLLECTION_CATEGORY"],
                 value,
                 "representative.jpg",
             )
         elif attr == "filename":
             if value.endswith(".pdf") or value.endswith(".jpg"):
                 attr_dict["thumbnail_path"] = os.path.join(
-                    self.env["app_img_root_path"],
-                    self.env["collection_category"],
+                    self.env["APP_IMG_ROOT_PATH"],
+                    self.env["COLLECTION_CATEGORY"],
                     "thumbnail",
                     value.replace(".pdf", ".jpg"),
                 )
                 attr_dict["manifest_url"] = os.path.join(
-                    self.env["app_img_root_path"],
-                    self.env["collection_category"],
+                    self.env["APP_IMG_ROOT_PATH"],
+                    self.env["COLLECTION_CATEGORY"],
                     "pdf",
                     value,
                 )
             elif "video.vt.edu/media" in value:
                 thumbnail = value.split("_")[1]
                 attr_dict["thumbnail_path"] = os.path.join(
-                    self.env["app_img_root_path"],
-                    self.env["collection_category"],
+                    self.env["APP_IMG_ROOT_PATH"],
+                    self.env["COLLECTION_CATEGORY"],
                     "thumbnail",
                     thumbnail,
                     ".png",
@@ -592,10 +640,20 @@ class GenericMetadata:
                 attr_dict["manifest_url"] = value
         else:
             extracted_value = self.extract_attribute(attr, value)
-            if extracted_value:
-                attr_dict[lower_attr] = extracted_value
+            # Always set the attribute, even if extracted_value is falsy (empty string, empty list, etc.)
+            attr_dict[lower_attr] = extracted_value
 
     def print_index_date(self, attr_dict, value, attr):
+        # If the value is None, 'None', or an empty string, set the attribute to an empty string.
+        # This is to ensure that the attribute is removed from the table if it is not set.
+        if value is None or str(value).strip().lower() == "none" or not str(value).strip():
+            attr_dict[attr] = ""
+            return
+        # Check if the value is a year-only format (e.g., "2023")
+        if re.fullmatch(r"\d{4}", value):
+            attr_dict[attr] = value
+            print(f"Year-only detected, attr_dict[{attr}]: {attr_dict[attr]}")
+            return
         try:
             parsed_date = parse(value)
             # dates in Elasticsearch are formatted, e.g. "2015/01/01" or
@@ -605,8 +663,8 @@ class GenericMetadata:
             print(f"Error - Unknown date format: {value} for {attr}")
         except OverflowError:
             print(f"Error - Invalid date range: {value} for {attr}")
-        except BaseException:
-            print(f"Error - Unexpected error: {value} for {attr}")
+        except BaseException as e:
+            print(f"Error - Unexpected error: {value} for {attr}, Exception: {e}")
 
     def query_by_index(self, table, index_name, value):
         index_key = index_name.lower()
@@ -644,7 +702,7 @@ class GenericMetadata:
             collection = self.query_by_index(
                 self.env["collection_table"],
                 "Identifier",
-                self.env["collection_identifier"],
+                self.env["COLLECTION_IDENTIFIER"],
             )
         return collection
 
@@ -663,6 +721,9 @@ class GenericMetadata:
         if header in self.single_value_headers:
             return value
         elif header in self.multi_value_headers:
+            # If the value is empty or only whitespace, return an empty string (so it can be picked up for removal using the update_items_in_table method)        
+            if not value.strip():
+                return ""  # or return None
             values = value.split("||")
             for idx, val in enumerate(values):
                 values[idx] = val.strip()
@@ -780,7 +841,7 @@ class GenericMetadata:
                     },
                 )
         else:
-            if self.env["dry_run"]:
+            if self.env["DRY_RUN"]:
                 print("Collection map creation SIMULATED.")
             else:
                 print(
@@ -799,7 +860,7 @@ class GenericMetadata:
 
 
     def create_NOID_record(self, noid, item, long_url, short_url, now):
-        if self.env["dry_run"]:
+        if self.env["DRY_RUN"]:
             print("create_NOID_record: New NOID SIMULATED.")
             return "12345678"
         category = None
@@ -826,7 +887,7 @@ class GenericMetadata:
         
 
     def delete_NOID_record(self, noid):
-        if self.env["dry_run"]:
+        if self.env["DRY_RUN"]:
             print("delete_NOID: SIMULATED.")
         else:
             self.env["mint_table"].delete_item(Key={"noid": noid})

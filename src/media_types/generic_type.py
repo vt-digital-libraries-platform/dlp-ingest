@@ -1,4 +1,9 @@
-from src.fixity.checksum_handler import checksum_handler
+import os
+
+if os.getenv("GUI") is not None and os.getenv("GUI").lower() == "true":
+    from src.dlp_ingest.src.fixity.checksum_handler import checksum_handler
+else:
+    from src.fixity.checksum_handler import checksum_handler
 
 class GenericType:
     def __init__(
@@ -19,16 +24,16 @@ class GenericType:
         self.modified_metadata = ""
 
     def ingest(self):
-        if self.env["media_ingest"]:
+        if self.env["MEDIA_INGEST"]:
             self.modified_metadata = self.import_digital_objects()
-        if self.env["metadata_ingest"]:
+        if self.env["METADATA_INGEST"]:
             self.modified_metadata = self.import_metadata()
 
         checksum_options = {
-            "COLLECTION_IDENTIFIER": self.env["collection_identifier"],
-            "FIXITY_TABLE_NAME": self.env["dynamodb_file_char_table"],
-            "S3_BUCKET_NAME": self.env["aws_src_bucket"],
-            "S3_PREFIX": self.env["collection_category"]
+            "COLLECTION_IDENTIFIER": self.env["COLLECTION_IDENTIFIER"],
+            "FIXITY_TABLE_NAME": self.env["DYNAMODB_FILE_CHAR_TABLE"],
+            "S3_BUCKET_NAME": self.env["AWS_SRC_BUCKET"],
+            "S3_PREFIX": self.env["COLLECTION_CATEGORY"]
         }
         checksum_handler(checksum_options, None)
 
