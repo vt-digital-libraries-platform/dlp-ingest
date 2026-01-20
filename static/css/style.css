@@ -327,3 +327,7 @@ div#content {
     display: block;
     clear: both;
 }
+
+div#content .msg {
+    color: #b00000;
+}
