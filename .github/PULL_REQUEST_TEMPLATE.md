@@ -43,7 +43,7 @@ List key updates, features added/removed, or issues addressed.**
 
 OS/Browser/Screen reader details: *For Example: macOS Tahoe 26.0.1, Google Chrome v141.0.7390.55, VoiceOver v10*
 
-- [ ] [axe DevTools full/partial page scans]())
+- [ ] Complete an axe DevTools full or partial page scans and link it here ([axe DevTools scanning docs](https://docs.deque.com/devtools-for-web/4/en/devtools-scanning))
 - [ ] Keyboard navigability: Focus ring showing on all focusable/interactive elements in expected order, standard interaction present ([keyboard testing basics](https://knowbility.org/blog/2018/keyboard-testing-basics/))
 - [ ] Screen reader comprehension: No elements hidden from screen reader, alt text, no repeated text ([screen reader keyboard shortcuts](https://dequeuniversity.com/screenreaders/)) 
 - [ ] Color contrast at least WCAG AA ([contrast checker](https://webaim.org/resources/contrastchecker/))
