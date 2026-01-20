@@ -32,6 +32,7 @@ application.config['TEMPLATE_DIR'] = os.path.join(app_src_dir, 'templates')
 application.config['ALLOWED_EXTENSIONS'] = {'csv'}
 application.config['DEBUG'] = True
 
+# === Routes === 
 
 # pages
 application.add_url_rule('/', view_func=pages.index)

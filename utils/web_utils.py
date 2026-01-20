@@ -1,4 +1,4 @@
-import os, sys, yaml
+import os, shutil, sys, yaml
 from flask import request
 
 
@@ -128,3 +128,12 @@ def user_is_admin(user):
         'cognito:groups' in user and 
         "admin" in user['cognito:groups']
     )
+
+
+# empty directory (mostly for uploads)
+def cleanup(directory):
+    try:
+        shutil.rmtree(directory, ignore_errors=True)
+        os.makedirs(directory)
+    except:
+        pass
