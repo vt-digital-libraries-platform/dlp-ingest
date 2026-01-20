@@ -17,7 +17,7 @@ def index():
         if utils.user_is_admin(user):
             return  redirect(url_for("ingest_form"))
         else:
-            msg = "Please contact so and so for admin privileges"
+            msg = f"Hi {user['email']}! Please contact so and so for admin privileges"
             return render_template("index.html", msg=msg)
     else:
         return render_template("index.html", msg=msg)
