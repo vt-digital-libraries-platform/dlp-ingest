@@ -24,7 +24,7 @@ def ingest_form():
     if(utils.user_is_admin(user)):
         return render_template("form.html", user=user)
     else:
-        return redirect(url_for("index"), msg="Not authorized to access page. Please login.")
+        return redirect(url_for("index", msg="Not authorized to access page. Please login."))
 
 
 def submit(application):
