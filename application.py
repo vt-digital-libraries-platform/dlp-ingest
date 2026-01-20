@@ -5,13 +5,6 @@ import routes.pages as pages
 import routes.auth as auth
 
 
-app_secret = os.environ.get('APP_SECRET')
-
-application = Flask(__name__)
-application.secret_key = app_secret
-
-oauth = auth.init(application, app_secret)
-
 logger = logging.getLogger(__name__)
 logging.basicConfig(
     filename='/var/log/application.log', 
@@ -21,6 +14,16 @@ logging.basicConfig(
 )
 logger.info("----------------------------------------")
 logger.info("Starting instance...")
+
+
+app_secret = os.environ.get('APP_SECRET')
+
+application = Flask(__name__)
+application.secret_key = app_secret
+
+oauth = auth.init(application, app_secret)
+
+
 
 # pages
 application.add_url_rule('/', view_func=pages.index)
