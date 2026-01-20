@@ -14,7 +14,11 @@ def index():
     except Exception as e:
         logging.info(f"index: {e}")
     if user:
-        return  redirect(url_for("ingest_form"))
+        if utils.user_is_admin(user):
+            return  redirect(url_for("ingest_form"))
+        else:
+            msg = "Please contact so and so for admin privileges"
+            return render_template("index.html", msg=msg)
     else:
         return render_template("index.html", msg=msg)
     
@@ -22,7 +26,7 @@ def index():
 def ingest_form():
     user = session.get('user')
     if(utils.user_is_admin(user)):
-        return render_template("form.html", user=user)
+        return render_template("form.html", user=user) 
     else:
         return redirect(url_for("index", msg="Not authorized to access page. Please login."))
 
