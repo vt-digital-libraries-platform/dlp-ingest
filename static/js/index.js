@@ -339,41 +339,45 @@ const addListeners = async () => {
 
 
 const fetchIdentifiers = async () => {
+    let data = null;
     try {
         const suffix = document.getElementById("dynamodb_table_suffix").value;
         const response = fetch(`/api/identifiers?suffix=${encodeURIComponent(suffix)}`)
-        const data = response.json()
+        if(response) {
+            data = response.json()
+        }
     }
     catch(error) {
         console.error(error)
     }
 
-        
-    try {
-        const collection_datalist = document.getElementById("collection_identifiers");
-        const parent_collection_datalist = document.getElementById("parent_collection_identifiers");
-        // Clear existing options
-        collection_datalist.innerHTML = "";
-        parent_collection_datalist.innerHTML = "";
-        collection_datalist.innerHTML = "";
-    }
-    catch(error) {
-        console.error(error)
-    }
+    if(data) { 
+        try {
+            const collection_datalist = document.getElementById("collection_identifiers");
+            const parent_collection_datalist = document.getElementById("parent_collection_identifiers");
+            // Clear existing options
+            collection_datalist.innerHTML = "";
+            parent_collection_datalist.innerHTML = "";
+            collection_datalist.innerHTML = "";
+        }
+        catch(error) {
+            console.error(error)
+        }
 
-    try {
-        const selected_collection = document.getElementById("collection_identifier").value;
-        data.identifiers.forEach(identifier => {
-            const option = document.createElement("option");
-            option.value = identifier;
-            collection_datalist.appendChild(option);
-            if (!selected_collection || identifier !== selected_collection) {
-                parent_collection_datalist.appendChild(option.cloneNode(true));
-            }
-        });
-    }
-    catch(error) {
-        console.error(error)
+        try {
+            const selected_collection = document.getElementById("collection_identifier").value;
+            data.identifiers.forEach(identifier => {
+                const option = document.createElement("option");
+                option.value = identifier;
+                collection_datalist.appendChild(option);
+                if (!selected_collection || identifier !== selected_collection) {
+                    parent_collection_datalist.appendChild(option.cloneNode(true));
+                }
+            });
+        }
+        catch(error) {
+            console.error(error)
+        }
     }
 }
 
