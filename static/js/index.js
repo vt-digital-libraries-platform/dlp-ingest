@@ -191,107 +191,150 @@ const checkCollectionAndParentIdentifiers = (selected, other) => {
 const addListeners = async () => {
 
     // parent collection identifier
-    document.getElementById("parent_collection_identifier").addEventListener("change", function(event) {
-        checkCollectionAndParentIdentifiers("parent_collection_identifier", "collection_identifier");
-    });
+    try {
+        document.getElementById("parent_collection_identifier").addEventListener("change", function(event) {
+            checkCollectionAndParentIdentifiers("parent_collection_identifier", "collection_identifier");
+        });
+    }
+    catch(error) {
+        console.error(error)
+    }
     
     // File input
-    document.getElementById("metadata_input").addEventListener("change", function(event) {
-        const fileInput = event.target;
-        if(fileInput.files?.length > 0){
-            document.getElementById("metadata_input").classList.remove("incomplete");
-        }
-    });
+    try {
+        document.getElementById("metadata_input").addEventListener("change", function(event) {
+            const fileInput = event.target;
+            if(fileInput.files?.length > 0){
+                document.getElementById("metadata_input").classList.remove("incomplete");
+            }
+        });
+    }
+    catch(error) {
+        console.error(error)
+    }
 
     // Add event listeners for ingest type selection (radio buttons)
     for (let elem of document.querySelectorAll('input[type="radio"][name="INGEST_TYPE"]')) {
-        elem.addEventListener("change", handleIngestTypeChange);
+        try {
+            elem.addEventListener("change", handleIngestTypeChange);
+        }
+        catch(error){
+            console.error(error)
+        }
     };
 
 
-
-    document.getElementById("3d_options-addOns").addEventListener("change", (event) => {
-        const selectedValue = event.target.value;
-        switch (selectedValue) {
-            case "flash_card":
-                showFlashCardOptions();
-                break;
-            default:
-                hideFlashCardOptions();
-                break;
-        }
-    });
+    try {
+        document.getElementById("3d_options-addOns").addEventListener("change", (event) => {
+            const selectedValue = event.target.value;
+            switch (selectedValue) {
+                case "flash_card":
+                    showFlashCardOptions();
+                    break;
+                default:
+                    hideFlashCardOptions();
+                    break;
+            }
+        });
+    }
+    catch(error) {
+        console.error(error)
+    }
 
     // Add event listener for media type selection
-    document.getElementById("media_type").addEventListener("change", (event) => {
-        handleMediaTypeChange();
-    });
+    try {
+        document.getElementById("media_type").addEventListener("change", (event) => {
+            handleMediaTypeChange();
+        });
+    }
+    catch(error) {
+        console.error(error)
+    }
     
     // Add event listeners for environment selection (radio buttons)
     for (let elem of document.querySelectorAll('input[type="radio"][name="ENV_SELECTION"]')) {
-        elem.addEventListener("change", handleEnvRadioChange);
+        try {
+            elem.addEventListener("change", handleEnvRadioChange);
+        }
+        catch(error) {
+            console.error(error)
+        }
     };
 
 
     // When a table is selected, autofill the suffix field
-    document.getElementById("dynamodb_table_suffix").addEventListener("change", function(event) {
-        const envDev = document.getElementById("env_dev");
-        const envPprd = document.getElementById("env_pprd");
+    try {
+        document.getElementById("dynamodb_table_suffix").addEventListener("change", function(event) {
+            const envDev = document.getElementById("env_dev");
+            const envPprd = document.getElementById("env_pprd");
 
-        // Environment detection logic remains, but field population will be handled by setEnvFields(env)
-        if (event.target.value.endsWith("vtdlpdev")) {
-            envDev.checked = true;
-        } else if (event.target.value.endsWith("vtdlppprd")) {
-            envPprd.checked = true;
-        }
-
-        fetchIdentifiers();
-        checkAllSections();
-    });
-
-
-    document.getElementById("ingest_button").addEventListener("click", function(e) {
-        e.preventDefault(); // Prevent normal form submission
-
-        const identifier = document.getElementById("collection_identifier").value;
-        if (!identifier.trim()) {
-            e.preventDefault();
-            alert("Please fill in the Collection Identifier before submitting.");
-            document.getElementById("collection_identifier").focus();
-        }
-
-        const form = document.querySelector("form");
-        const formData = new FormData(form);
-        const xhr = new XMLHttpRequest();
-        const progressBar = document.getElementById("progress-bar");
-        const progressText = document.getElementById("progress-text");
-
-        xhr.upload.onprogress = function(event) {
-            if (event.lengthComputable) {
-                const percent = Math.round((event.loaded / event.total) * 100);
-                progressBar.value = percent;
-                progressText.textContent = percent + "%";
+            // Environment detection logic remains, but field population will be handled by setEnvFields(env)
+            if (event.target.value.endsWith("vtdlpdev")) {
+                envDev.checked = true;
+            } else if (event.target.value.endsWith("vtdlppprd")) {
+                envPprd.checked = true;
             }
-        };
 
-        xhr.onload = function() {
-            progressBar.value = 100;
-            progressText.textContent = "Complete!";
-            // Redirect to a results or success page
-            window.location.href = "/success"; // Change "/success" to your desired URL
-        };
+            fetchIdentifiers();
+            checkAllSections();
+        });
+    }
+    catch(error) {
+        console.error(error)
+    }
 
-        xhr.open("POST", form.action);
-        xhr.send(formData);
+    try {
+        document.getElementById("ingest_button").addEventListener("click", function(e) {
+            e.preventDefault(); // Prevent normal form submission
 
-        progressBar.value = 0;
-        progressText.textContent = "Uploading...";
-    });
+            const identifier = document.getElementById("collection_identifier").value;
+            if (!identifier.trim()) {
+                e.preventDefault();
+                alert("Please fill in the Collection Identifier before submitting.");
+                document.getElementById("collection_identifier").focus();
+            }
+
+            const form = document.querySelector("form");
+            const formData = new FormData(form);
+            const xhr = new XMLHttpRequest();
+            const progressBar = document.getElementById("progress-bar");
+            const progressText = document.getElementById("progress-text");
+
+            xhr.upload.onprogress = function(event) {
+                if (event.lengthComputable) {
+                    const percent = Math.round((event.loaded / event.total) * 100);
+                    progressBar.value = percent;
+                    progressText.textContent = percent + "%";
+                }
+            };
+
+            xhr.onload = function() {
+                progressBar.value = 100;
+                progressText.textContent = "Complete!";
+                // Redirect to a results or success page
+                window.location.href = "/success"; // Change "/success" to your desired URL
+            };
+
+            xhr.open("POST", form.action);
+            xhr.send(formData);
+
+            progressBar.value = 0;
+            progressText.textContent = "Uploading...";
+        });
+    }
+    catch(error) {
+        console.error(error)
+    }
 
 
     // Section checker: listen for changes on errthang
     document.querySelectorAll("input, select").forEach(el => {
-        el.addEventListener("input", checkAllSections);
+        try {
+            el.addEventListener("input", checkAllSections);
+        }
+        catch(error) {
+            console.error(error)
+        }
     });
 
 
@@ -302,39 +345,53 @@ const addListeners = async () => {
             for (const section of sections) {
                 const status = document.getElementById(section.statusId);
                 if (status && status.classList.contains("incomplete")) {
-                    document.getElementById(section.id).scrollIntoView({behavior: "smooth"});
-                    break;
+                    try {
+                        document.getElementById(section.id).scrollIntoView({behavior: "smooth"});
+                        break;
+                    }
+                    catch(error) {
+                        console.error(error)
+                    }
                 }
             }
         };
     }
 
     const select = document.getElementById("collection_identifier");
-    select.addEventListener("change", checkCollectionIdentifier);
-    select.addEventListener("input", checkCollectionIdentifier); // For manual typing if supported
+    try {
+        select.addEventListener("change", checkCollectionIdentifier);
+        select.addEventListener("input", checkCollectionIdentifier); // For manual typing if supported
+    }
+    catch(error) {
+        console.error(error)
+    }
 
+    try {
+        document.getElementById("ingest_button").addEventListener("click", function(e) {
+            const form = document.querySelector("form");
+            const checkboxes = form.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(cb => {
+                // Remove any existing hidden field for this checkbox
+                const existing = form.querySelector(`input[type="hidden"][name="${cb.name}"]`);
+                existing && existing.remove();
 
-    document.getElementById("ingest_button").addEventListener("click", function(e) {
-        const form = document.querySelector("form");
-        const checkboxes = form.querySelectorAll('input[type="checkbox"]');
-        checkboxes.forEach(cb => {
-            // Remove any existing hidden field for this checkbox
-            const existing = form.querySelector(`input[type="hidden"][name="${cb.name}"]`);
-            existing && existing.remove();
-
-            // If checked, value is true; if not checked, add a hidden field with value false
-            if (!cb.checked) {
-                const hidden = document.createElement("input");
-                hidden.type = "hidden";
-                hidden.name = cb.name;
-                hidden.value = "false";
-                form.appendChild(hidden);
-            } else {
-                cb.value = "true";
-            }
+                // If checked, value is true; if not checked, add a hidden field with value false
+                if (!cb.checked) {
+                    const hidden = document.createElement("input");
+                    hidden.type = "hidden";
+                    hidden.name = cb.name;
+                    hidden.value = "false";
+                    form.appendChild(hidden);
+                } else {
+                    cb.value = "true";
+                }
+            });
+            // Allow form to submit normally after this
         });
-        // Allow form to submit normally after this
-    });
+    }
+    catch(error) {
+        console.error(error)
+    }
 }
 
 
