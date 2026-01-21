@@ -345,7 +345,7 @@ const fetchIdentifiers = async () => {
         const response = fetch(`/api/identifiers?suffix=${encodeURIComponent(suffix)}`)
         if(response) {
             console.log(response)
-            data = response.json()
+            data = await response.json()
         }
     }
     catch(error) {
