@@ -342,7 +342,7 @@ const fetchIdentifiers = async () => {
     let data = null;
     try {
         const suffix = document.getElementById("dynamodb_table_suffix").value;
-        const response = fetch(`/api/identifiers?suffix=${encodeURIComponent(suffix)}`)
+        const response = await fetch(`/api/identifiers?suffix=${encodeURIComponent(suffix)}`)
         data = await response.json()
     }
     catch(error) {
