@@ -16,7 +16,7 @@ const getTables = async () => {
             });
     }
     catch(error) {
-        console.error('caught: ', error)
+        console.error(error)
     }
 }
 
@@ -28,7 +28,7 @@ const getDefaults = async () => {
         defaults = await response.json();
     }
     catch(error) {
-        console.error('caught: ', error)
+        console.error(error)
     }
     return defaults;
 }
@@ -45,7 +45,7 @@ const handleEnvRadioChange = async (event) => {
             checkAllSections();
         }
         catch(error){
-            console.error('caught: ', error)
+            console.error(error)
         }
     }
 }
@@ -64,7 +64,7 @@ const handleIngestTypeChange = async (event) => {
             checkAllSections();
         }
         catch(error) {
-            console.error('caught: ', error)
+            console.error(error)
         }
     }
     else {
@@ -76,7 +76,7 @@ const handleIngestTypeChange = async (event) => {
             checkAllSections();
         }
         catch(error) {
-            console.error('caught: ', error)
+            console.error(error)
         }
     }
 }
@@ -93,7 +93,7 @@ const resetMediaTypes = () => {
         });
     }
     catch(error) {
-        console.error('caught: ', error)
+        console.error(error)
     }
 }
 
@@ -105,7 +105,7 @@ const show3dOptions = () => {
             document.getElementById("3d_options").classList.remove("hidden");
         }
         catch(error) {
-            console.error('caught: ', error)
+            console.error(error)
         }
     }
 }
@@ -117,7 +117,7 @@ const hide3dOptions = () => {
         hideFlashCardOptions();
     }
     catch(error) {
-        console.error('caught: ', error)
+        console.error(error)
     }
 }
 
@@ -128,7 +128,7 @@ const handleMediaTypeChange = (event) => {
         mediaType = document.getElementById("media_type").value;
     }
     catch(error) {
-        console.error('caught: ', error)
+        console.error(error)
     }
     if(mediaType) {
         switch (mediaType) {
@@ -151,7 +151,7 @@ const showFlashCardOptions = () => {
         document.getElementById("3d_options-flash_card-options").classList.remove("hidden");
     }
     catch(error) {
-        console.error('caught: ', error)
+        console.error(error)
     }
 }
 
@@ -161,7 +161,7 @@ const hideFlashCardOptions = () => {
         document.getElementById("3d_options-flash_card-options").classList.add("hidden");
     }
     catch(error) {
-        console.error('caught: ', error)
+        console.error(error)
     }
 }
 
@@ -182,7 +182,7 @@ const checkCollectionAndParentIdentifiers = (selected, other) => {
             }
         }
         catch(error) {
-            console.error('caught: ', error)
+            console.error(error)
         }
     }
 }
@@ -345,7 +345,7 @@ const fetchIdentifiers = async () => {
         const data = response.json()
     }
     catch(error) {
-        console.error('caught: ', error)
+        console.error(error)
     }
 
         
@@ -358,7 +358,7 @@ const fetchIdentifiers = async () => {
         collection_datalist.innerHTML = "";
     }
     catch(error) {
-        console.error('caught: ', error)
+        console.error(error)
     }
 
     try {
@@ -373,7 +373,7 @@ const fetchIdentifiers = async () => {
         });
     }
     catch(error) {
-        console.error('caught: ', error)
+        console.error(error)
     }
 }
 
@@ -403,7 +403,7 @@ const checkSection = (section) => {
             return true;
         }
         catch(error){
-            console.error('caught: ', error)
+            console.error(error)
         }
     } else {
         try {
@@ -415,7 +415,7 @@ const checkSection = (section) => {
             return false;
         }
         catch(error) {
-            console.error('caught: ', error)
+            console.error(error)
         }
     }
 }
@@ -434,7 +434,7 @@ const checkAllSections = () => {
             document.getElementById("ingest_button").disabled = false;
         }
         catch(error) {
-            console.error('caught: ', error)
+            console.error(error)
         }
     }
 }
@@ -452,7 +452,7 @@ const checkCollectionIdentifier = () => {
             status.classList.add("complete");
         }
         catch(error) {
-            console.error('caught: ', error)
+            console.error(error)
         }
     } else {
         try {
@@ -461,7 +461,7 @@ const checkCollectionIdentifier = () => {
             status.classList.add("incomplete");
         }
         catch(error) {
-            console.error('caught: ', error)
+            console.error(error)
         }
 
     }
@@ -487,7 +487,7 @@ const setEnvFields = (defaults, env) => {
             document.getElementById("noid_naa").value = "";
         }
         catch(error) {
-            console.error('caught: ', error)
+            console.error(error)
         }
     }
     else {
@@ -505,7 +505,7 @@ const setEnvFields = (defaults, env) => {
             document.getElementById("noid_naa").value = envDefaults.noid_naa || "";
         }
         catch(error) {
-            console.error('caught: ', error)
+            console.error(error)
         }
     }
 }
@@ -562,7 +562,7 @@ async function init() {
             checkAllSections();
         }
         catch(error) {
-            console.error('caught: ', error)
+            console.error(error)
         }
     });
 
