@@ -22,9 +22,10 @@ const getTables = async () => {
 
 // Fetch environment defaults from the server
 const getDefaults = async () => {
+    let defaults = null
     try {
         const response = await fetch('/api/env_defaults')
-        const defaults = await response.json();
+        defaults = await response.json();
     }
     catch(error) {
         console.error(error)
