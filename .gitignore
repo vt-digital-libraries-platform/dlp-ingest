@@ -1,4 +1,3 @@
-
 # Created by https://www.gitignore.io/api/osx,linux,python,windows,pycharm,visualstudiocode
 
 # Exception for headers_keys.json
@@ -254,17 +253,33 @@ custom_pytest.ini
 # End of https://www.gitignore.io/api/osx,linux,python,windows,pycharm,visualstudiocode
 
 run_*.sh
+!run_vtdlp-ingest_example.sh
+!run_vtdlp-testextract_example.sh
+!dev_startup.sh
 lambda_local.sh
 results_files/
-src/static/yml/env_defaults.yml
+src/static/yml/
+!src/static/yml/env_defaults_example.yml
 src/config/env_defaults.yml
+!src/config/env_defaults_example.yml
 src/uploads/
+src/application.py.padma-backup
+dlp-dpla-xml-export.py
+.vscode/
+*:Zone.Identifier
+.aws-sam/
 
 bin/
 examples/
 lib64/
 pyvenv.cfg
 lib64*
-
-
-dev_startup.sh
+PR.md
+*.log
+test_event.json
+run_vtdlp-ingest_testextract.sh
+run_vtdlp-testextract.sh
+run_vtdlp-ingest_testss.sh
+python/
+requirements.txt
+env_defaults.yml

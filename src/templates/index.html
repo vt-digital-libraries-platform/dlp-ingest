@@ -7,53 +7,92 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
+    <header>
+        <div class="header-bar">
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="App Logo" class="app-logo">
+            <h1>VTDLP Ingest</h1>
+        </div>
+    </header>
+    <main role="main">
+        <div class="tool-description" role="region" aria-label="Instructions">
+            <p>
+                This tool ingests media/metadata into the VTDLP Archive system.
+            </p>
+            <p>
+                Record type is determined by the metadata filename selected below (*_archive.csv | *_collection.csv)
+            </p>
+            <ol>
+                <li>Ingest Collection metadata file first</li>
+                <li>Ingest Archive metadata file after Collection</li>
+            </ol>
+        </div>
 
-    <div class="header-bar">
-        <img src="{{ url_for('static', filename='img/logo.png') }}" alt="App Logo" class="app-logo">
-        <h1>VTDLP Ingest</h1>
-    </div>
-    <p>This tool ingests media/metadata into the VTDLP Archive system.</p>
-    <p>1. Ingest Collection metadata file first</p>
-    <p>2. Ingest Archive metadata file after Collection</p>
-
-    <div>
-        <form action="/submit" method="post" enctype="multipart/form-data">
-            <!-- Environment Selection -->
-            <div class="form-section">
-                <div class="section-text">Select the type of ingest to perform</div>
-                <div class="ingest_type-radios">
-                    <label for="ingest_type-archive">
-                        <input type="radio" id="ingest_type-archive" name="INGEST_TYPE" value="archive" checked> Items/Archives
+        <div>
+            <form action="/submit" method="post" enctype="multipart/form-data" aria-label="VTDLP Ingest Form">
+            <!-- Select DynamoDB Table -->
+            <fieldset class="form-section">
+                <legend>Step 1: Select DynamoDB Table</legend>
+                <div>
+                    <label for="dynamodb_table_select" id="dynamodb_table_label">
+                        <span class="visually-hidden">Step 1:</span> DynamoDB Table
                     </label>
-                    <label for="ingest_type-collection">
-                        <input type="radio" id="ingest_type-collection" name="INGEST_TYPE" value="collection"> Collection(s)
-                    </label>
+                    <select id="dynamodb_table_select" 
+                            name="DYNAMODB_TABLE_SELECT" 
+                            aria-labelledby="dynamodb_table_label"
+                            aria-required="true"
+                            aria-describedby="dynamodb_table_help">
+                        <option value="" disabled selected>Choose a table...</option>
+                    </select>
+                    <span id="dynamodb_table_help" class="visually-hidden">Select the DynamoDB table for your environment. This will auto-populate environment settings.</span>
+                    <input type="hidden" id="dynamodb_table_suffix" name="DYNAMODB_TABLE_SUFFIX" aria-hidden="true">
                 </div>
-                
-            </div>
+                <div id="table_status" role="status" aria-live="polite" aria-atomic="true" class="visually-hidden"></div>
+            </fieldset>
+
+            <!-- Ingest Type Selection -->
+            <fieldset class="form-section">
+                <legend>Step 2: Type of Ingest</legend>
+                <div>
+                    <label for="ingest_type" id="ingest_type_label">
+                        <span class="visually-hidden">Step 2:</span> Ingest Type
+                    </label>
+                    <select id="ingest_type" 
+                            name="INGEST_TYPE" 
+                            aria-labelledby="ingest_type_label"
+                            aria-required="true"
+                            aria-describedby="ingest_type_help">
+                        <option value="archive" selected>Items/Archives</option>
+                        <option value="collection">Collection(s)</option>
+                    </select>
+                    <span id="ingest_type_help" class="visually-hidden">Choose whether to ingest individual items or entire collections.</span>
+                </div>
+            </fieldset>
 
 
             <!-- Environment Selection -->
-            <div class="form-section">
-                <div class="section-text">Select the environment to ingest to. Form fields will be populated based on your selection, but can be changed</div>
-                <div class="env-radios">
+            <fieldset class="form-section">
+                <legend>Step 3: Environment Selection</legend>
+                <p id="env_instructions" class="fieldset-description">Select the environment to ingest to. Form fields will be populated based on your selection, but can be changed.</p>
+                <div class="env-radios" role="radiogroup" aria-labelledby="env_instructions" aria-required="true">
                     {% for env in envs %}
                         <label for="env_{{env.value}}">
-                            <input type="radio" id="env_{{env.value}}" name="ENV_SELECTION" value="{{env.value}}" {% if env.selected %} checked {% endif %}> {{env.label}} ({{env.name}})
+                            <input type="radio" id="env_{{env.value}}" name="ENV_SELECTION" value="{{env.value}}" {% if env.selected %} checked {% endif %} aria-describedby="env_help"> {{env.label}} ({{env.name}})
                         </label>
                     {% endfor %}
                     <label for="env_other">
-                        <input type="radio" id="env_other" name="ENV_SELECTION" value="other"> Other (select below)
+                        <input type="radio" id="env_other" name="ENV_SELECTION" value="other" aria-describedby="env_help"> Other (select below)
                     </label>
                 </div>
-                <div id="db-table-select" class="hidden">
+                <span id="env_help" class="visually-hidden">Selecting an environment will automatically populate AWS configuration fields.</span>
+                <div id="env_status" role="status" aria-live="polite" aria-atomic="true" class="visually-hidden"></div>
+                <div id="db-table-select" class="hidden" aria-hidden="true">
                     <label for="dynamodb_table_suffix">Select your Amplify backend environment:</label>
                     <select id="dynamodb_table_suffix" name="DYNAMODB_TABLE_SUFFIX" placeholder="Select environment"></select>
                 </div>
-            </div>
+            </fieldset>
 
-            <div class="form-section">
-                <h3>Collection Configuration</h3>
+            <fieldset class="form-section">
+                <legend>Collection Configuration</legend>
                 <!-- Collection Identifier -->
                 <div class="form-section" id="collection-identifier-section">
                     <div class="section-text" id="msg-archive">Select the collection to ingest items/archives into by the collection's identifier</div>
@@ -76,13 +115,13 @@
                 </div>
 
                 <div id="collection_parent_match" class="hidden">Collection identifier and Parent Collection identifier cannot match.</div>
-            </div>
+            </fieldset>
             <hr />
             
             
             <!-- AWS Configuration Section -->
-            <div class="form-section" id="aws-section">
-                <h3>AWS Configuration</h3>
+            <fieldset class="form-section" id="aws-section">
+                <legend>AWS Configuration</legend>
                 <div id="aws-section-status" class="section-status incomplete">Incomplete</div>
                 <div>
                     <label for="aws_src_bucket">AWS Source Bucket:</label>
@@ -98,12 +137,12 @@
                         <option value="us-east-1" selected>us-east-1</option>
                     </select>
                 </div>
-            </div>
+            </fieldset>
 
 
             <!-- Collection Configuration Section -->
-            <div class="form-section" id="collection-section">
-                <h3>Collection Configuration</h3>
+            <fieldset class="form-section" id="collection-section">
+                <legend>Collection Configuration</legend>
                 <div id="collection-section-status" class="section-status incomplete">Incomplete</div>
                 <div>
                     <label for="collection_category">Collection Category:</label>
@@ -117,12 +156,12 @@
                     <label for="item_subdirectory">Item Subdirectory:</label>
                     <input type="text" id="item_subdirectory" name="ITEM_SUBDIRECTORY" placeholder="Item subdirectory path">
                 </div>
-            </div>
+            </fieldset>
 
 
             <!-- DynamoDB Configuration Section -->
-            <div class="form-section" id="dynamodb-section">
-                <h3>DynamoDB Configuration</h3>
+            <fieldset class="form-section" id="dynamodb-section">
+                <legend>DynamoDB Configuration</legend>
                 <div id="dynamodb-section-status" class="section-status incomplete">Incomplete</div>
                 <div>
                     <label for="dynamodb_noid_table">DynamoDB NOID Table:</label>
@@ -132,11 +171,11 @@
                     <label for="dynamodb_file_char_table">DynamoDB File Character Table:</label>
                     <input type="text" id="dynamodb_file_char_table" name="DYNAMODB_FILE_CHAR_TABLE" placeholder="File character table name">
                 </div>
-            </div>
+            </fieldset>
 
-            <!-- Path Configuration Section -->
-            <div class="form-section" id="path-section">
-                <h3>Endpoints</h3>
+            <!-- Endpoints Section -->
+            <fieldset class="form-section" id="path-section">
+                <legend>Endpoints</legend>
                 <div id="path-section-status" class="section-status incomplete">Incomplete</div>
                 <div>
                     <label for="app_img_root_path">Cloudfront endpoint (app_img_root_path):</label>
@@ -150,11 +189,11 @@
                     <label for="short_url_path">Ark link resolver (short_url_path):</label>
                     <input type="text" id="short_url_path" name="SHORT_URL_PATH" placeholder="Short URL path">
                 </div>
-            </div>
+            </fieldset>
 
             <!-- NOID Configuration Section -->
-            <div class="form-section" id="noid-section">
-                <h3>NOID Configuration</h3>
+            <fieldset class="form-section" id="noid-section">
+                <legend>NOID Configuration</legend>
                 <div id="noid-section-status" class="section-status incomplete">Incomplete</div>
                 <div>
                     <label for="noid_scheme">NOID Scheme:</label>
@@ -164,11 +203,11 @@
                     <label for="noid_naa">NOID NAA:</label>
                     <input type="text" id="noid_naa" name="NOID_NAA" placeholder="NOID NAA identifier">
                 </div>
-            </div>
+            </fieldset>
 
             <!-- Media Configuration Section -->
-            <div class="form-section" id="media-section">
-                <h3>Media Configuration</h3>
+            <fieldset class="form-section" id="media-section">
+                <legend>Media Configuration</legend>
                 <div id="media-section-status" class="section-status incomplete">Incomplete</div>
                 <div>
                     <label for="media_type">Media Type:</label>
@@ -231,11 +270,11 @@
                         </div>
                     </div>        
                 </div>
-            </div>
+            </fieldset>
             
             <!-- Boolean Options -->
-            <div class="form-section" id="options-section">
-                <h3>Options</h3>
+            <fieldset class="form-section" id="options-section">
+                <legend>Processing Options</legend>
                 <label for="verbose">
                     <input type="checkbox" id="verbose" name="VERBOSE" value="true" checked> 
                     Verbose Output
@@ -266,9 +305,10 @@
                     Update Existing Metadata
                 </label>
             
-            </div>
+            </fieldset>
             
-            <div class="form-section" id="metadata-section">
+            <fieldset class="form-section" id="metadata-section">
+                <legend>Metadata Upload</legend>
                 <div id="metadata-section-status" class="section-status incomplete">Incomplete</div>
                 <div>
                     <label for="metadata_input">Metadata CSV:</label>
@@ -285,9 +325,11 @@
                 <div>
                     <button type="submit" id="ingest_button" class="disabled" disabled>Run Ingest</button>
                 </div>
+            </fieldset>
             </div>
         </form>
     </div>
+    </main>
     <script src="{{ url_for('static', filename='js/index.js') }}"></script>
 </body>
 </html>

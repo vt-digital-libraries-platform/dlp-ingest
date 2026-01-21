@@ -2,7 +2,7 @@
 - name: vtdlpdev
   value: dev
   label: Development
-- name: vtdpprd
+- name: vtdlppprd
   value: pprd
   label: Pre-production
   selected: true

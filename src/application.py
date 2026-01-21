@@ -198,7 +198,7 @@ def get_identifiers():
 def get_tables():
     dynamodb = boto3.client('dynamodb', region_name='us-east-1')
     response = dynamodb.list_tables()
-    tables = filterTableNames(response.get('TableNames', []))
+    tables = sorted(response.get('TableNames', []))
     return jsonify({'tables': tables})
 
 
@@ -285,9 +285,15 @@ def submit():
 @application.route('/')
 def index():
     user = session.get('user')
-    if not user:
+    # Skip authentication for local development (when COGNITO_APP_CLIENT_SECRET is not set)
+    skip_auth = not os.environ.get('COGNITO_APP_CLIENT_SECRET')
+    
+    if not user and not skip_auth:
         return render_template("login_page.html")
     else:
+        # Set a mock user for local dev if skipping auth
+        if skip_auth and not user:
+            session['user'] = {'email': 'dev@localhost', 'name': 'Local Dev User'}
         envs = get_available_envs()
         set_environment_defaults()
         return render_template('index.html', envs=envs)
@@ -303,7 +309,21 @@ def login():
 
 @application.route('/success')
 def success():
-    return render_template('success.html')
+    # Read the last 100 lines of startup.log to show ingest logs
+    # startup.log is in the parent directory of src/
+    log_file = os.path.join(os.path.dirname(application.config['APPLICATION_ROOT']), 'startup.log')
+    log_lines = []
+    try:
+        with open(log_file, 'r') as f:
+            all_lines = f.readlines()
+            # Get last 100 lines, or all if fewer than 100
+            log_lines = all_lines[-100:] if len(all_lines) > 100 else all_lines
+    except FileNotFoundError:
+        log_lines = ["No log file found."]
+    except Exception as e:
+        log_lines = [f"Error reading log file: {str(e)}"]
+    
+    return render_template('success.html', log_lines=log_lines)
 
 
 @application.route('/results/<filename>')

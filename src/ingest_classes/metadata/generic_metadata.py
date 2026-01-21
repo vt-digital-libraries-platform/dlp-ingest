@@ -144,9 +144,11 @@ class GenericMetadata:
                     )
                     archive_dict["thumbnail_path"] = self.get_thumbnail_path_for_archive(archive_dict, collection)
                     
-                    if self.archive_exists(self.env["archive_table"],archive_dict["identifier"]):
+                    existing_archive = self.query_by_index(self.env["archive_table"], "Identifier", archive_dict["identifier"])
+                    if existing_archive:
                         if self.env["UPDATE_METADATA"]:
-                            self.update_item_in_table(self.env["archive_table"], archive_dict["identifier"], archive_dict, idx, archive_dict["identifier"])
+                            # Use the UUID from existing record for update
+                            self.update_item_in_table(self.env["archive_table"], existing_archive["id"], archive_dict, idx, archive_dict["identifier"])
                         else:
                             print(f"Error: Archive {archive_dict['identifier']} already exists in the database. Use UPDATE_METADATA option to update existing records.")
                             continue

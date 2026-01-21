@@ -1,18 +1,45 @@
 const getTables = async () => {
+    // Announce loading status for screen readers
+    const statusElement = document.getElementById("table_status");
+    if (statusElement) {
+        statusElement.textContent = "Loading DynamoDB tables...";
+    }
+    
     // Populate table dropdown from AWS
-    const response = await fetch('/api/tables')
+    fetch('/api/tables')
         .then(response => response.json())
         .then(data => {
-            const select = document.getElementById("dynamodb_table_suffix");
+            const select = document.getElementById("dynamodb_table_select");
             select.innerHTML = "";
+            
+            // Re-add placeholder option
+            const placeholder = document.createElement("option");
+            placeholder.value = "";
+            placeholder.textContent = "Choose a table...";
+            placeholder.disabled = true;
+            placeholder.selected = true;
+            select.appendChild(placeholder);
+            
             data.tables.forEach(table => {
-                const env = table.split('-').pop(); // Get the last part of the table name
-                const value = table.replace("Collection-", ""); // Remove environment suffix for value
                 const option = document.createElement("option");
-                option.value = value;
-                option.textContent = env;
+                option.value = table;
+                option.textContent = table;
                 select.appendChild(option);
             });
+            
+            // Announce completion for screen readers
+            if (statusElement) {
+                statusElement.textContent = `${data.tables.length} tables loaded. Please select one.`;
+                // Clear status after 3 seconds so it doesn't keep repeating
+                setTimeout(() => {
+                    statusElement.textContent = "";
+                }, 3000);
+            }
+        })
+        .catch(error => {
+            if (statusElement) {
+                statusElement.textContent = "Error loading tables. Please refresh the page.";
+            }
         });
 }
 
@@ -25,13 +52,35 @@ const getDefaults = async () => {
 
 const handleEnvRadioChange = async (event) => {  
     const defaults = await getDefaults();
+    const statusElement = document.getElementById("env_status");
+    
     if (event.target.value === "other") {
-        document.getElementById("db-table-select").classList.remove("hidden");
+        const dbSelect = document.getElementById("db-table-select");
+        dbSelect.classList.remove("hidden");
+        dbSelect.setAttribute("aria-hidden", "false");
+        
+        if (statusElement) {
+            statusElement.textContent = "Other environment selected. Additional options now available.";
+        }
     }
     else {
+        const dbSelect = document.getElementById("db-table-select");
+        dbSelect.classList.add("hidden");
+        dbSelect.setAttribute("aria-hidden", "true");
+        
         await setEnvFields(defaults,event.target.value);
         await fetchIdentifiers();
         checkAllSections();
+        
+        if (statusElement) {
+            const envName = event.target.value === "dev" ? "Development" : 
+                           event.target.value === "pprd" ? "Pre-production" : "Production";
+            statusElement.textContent = `${envName} environment selected. Form fields have been populated.`;
+            // Clear after 3 seconds
+            setTimeout(() => {
+                statusElement.textContent = "";
+            }, 3000);
+        }
     }
 }
 
@@ -125,6 +174,17 @@ const checkCollectionAndParentIdentifiers = (selected, other) => {
 // Add event listeners for all the form elements
 const addListeners = async () => {
 
+    // Add keyboard accessibility for radio buttons and checkboxes
+    // Enable Enter key in addition to Space for toggling
+    document.querySelectorAll('input[type="radio"], input[type="checkbox"]').forEach(input => {
+        input.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                this.click();
+            }
+        });
+    });
+
     // parent collection identifier
     document.getElementById("parent_collection_identifier").addEventListener("change", function(event) {
         checkCollectionAndParentIdentifiers("parent_collection_identifier", "collection_identifier");
@@ -169,15 +229,44 @@ const addListeners = async () => {
 
 
     // When a table is selected, autofill the suffix field
-    document.getElementById("dynamodb_table_suffix").addEventListener("change", function(event) {
+    document.getElementById("dynamodb_table_select").addEventListener("change", function() {
+        const tableName = this.value;
+        let suffix = "";
+        const hyphenIndex = tableName.indexOf("-");
+        if (hyphenIndex !== -1 && tableName.length > hyphenIndex + 1) {
+            suffix = tableName.substring(hyphenIndex + 1);
+        }
+        document.getElementById("dynamodb_table_suffix").value = suffix;
+        document.getElementById("dynamodb_table_suffix").dispatchEvent(new Event("change"));
+    });
+
+    document.getElementById("dynamodb_table_suffix").addEventListener("change", function() {
+        const suffix = this.value;
         const envDev = document.getElementById("env_dev");
-        const envPprd = document.getElementById("env_pprd");
+        const envPreprod = document.getElementById("env_preprod");
+        const envProd = document.getElementById("env_prod");
+        const envMessage = document.getElementById("env_message");
+        const environmentInput = document.getElementById("environment");
+
+        // Reset checkboxes
+        envDev.checked = false;
+        envPreprod.checked = false;
+        envProd.checked = false;
+        envMessage.textContent = "";
 
         // Environment detection logic remains, but field population will be handled by setEnvFields(env)
-        if (event.target.value.endsWith("vtdlpdev")) {
+        if (suffix.endsWith("vtdlpdev")) {
             envDev.checked = true;
-        } else if (event.target.value.endsWith("vtdlppprd")) {
-            envPprd.checked = true;
+            environmentInput.value = "dev";
+            envMessage.textContent = "Detected environment: Dev";
+        } else if (suffix.endsWith("vtdlppprd")) {
+            envPreprod.checked = true;
+            environmentInput.value = "preprod";
+            envMessage.textContent = "Detected environment: Preprod";
+        } else if (suffix.endsWith("vtdlpprd")) {
+            envProd.checked = true;
+            environmentInput.value = "prod";
+            envMessage.textContent = "Detected environment: Prod";
         }
 
         fetchIdentifiers();
