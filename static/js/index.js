@@ -407,11 +407,11 @@ const fetchIdentifiers = async () => {
     }
 
     if(data) { 
-        console.log(data)
+        
+        const collection_datalist = document.getElementById("collection_identifiers");
+        const parent_collection_datalist = document.getElementById("parent_collection_identifiers");
+        // Clear existing options
         try {
-            const collection_datalist = document.getElementById("collection_identifiers");
-            const parent_collection_datalist = document.getElementById("parent_collection_identifiers");
-            // Clear existing options
             collection_datalist.innerHTML = "";
             parent_collection_datalist.innerHTML = "";
             collection_datalist.innerHTML = "";
