@@ -14,10 +14,12 @@
             <img src="{{ url_for('static', filename='img/logo.png') }}" alt="App Logo" class="app-logo">
             <h1>VTDLP Ingest</h1>
         </div>
-        <div class="user-info">
-            <div>Hi {{user['email']}}!</div>
-            <div><a href="{{url_for('logout')}}">Logout</a></div>
-        </div>
+        {% if user %}
+            <div class="user-info">
+                <div>Hi {{user['email']}}!</div>
+                <div><a href="{{url_for('logout')}}">Logout</a></div>
+            </div>
+        {% endif %}
     </div>
 
     <div id="content">
