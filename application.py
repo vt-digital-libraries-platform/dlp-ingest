@@ -43,7 +43,10 @@ utils.cleanup(application.config['UPLOADS'])
 
 # pages
 application.add_url_rule('/', view_func=pages.index)
-application.add_url_rule('/ingest_form', view_func=pages.ingest_form)
+
+@application.route('/ingest_form')
+def ingest_form():
+    pages.ingest_form(application)
 
 @application.route('/submit', methods=['GET', 'POST'])
 def submit():

@@ -46,6 +46,14 @@ def get_ingestConfig():
     return ingestConfig
 
 
+def get_available_envs(application):
+    env_file = os.path.join(application.config['APP_SRC_DIR'], "config", "available_envs.yml")
+    with open(env_file, 'r') as f:
+        envs = yaml.safe_load(f)
+
+    return envs or []
+
+
 def set_environment(env_values):
     for key, value in env_values:
         if str(key).upper() in env_vars:

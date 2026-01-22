@@ -23,10 +23,11 @@ def index():
         return render_template("index.html", msg=msg)
     
 
-def ingest_form():
+def ingest_form(application):
     user = session.get('user')
     if(utils.user_is_admin(user)):
-        return render_template("form.html", user=user) 
+        envs = utils.get_available_envs(application)
+        return render_template("form.html", envs=envs, user=user) 
     else:
         return redirect(url_for("index", msg="Not authorized to access page. Please login."))
 
