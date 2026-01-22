@@ -407,6 +407,7 @@ const fetchIdentifiers = async () => {
     }
 
     if(data) { 
+        console.log(data)
         try {
             const collection_datalist = document.getElementById("collection_identifiers");
             const parent_collection_datalist = document.getElementById("parent_collection_identifiers");
