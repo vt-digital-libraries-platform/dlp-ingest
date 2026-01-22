@@ -26,9 +26,11 @@
             <p class="msg">{{msg}}</p>
         {% endif %}
         <p>This tool ingests media/metadata into the VTDLP Archive system.</p>
-        <div>
-            <p>Please <a href="{{ url_for('login', _scheme='https') }}">click here</a> to login. Then:</p>
-        </div>
+        {% if not user %}
+            <div>
+                <p>Please <a href="{{ url_for('login', _scheme='https') }}">click here</a> to login. Then:</p>
+            </div>
+        {% endif %}
         <p>1. Ingest Collection metadata file first</p>
         <p>2. Ingest Archive metadata file after Collection</p>
     </div>
