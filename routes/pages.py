@@ -18,7 +18,8 @@ def index():
             return  redirect(url_for("ingest_form"))
         else:
             msg = f"Hi {user['email']}! Please contact so and so for admin privileges"
-            return render_template("index.html", msg=msg)
+            logger.info(user)
+            return render_template("index.html", msg=msg, user=user)
     else:
         return render_template("index.html", msg=msg)
     
