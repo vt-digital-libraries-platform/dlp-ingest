@@ -6,4 +6,5 @@
 **/__pycache__
 results
 results_files
-log
+log/*
+!log/.keep
