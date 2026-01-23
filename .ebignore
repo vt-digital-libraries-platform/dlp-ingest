@@ -3,3 +3,5 @@ Dockerfile
 results
 results_files
 log
+.git
+.github
