@@ -54,6 +54,13 @@ def get_available_envs(application):
     return envs or []
 
 
+def get_logfile(logger):
+    for handler in logger.root.handlers:
+        if isinstance(handler, logging.FileHandler):
+            return handler.baseFilename
+    return None
+
+
 def set_environment(env_values):
     for key, value in env_values:
         if str(key).upper() in env_vars:

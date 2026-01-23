@@ -97,3 +97,22 @@ def submit(application):
         errors_count=len(errors),
         summary_count=len(summary)
     )
+
+
+def success(application):
+    # Read the last 100 lines of log_file to show ingest logs
+    # Get log_file path from logger config
+    log_file = utils.get_logfile(logger)
+    if log_file:
+        log_lines = []
+        try:
+            with open(log_file, 'r') as f:
+                all_lines = f.readlines()
+                # Get last 100 lines, or all if fewer than 100
+                log_lines = all_lines[-100:] if len(all_lines) > 100 else all_lines
+        except FileNotFoundError:
+            log_lines = ["No log file found."]
+        except Exception as e:
+            log_lines = [f"Error reading log file: {str(e)}"]
+        
+        return render_template('success.html', log_lines=log_lines)

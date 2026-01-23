@@ -53,6 +53,10 @@ def submit():
     return pages.submit(application)
 
 
+@application.route('/success')
+def success():
+    return pages.success(application)
+
 #auth
 @application.route('/login')
 def login():
