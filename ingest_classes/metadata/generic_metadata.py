@@ -52,6 +52,7 @@ class GenericMetadata:
             print(f"An error occurred reading headers_keys.json: {str(e)}")
             raise e
 
+
     def ingest(self):
         metadata_stream = self.get_metadata(self.filename)
 
@@ -60,8 +61,6 @@ class GenericMetadata:
         elif "INGEST_TYPE" in self.env and self.env['INGEST_TYPE'] == "archive":
             self.batch_import_archives(metadata_stream)
 
-        print("===================================")
-        print("Ingest process completed.")
         return {"statusCode": 200, "body": json.dumps("Finish metadata import.")}
     
  
@@ -70,8 +69,6 @@ class GenericMetadata:
     def batch_import_collections(self, response):
         df = self.csv_to_dataframe(io.BytesIO(response["Body"].read()))
         for idx, row in df.iterrows():
-            print("")
-            print("===================================")
             collection_dict = self.process_csv_metadata(row, "Collection")
             if not collection_dict:
                 print(f"Error: Collection {idx+1} has failed to be imported.")
@@ -99,8 +96,6 @@ class GenericMetadata:
             if "heirarchy_path" in collection_dict:
                 self.update_collection_map(collection_dict["heirarchy_path"][0])
 
-            print(f"Collection {idx+1} ({identifier}) has been imported.")
-
 
     def create_heirarchy_path(self, collection_dict):
         heirarchy_path = []
@@ -127,7 +122,6 @@ class GenericMetadata:
         for idx, row in df.iterrows():
             archive_dict = self.process_csv_metadata(row, "Archive")
             if not archive_dict:
-                print(f"Error: Archive {idx+1} has failed to be imported.")
                 continue
             else:
                 collection = self.get_collection(archive_dict)
@@ -144,17 +138,15 @@ class GenericMetadata:
                     )
                     archive_dict["thumbnail_path"] = self.get_thumbnail_path_for_archive(archive_dict, collection)
                     
-                    if self.archive_exists(self.env["archive_table"],archive_dict["identifier"]):
+                    existing_archive = self.query_by_index(self.env["archive_table"], "Identifier", archive_dict["identifier"])
+                    if existing_archive:
                         if self.env["UPDATE_METADATA"]:
-                            self.update_item_in_table(self.env["archive_table"], archive_dict, "Archive", idx)
+                            self.update_item_in_table(self.env["archive_table"], existing_archive['id'], archive_dict, archive_dict["identifier"])
                         else:
-                            print(f"Error: Archive {archive_dict['identifier']} already exists in the database. Use UPDATE_METADATA option to update existing records.")
                             continue
                     else:
-                        self.create_item_in_table(self.env["archive_table"], archive_dict, "Archive", idx)
-                else:
-                    print(f"Error: Collection record not found for Archive {archive_dict['identifier']}.")
-
+                        self.create_item_in_table(self.env["archive_table"], archive_dict, "Archive")
+                
 
     
     def archive_exists(self, table, identifier):
@@ -205,7 +197,7 @@ class GenericMetadata:
         return f"{table_name}-{self.env['DYNAMODB_TABLE_SUFFIX']}" 
 
 
-    def update_item_in_table(self, table, item_id, attr_dict, index, identifier):
+    def update_item_in_table(self, table, item_id, attr_dict, identifier):
         """
         Updates an existing item in the DynamoDB table with the provided attributes.
         Removes attributes that are empty or None.
@@ -289,7 +281,7 @@ class GenericMetadata:
             print(f"Error updating Identifier ({identifier}) in {table}: {str(e)}")
             return False  # Indicate failure
 
-    def create_item_in_table(self, table, attr_dict, item_type, index):
+    def create_item_in_table(self, table, attr_dict, item_type):
         if "id" not in attr_dict:
             attr_dict["id"] = str(uuid.uuid4())
 
