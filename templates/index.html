@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <div id="content">
+    <div id="content" class="tool-description" role="region" aria-label="Instructions">
         {% if msg %}
             <p class="msg">{{msg}}</p>
         {% endif %}
@@ -11,7 +11,9 @@
                 <p>Please <a href="{{ url_for('login', _scheme='https') }}">click here</a> to login. Then:</p>
             </div>
         {% endif %}
-        <p>1. Ingest Collection metadata file first</p>
-        <p>2. Ingest Archive metadata file after Collection</p>
+        <ol>
+            <li>Ingest Collection metadata file first</li>
+            <li>Ingest Archive metadata file after Collection</li>
+        </ol>
     </div>
 {% endblock %}
