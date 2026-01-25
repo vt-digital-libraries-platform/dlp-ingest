@@ -91,8 +91,12 @@ div#db-table-select {
     display: none;
 }
 
-#collection-identifier-section {
+#collection_identifier_section {
     margin: 2rem 0;
+}
+
+#collection_identifier_status {
+    margin-top: 5px;
 }
 
 #collection_parent_match {
@@ -248,6 +252,7 @@ h3 {
 .section-status.complete { background: #e0ffe0; color: #008000; }
 
 .section-text {
+    font-size: 1rem;
     margin-bottom: 8px;
 }
 
@@ -296,4 +301,8 @@ div#content {
 
 div#content .msg {
     color: #b00000;
+}
+
+#progress_container {
+    margin: 16px 0;
 }
