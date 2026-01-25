@@ -1,26 +1,6 @@
-<!doctype html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VTDLP Ingest</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link rel="shortcut icon" href="{{ url_for('static', filename='img/favicon.ico') }}">
-</head>
-<body>
-    <div class="header-bar">
-        <div class="logo-title">
-            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="App Logo" class="app-logo">
-            <h1>VTDLP Ingest</h1>
-        </div>
-        {% if user %}
-            <div class="user-info">
-                <div>Hi {{user['email']}}!</div>
-                <div><a href="{{url_for('logout')}}">Logout</a></div>
-            </div>
-        {% endif %}
-    </div>
+{% extends "base.html" %}
 
+{% block content %}
     <div id="content">
         {% if msg %}
             <p class="msg">{{msg}}</p>
@@ -34,6 +14,4 @@
         <p>1. Ingest Collection metadata file first</p>
         <p>2. Ingest Archive metadata file after Collection</p>
     </div>
-    
-</body>
-</html>
+{% endblock %}

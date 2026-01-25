@@ -1,27 +1,6 @@
-<!doctype html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VTDLP Ingest | Configuration</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link rel="shortcut icon" href="{{ url_for('static', filename='img/favicon.ico') }}">
-</head>
-<body>
+{% extends "base.html" %}
 
-    <div class="header-bar">
-        <div class="logo-title">
-            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="App Logo" class="app-logo">
-            <h1>VTDLP Ingest</h1>
-        </div>
-        {% if user %}
-            <div class="user-info">
-                <div>Hi {{user['email']}}!</div>
-                <div><a href="{{url_for('logout')}}">Logout</a></div>
-            </div>
-        {% endif %}
-    </div>
-
+{% block content %}
     <div id="content">
         <p>This tool ingests media/metadata into the VTDLP Archive system.</p>
         <p>1. Ingest Collection metadata file first</p>
@@ -301,5 +280,4 @@
         </div>
     </div>
     <script src="{{ url_for('static', filename='js/index.js') }}"></script>
-</body>
-</html>
+{% endblock %}

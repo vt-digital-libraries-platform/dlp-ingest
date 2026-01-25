@@ -25,7 +25,7 @@ def index():
 
 def ingest_form(application):
     user = session.get('user')
-    if(utils.user_is_admin(user)):
+    if(utils.user_is_admin(user) or os.getenv('LOCAL_DEV') == "true"):
         envs = utils.get_available_envs(application)
         return render_template("form.html", envs=envs, user=user) 
     else:
