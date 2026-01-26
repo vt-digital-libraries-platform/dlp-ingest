@@ -35,7 +35,7 @@ const getDefaults = async () => {
 
 const handleEnvRadioChange = async (event) => {  
     if (event.target.value === "other") {
-        document.getElementById("db-table-select").classList.remove("hidden");
+        document.getElementById("db_table_select").classList.remove("hidden");
     }
     else {
         try {
@@ -52,15 +52,10 @@ const handleEnvRadioChange = async (event) => {
 
 
 const handleIngestTypeChange = async (event) => {  
-    const subCollectionOptions = document.getElementById("sub_collection-options");
-    const msgArchive = document.getElementById("msg-archive");
-    const msgCollection = document.getElementById("msg-collection");
+    const subCollectionOptions = document.getElementById("sub_collection_options");
     if (event.target.value === "collection") {
         try {
             subCollectionOptions.classList.remove("hidden");
-            // Show the collection message, hide the archive message
-            msgArchive.classList.add("hidden");
-            msgCollection.classList.remove("hidden");
             checkAllSections();
         }
         catch(error) {
@@ -70,9 +65,6 @@ const handleIngestTypeChange = async (event) => {
     else {
         try {
             subCollectionOptions.classList.add("hidden");
-            // Show the archive message, hide the collection message
-            msgArchive.classList.remove("hidden");
-            msgCollection.classList.add("hidden");
             checkAllSections();
         }
         catch(error) {
@@ -99,7 +91,7 @@ const resetMediaTypes = () => {
 
 
 const show3dOptions = () => {
-    const ingestType = document.getElementById("ingest_type-archive")
+    const ingestType = document.getElementById("ingest_type_archive")
     if(ingestType && ingestType.checked) {
         try {
             document.getElementById("3d_options").classList.remove("hidden");
@@ -148,7 +140,7 @@ const handleMediaTypeChange = (event) => {
 
 const showFlashCardOptions = () => {
     try {
-        document.getElementById("3d_options-flash_card-options").classList.remove("hidden");
+        document.getElementById("3d_options_flash_card_options").classList.remove("hidden");
     }
     catch(error) {
         console.error(error)
@@ -158,7 +150,7 @@ const showFlashCardOptions = () => {
 
 const hideFlashCardOptions = () => {
     try {
-        document.getElementById("3d_options-flash_card-options").classList.add("hidden");
+        document.getElementById("3d_options_flash_card_options").classList.add("hidden");
     }
     catch(error) {
         console.error(error)
@@ -225,7 +217,7 @@ const addListeners = async () => {
 
 
     try {
-        document.getElementById("3d_options-addOns").addEventListener("change", (event) => {
+        document.getElementById("3d_options_addOns").addEventListener("change", (event) => {
             const selectedValue = event.target.value;
             switch (selectedValue) {
                 case "flash_card":
@@ -297,8 +289,8 @@ const addListeners = async () => {
             const form = document.querySelector("form");
             const formData = new FormData(form);
             const xhr = new XMLHttpRequest();
-            const progressBar = document.getElementById("progress-bar");
-            const progressText = document.getElementById("progress-text");
+            const progressBar = document.getElementById("progress_bar");
+            const progressText = document.getElementById("progress_text");
 
             xhr.upload.onprogress = function(event) {
                 if (event.lengthComputable) {
@@ -339,7 +331,7 @@ const addListeners = async () => {
 
 
     // Add summary panel logic
-    const summaryBtn = document.getElementById("goto-missing");
+    const summaryBtn = document.getElementById("goto_missing");
     if (summaryBtn) {
         summaryBtn.onclick = function() {
             for (const section of sections) {
@@ -445,9 +437,9 @@ const checkSection = (section) => {
         if (el && el.value && el.value.trim() !== "") {
             filled++;
             // Highlight completed fields
-            el.classList.add("field-complete");
+            el.classList.add("field_complete");
         } else if (el) {
-            el.classList.remove("field-complete");
+            el.classList.remove("field_complete");
         }
     });
     const status = document.getElementById(section.statusId);
@@ -503,7 +495,7 @@ const checkAllSections = () => {
 const checkCollectionIdentifier = () => {
     checkCollectionAndParentIdentifiers("collection_identifier", "parent_collection_identifier");
     const select = document.getElementById("collection_identifier");
-    const status = document.getElementById("collection-identifier-status");
+    const status = document.getElementById("collection_identifier_status");
     // For a select menu, check if a value is selected
     if (select?.value && select?.value?.trim() !== "") {
         try {        
@@ -570,42 +562,42 @@ const setEnvFields = (defaults, env) => {
     }
 }
 
-// --- Section checker logic ---
+// ___ Section checker logic ___
 const sections = [
     {
-        id: "aws-section",
-        statusId: "aws-section-status",
+        id: "aws_section",
+        statusId: "aws_section_status",
         fields: ["aws_src_bucket", "aws_dest_bucket"]
     },
     {
-        id: "collection-section",
-        statusId: "collection-section-status",
+        id: "collection_section",
+        statusId: "collection_section_status",
         // Only check collection_category for completion
         fields: ["collection_category"]
     },
     {
-        id: "dynamodb-section",
-        statusId: "dynamodb-section-status",
+        id: "dynamodb_section",
+        statusId: "dynamodb_section_status",
         fields: ["dynamodb_noid_table", "dynamodb_file_char_table"]
     },
     {
-        id: "path-section",
-        statusId: "path-section-status",
+        id: "path_section",
+        statusId: "path_section_status",
         fields: ["app_img_root_path", "long_url_path", "short_url_path"]
     },
     {
-        id: "noid-section",
-        statusId: "noid-section-status",
+        id: "noid_section",
+        statusId: "noid_section_status",
         fields: ["noid_scheme", "noid_naa"]
     },
     {
-        id: "media-section",
-        statusId: "media-section-status",
+        id: "media_section",
+        statusId: "media_section_status",
         fields: ["media_type"]
     },
     {
-        id: "metadata-section",
-        statusId: "metadata-section-status",
+        id: "metadata_section",
+        statusId: "metadata_section_status",
         fields: ["metadata_input"]
     }
 ];

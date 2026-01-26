@@ -9,13 +9,13 @@
     </head>
     <body>
         <header>
-            <div class="header-bar">
-                <div class="logo-title">
-                    <img src="{{ url_for('static', filename='img/logo.png') }}" alt="App Logo" class="app-logo">
+            <div class="header_bar">
+                <div class="logo_title">
+                    <img src="{{ url_for('static', filename='img/logo.png') }}" alt="App Logo" class="app_logo">
                     <h1>VTDLP Ingest</h1>
                 </div>
                 {% if user %}
-                    <div class="user-info">
+                    <div class="user_info">
                         <div>Hi {{user['email']}}!</div>
                         <div><a href="{{url_for('logout')}}">Logout</a></div>
                     </div>

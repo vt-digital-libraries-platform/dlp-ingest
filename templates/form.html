@@ -11,36 +11,38 @@
         <div>
             <form action="/submit" method="post" enctype="multipart/form-data" aria-label="VTDLP Ingest Form">
                 <!-- Type Selection -->
-                <fieldset class="form-section">
+                <fieldset class="form_section">
                     <legend>Select ingest type</legend>
-                    <span id="ingest_type_help" class="visually-hidden">Choose whether to ingest individual items or entire collections.</span>
-                    <div class="ingest_type-radios" role="radiogroup" aria-labelledby="ingest_type_help" aria-required="true">
+                    <span id="ingest_type_help" class="visually_hidden">Choose whether to ingest individual items or entire collections.</span>
+                    <div class="ingest_type_radios" role="radiogroup" aria-labelledby="ingest_type_help" aria-required="true">
                         <label for="ingest_type-archive">
-                            <input type="radio" id="ingest_type-archive" name="INGEST_TYPE" value="archive" aria-describedby="ingest_type_help" checked> Items/Archives
+                            <input type="radio" id="ingest_type_archive" name="INGEST_TYPE" value="archive" aria-describedby="ingest_type_help" checked /> Items/Archives
                         </label>
                         <label for="ingest_type-collection">
-                            <input type="radio" id="ingest_type-collection" name="INGEST_TYPE" value="collection" aria-describedby="ingest_type_help"> Collection(s)
+                            <input type="radio" id="ingest_type_collection" name="INGEST_TYPE" value="collection" aria-describedby="ingest_type_help" /> Collection(s)
                         </label>
                     </div>
                 </fieldset>
 
 
                 <!-- Environment Selection -->
-                <fieldset class="form-section">
+                <fieldset class="form_section">
                     <legend>Select the environment</legend>
-                    <div class="section-text">Form fields will be populated based on your selection, but can be changed</div>
-                    <span id="env_help" class="visually-hidden">Select the environment to ingest records to</span>
-                    <div class="env-radios">
+                    <div class="section_text">Form fields will be populated based on your selection, but can be changed</div>
+                    <span id="env_help" class="visually_hidden">Select the environment to ingest records to</span>
+                    <div class="env_radios" role="radiogroup" aria-labelledby="env_help" aria-required="true">
                         {% for env in envs %}
                             <label for="env_{{env.value}}">
-                                <input type="radio" id="env_{{env.value}}" name="ENV_SELECTION" value="{{env.value}}" {% if env.selected %} checked {% endif %} aria-describedby="env_help"> {{env.label}} ({{env.name}})
+                                <input type="radio" id="env_{{env.value}}" name="ENV_SELECTION" value="{{env.value}}" {% if env.selected %} checked {% endif %} aria-describedby="env_help" /> {{env.label}} ({{env.name}})
                             </label>
                         {% endfor %}
+
                         <label for="env_other">
-                            <input type="radio" id="env_other" name="ENV_SELECTION" value="other" aria-describedby="env_help"> Other (select below)
+                            <input type="radio" id="env_other" name="ENV_SELECTION" value="other" aria-describedby="env_help" /> Other (select below)
                         </label>
                     </div>
-                    <div id="db-table-select" class="hidden" aria-hidden="true">
+
+                    <div id="db_table_select" class="hidden" aria-hidden="true">
                         <label id="dynamodb_table_suffix_label" for="dynamodb_table_suffix">Select your Amplify backend environment:</label>
                         <select 
                             id="dynamodb_table_suffix" 
@@ -54,11 +56,11 @@
 
                     
                 <!-- Collection Identifier -->
-                <fieldset class="form-section" id="collection_identifier_section">
+                <fieldset class="form_section">
                     <legend>Identifiers</legend>
-                    <div class="section-text" id="collection_help">Select an existing collection to update by it's identifier, or enter a new identifier to create a new collection</div>
+                    <div class="section_text" id="collection_help">Select an existing collection to update by it's identifier, or enter a new identifier to create a new collection</div>
                     
-                    <span id="collection_identifier_status" class="section-status incomplete">Incomplete</span>
+                    <span id="collection_identifier_status" class="section_status incomplete">Incomplete</span>
                     <label id="collection_identifier_label" for="collection_identifier">Collection Identifier:</label>
                     <input list="collection_identifiers" id="collection_identifier" name="COLLECTION_IDENTIFIER" autocomplete="off" placeholder="Type or select collection identifier" required aria-describedby="collection_help">
                     <datalist id="collection_identifiers">
@@ -66,8 +68,8 @@
                     </datalist>
                 
 
-                    <div id="sub_collection_options" class="form-section hidden">
-                        <div class="section-text" id="sub_collection_help">Is this collection a sub-collection (part of a larger collection)? Add the identifier of the collection's PARENT collection to create the relationship.</div>
+                    <div id="sub_collection_options" class="form_section hidden">
+                        <div class="section_text" id="sub_collection_help">Is this collection a sub-collection (part of a larger collection)? Add the identifier of the collection's PARENT collection to create the relationship.</div>
                         <label id="parent_collection_identifier_label" for="parent_collection_identifiers">Parent Collection Identifier:</label>
                         <input list="parent_collection_identifiers" id="parent_collection_identifier" name="PARENT_COLLECTION_IDENTIFIER" placeholder="Parent collection identifier (optional)" aria-describedby="sub_collection_help">
                         <datalist id="parent_collection_identifiers">
@@ -80,10 +82,10 @@
 
 
                 <!-- Collection Configuration Section -->
-                <fieldset class="form-section" id="collection_section">
+                <fieldset class="form_section" id="collection_section">
                     <legend>Collection Configuration</legend>
-                    <div class="section-text" id="collection_configuration_help">Set collection options for your ingest</div>
-                    <div id="collection_section_status" class="section-status incomplete">Incomplete</div>
+                    <div class="section_text" id="collection_configuration_help">Set collection options for your ingest</div>
+                    <div id="collection_section_status" class="section_status incomplete">Incomplete</div>
                     <div>
                         <label for="collection_category">Collection Category:</label>
                         <input type="text" id="collection_category" name="COLLECTION_CATEGORY" placeholder='Category name (probably "federated")' value="federated" aria-describedby="collection_configuration_help">
@@ -100,10 +102,10 @@
 
 
                 <!-- AWS Configuration Section -->
-                <fieldset class="form-section" id="aws_section">
+                <fieldset class="form_section" id="aws_section">
                     <legend>AWS Configuration</legend>
-                    <div class="section-text" id="aws_help">Select the S3 Source (for media) and Destination Buckets. Then select your region</div>
-                    <div id="aws_section_status" class="section-status incomplete">Incomplete</div>
+                    <div class="section_text" id="aws_help">Select the S3 Source (for media) and Destination Buckets. Then select your region</div>
+                    <div id="aws_section_status" class="section_status incomplete">Incomplete</div>
                     <div>
                         <label for="aws_src_bucket">AWS Source Bucket:</label>
                         <input type="text" id="aws_src_bucket" name="AWS_SRC_BUCKET" placeholder="Source bucket name" aria-describedby="aws_help">
@@ -128,10 +130,10 @@
 
 
                 <!-- DynamoDB Configuration Section -->
-                <fieldset class="form-section" id="dynamodb_section">
+                <fieldset class="form_section" id="dynamodb_section">
                     <legend>DynamoDB Configuration</legend>
-                    <div class="section-text" id="dynamodb_help">Enter the DynamoDB tables to use in your ingest</div>
-                    <div id="dynamodb_section_status" class="section-status incomplete">Incomplete</div>
+                    <div class="section_text" id="dynamodb_help">Enter the DynamoDB tables to use in your ingest</div>
+                    <div id="dynamodb_section_status" class="section_status incomplete">Incomplete</div>
                     <div>
                         <label for="dynamodb_noid_table">NOID Table:</label>
                         <input type="text" id="dynamodb_noid_table" name="DYNAMODB_NOID_TABLE" placeholder="NOID table name" aria-describedby="dynamodb_help">
@@ -143,10 +145,10 @@
                 </fieldset>
 
                 <!-- Path Configuration Section -->
-                <fieldset class="form-section" id="path_section">
+                <fieldset class="form_section" id="path_section">
                     <legend>Endpoints</legend>
-                    <div class="section-text" id="path_help">Enter the URL endpoints to use in your ingest</div>
-                    <div id="path_section_status" class="section-status incomplete">Incomplete</div>
+                    <div class="section_text" id="path_help">Enter the URL endpoints to use in your ingest</div>
+                    <div id="path_section_status" class="section_status incomplete">Incomplete</div>
                     <div>
                         <label for="app_img_root_path">Cloudfront endpoint (app_img_root_path):</label>
                         <input type="text" id="app_img_root_path" name="APP_IMG_ROOT_PATH" placeholder="Root path for images" aria-describedby="path_help">
@@ -162,9 +164,9 @@
                 </fieldset>
 
                 <!-- NOID Configuration Section -->
-                <fieldset class="form-section" id="noid_section">
+                <fieldset class="form_section" id="noid_section">
                     <legend>NOID Configuration</legend>
-                    <div id="noid_section_status" class="section-status incomplete">Incomplete</div>
+                    <div id="noid_section_status" class="section_status incomplete">Incomplete</div>
                     <div>
                         <label for="noid_scheme">NOID Scheme:</label>
                         <input type="text" id="noid_scheme" name="NOID_SCHEME" value="ark:/" placeholder="ark:/">
@@ -176,10 +178,10 @@
                 </fieldset>
 
                 <!-- Media Configuration Section -->
-                <fieldset class="form-section" id="media_section">
+                <fieldset class="form_section" id="media_section">
                     <legend>Media Configuration</legend>
-                    <div class="section-text" id="media_type_help">Select the media type for your collection and set options for that type</div>
-                    <div id="media_section_status" class="section-status incomplete">Incomplete</div>
+                    <div class="section_text" id="media_type_help">Select the media type for your collection and set options for that type</div>
+                    <div id="media_section_status" class="section_status incomplete">Incomplete</div>
                     <div>
                         <label id="media_type_label" for="media_type">Media Type:</label>
                         <select 
@@ -205,11 +207,11 @@
                             </option>
                         </select>
                     </div>
-                    <fieldset id="3d_options" class="hidden form-section">
+                    <fieldset id="3d_options" class="hidden form_section">
                         <legend>3D Options</legend>
-                        <div id="3d_options_help" class="section-text">Set options for 3d media type. Supported options are rotation (x/y) and scale.</div>
-                        <div class="form-section">
-                            <div class="section-text">Rotation:</div>
+                        <div id="3d_options_help" class="section_text">Set options for 3d media type. Supported options are rotation (x/y) and scale.</div>
+                        <div class="form_section">
+                            <div class="section_text">Rotation:</div>
                             <label for="3d_options_rotation_x">
                                 x: <input class="short" type="number" name="3D_OPTIONS_ROTATION_X" id="3d_options_rotation_x" placeholder="Rotation X (radians)" aria-describedby="3d_options_help">
                             </label>
@@ -218,16 +220,16 @@
                             </label>
                         </div> 
 
-                        <div class="form-section"> 
+                        <div class="form_section"> 
                             <label for="3d_options_scale">
                                 <span>Scale:</span> <input class="short" type="number" name="3D_OPTIONS_SCALE" id="3d_options_scale" placeholder="Scale" aria-describedby="3d_options_help">
                             </label>
                         </div>
 
-                        <div class="3d_options_addOns form-section">
+                        <div class="3d_options_addOns form_section">
                             <div>
                                 <label id="3d_options_addOns_label" for="3d_options_addOns">
-                                    <div id="add_on_help" class="section-text">Select any needed Add-ons:</div>
+                                    <div id="add_on_help" class="section_text">Select any needed Add-ons:</div>
                                     <select 
                                         id="3d_options_addOns" 
                                         name="3D_OPTIONS_ADDONS"
@@ -238,25 +240,25 @@
                                     </select>
                                 </label>
                             </div>
-                            <div id="3d_options_flash_card_options" class="hidden form-section">
-                                <div id="flash_card_help" class="section-text">Flash Card Text: The card's front text is defined as a String. The back text should refer to a metadata key. </div>
-                                <label for="3d_options_flash_card_options_text_front">
-                                    <span>Front (string):</span>
-                                    <input type="text" id="3d_options_flash_card_options_text_front" name="3D_OPTIONS_FLASH_CARD_OPTIONS_TEXT_FRONT" placeholder="Text for flash card front" aria-describedby="flash_card_help">
-                                </label>
-                                <label for="3d_options_flash_card_options_text_back">
-                                    <span>Back (metadata field):</span>
-                                    <input type="text" id="3d_options_flash_card_options_text_back" name="3D_OPTIONS_FLASH_CARD_OPTIONS_TEXT_BACK" placeholder="Metadata field to populate back" aria-describedby="flash_card_help">
-                                </label>
+                            <div id="3d_options_flash_card_options" class="hidden form_section">
+                                <div id="flash_card_help" class="section_text">Flash Card Text:</div>
+                                <div>
+                                    <label for="3d_options_flash_card_options_text_front">Front (string):</label>
+                                    <input type="text" id="3d_options_flash_card_options_text_front" name="3D_OPTIONS_FLASH_CARD_OPTIONS_TEXT_FRONT" placeholder="Text for flash card front" aria-describedby="flash_card_help" />
+                                </div>
+                                <div>
+                                    <label for="3d_options_flash_card_options_text_back">Back (metadata field):</label>
+                                    <input type="text" id="3d_options_flash_card_options_text_back" name="3D_OPTIONS_FLASH_CARD_OPTIONS_TEXT_BACK" placeholder="Metadata field to populate back" aria-describedby="flash_card_help" />
+                                </div>
                             </div>
                         </div>        
                     </fieldset>
                 </fieldset>
                 
                 <!-- Boolean Options -->
-                <fieldset class="form-section" id="options_section">
+                <fieldset class="form_section" id="options_section">
                     <legend>Options</legend>
-                    <div id="ingest_booleans_help" class="section-text">Set boolean options for ingest</div>
+                    <div id="ingest_booleans_help" class="section_text">Set boolean options for ingest</div>
                     
                     <label for="verbose">
                         <input type="checkbox" id="verbose" name="VERBOSE" value="true" checked aria-describedby="ingest_booleans_help"> 
@@ -289,10 +291,10 @@
                     </label>
                 </fieldset>
                 
-                <fieldset class="form-section" id="metadata_section">
+                <fieldset class="form_section" id="metadata_section">
                     <legend>Metadata</legend>
-                    <div id="metadata_help" class="section-text">Upload your metadata file (csv)</div>
-                    <div id="metadata_section_status" class="section-status incomplete">Incomplete</div>
+                    <div id="metadata_help" class="section_text">Upload your metadata file (csv)</div>
+                    <div id="metadata_section_status" class="section_status incomplete">Incomplete</div>
                     <div>
                         <label for="metadata_input">Metadata CSV:</label>
                         <input type="file" id="metadata_input" class="incomplete" name="metadata_input" aria-describedby="metadata_help">
@@ -300,9 +302,9 @@
                 
                     <!-- Progress Bar -->
                     <div id="progress_container">
-                        <label for="progress-bar">Progress:</label>
-                        <progress id="progress-bar" value="0" max="100" style="width: 100%;"></progress>
-                        <span id="progress-text"></span>
+                        <label for="progress_bar">Progress:</label>
+                        <progress id="progress_bar" value="0" max="100" style="width: 100%;"></progress>
+                        <span id="progress_text"></span>
                     </div>
                     
                     <div>
