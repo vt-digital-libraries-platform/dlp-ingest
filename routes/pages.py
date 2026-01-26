@@ -17,7 +17,8 @@ def index():
         if utils.user_is_admin(user):
             return  redirect(url_for("ingest_form"))
         else:
-            msg = f"Hi {user['email']}! Please contact a DLP team member for admin privileges"
+            if not msg:
+                msg = f"Hi {user['email']}! Please contact a DLP team member for admin privileges"
             return render_template("index.html", msg=msg, user=user)
     else:
         return render_template("index.html", msg=msg)
@@ -44,6 +45,9 @@ def submit(application):
     summary = []
 
     user = session.get('user')
+    if not user and os.getenv('LOCAL_DEV') == "true":
+        session['user'] = {'email': 'dev@localhost', 'name': 'Local Dev User'}
+        user = session.get('user')
 
     utils.set_environment_defaults(application)
     collection_identifier = utils.get_identifier()
@@ -90,9 +94,9 @@ def submit(application):
 
         # Read the last 100 lines of log_file to show ingest logs
         # Get log_file path from logger config
-        log_lines = []
         log_file = utils.get_logfile(logger)
         if log_file:
+            log_lines = []
             try:
                 with open(log_file, 'r') as f:
                     all_lines = f.readlines()
@@ -103,12 +107,14 @@ def submit(application):
             except Exception as e:
                 log_lines = [f"Error reading log file: {str(e)}"]
 
-    return render_template(
-        'submit.html',
-        ingested_count=len(ingested_items),
-        updated_count=len(updated_items),
-        errors_count=len(errors),
-        summary_count=len(summary),
-        log_lines=log_lines,
-        user_is_admin=utils.user_is_admin(user)
-    )
+            return render_template(
+                'submit.html',
+                ingested_count=len(ingested_items),
+                updated_count=len(updated_items),
+                errors_count=len(errors),
+                summary_count=len(summary),
+                log_lines=log_lines,
+                user_is_admin=utils.user_is_admin(user)
+            )
+    else:
+        return redirect(url_for("index", msg="There was an error processing your ingest. My bad :("))
