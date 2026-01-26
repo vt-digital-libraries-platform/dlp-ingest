@@ -332,6 +332,8 @@ const addListeners = async () => {
             else {
                 envOther.checked = true;
                 envName = event.target.value
+                const split = envName.split("-")
+                envName = split[split.length - 1]
                 console.log(envName)
             }
             const statusElement = document.getElementById("env_message");
