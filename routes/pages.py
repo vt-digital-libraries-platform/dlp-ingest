@@ -27,9 +27,6 @@ def index():
 def ingest_form(application):
     user = session.get('user')
     if(utils.user_is_admin(user) or os.getenv('LOCAL_DEV') == "true"):
-        if not user and os.getenv('LOCAL_DEV') == "true":
-            session['user'] = {'email': 'dev@localhost', 'name': 'Local Dev User'}
-            user = session.get('user')
         envs = utils.get_available_envs(application)
         return render_template("form.html", envs=envs, user=user) 
     else:
@@ -43,78 +40,85 @@ def submit(application):
     updated_items = []
     errors = []
     summary = []
+    ret_msgs = ["There was an exception processing your ingest. My bad :("]
 
     user = session.get('user')
-    if not user and os.getenv('LOCAL_DEV') == "true":
-        session['user'] = {'email': 'dev@localhost', 'name': 'Local Dev User'}
-        user = session.get('user')
 
     utils.set_environment_defaults(application)
     collection_identifier = utils.get_identifier()
     if request.method == 'POST' and 'metadata_input' in request.files:
         uploaded = utils.save_uploads(application, collection_identifier, len(request.files.getlist('metadata_input')))
     
-    if utils.files_exist(application):
-        utils.set_environment_overrides(application)
+        if utils.files_exist(application):
+            utils.set_environment_overrides(application)
 
-        # Do the ingest
-        metadata_filepath = os.path.join(application.config['UPLOADS'], uploaded[0])
+            # Do the ingest
+            metadata_filepath = os.path.join(application.config['UPLOADS'], uploaded[0])
 
-        result = None
-        result = dlp_ingest_main(None, None, metadata_filepath, utils.get_ingestConfig())
-        if result:
-            ingested_items = result.get('ingested', [])
-            updated_items = result.get('updated', [])
-            errors = result.get('errors', [])
-            summary = result.get('summary', [])
+            result = None
+            result = dlp_ingest_main(None, None, metadata_filepath, utils.get_ingestConfig())
+            if result:
+                ingested_items = result.get('ingested', [])
+                updated_items = result.get('updated', [])
+                errors = result.get('errors', [])
+                summary = result.get('summary', [])
+            else:
+                ret_msgs.append("No response from ingest script dlp_ingest_main()")
 
-        # Write files for download
-        results_dir = os.path.join(application.config['APP_SRC_DIR'], 'results')
-        os.makedirs(results_dir, exist_ok=True)
+            # Write files for download
+            results_dir = os.path.join(application.config['APP_SRC_DIR'], 'results')
+            os.makedirs(results_dir, exist_ok=True)
 
-        with open(os.path.join(results_dir, 'ingested.csv'), 'w') as f:
-            f.write("item\n")
-            for item in ingested_items:
-                f.write(f"{item}\n")
-
-        with open(os.path.join(results_dir, 'updated.csv'), 'w') as f:
-            f.write("item\n")
-            for item in updated_items:
-                f.write(f"{item}\n")
-
-        with open(os.path.join(results_dir, 'errors.csv'), 'w') as f:
-            f.write("error\n")
-            for err in errors:
-                f.write(f"{err}\n")
-
-        with open(os.path.join(results_dir, 'summary.csv'), 'w') as f:
-            f.write("summary\n")
-            for line in summary:
-                f.write(f"{line}\n")
-
-        # Read the last 100 lines of log_file to show ingest logs
-        # Get log_file path from logger config
-        log_file = utils.get_logfile(logger)
-        if log_file:
-            log_lines = []
             try:
-                with open(log_file, 'r') as f:
-                    all_lines = f.readlines()
-                    # Get last 100 lines, or all if fewer than 100
-                    log_lines = all_lines[-100:] if len(all_lines) > 100 else all_lines
-            except FileNotFoundError:
-                log_lines = ["No log file found."]
-            except Exception as e:
-                log_lines = [f"Error reading log file: {str(e)}"]
+                with open(os.path.join(results_dir, 'ingested.csv'), 'w') as f:
+                    f.write("item\n")
+                    for item in ingested_items:
+                        f.write(f"{item}\n")
 
-            return render_template(
-                'submit.html',
-                ingested_count=len(ingested_items),
-                updated_count=len(updated_items),
-                errors_count=len(errors),
-                summary_count=len(summary),
-                log_lines=log_lines,
-                user_is_admin=utils.user_is_admin(user)
-            )
+                with open(os.path.join(results_dir, 'updated.csv'), 'w') as f:
+                    f.write("item\n")
+                    for item in updated_items:
+                        f.write(f"{item}\n")
+
+                with open(os.path.join(results_dir, 'errors.csv'), 'w') as f:
+                    f.write("error\n")
+                    for err in errors:
+                        f.write(f"{err}\n")
+
+                with open(os.path.join(results_dir, 'summary.csv'), 'w') as f:
+                    f.write("summary\n")
+                    for line in summary:
+                        f.write(f"{line}\n")
+            except Exception as e:
+                ret_msgs.append(f"Error writing results files: {e}")
+
+            # Read the last 100 lines of log_file to show ingest logs
+            # Get log_file path from logger config
+            log_file = utils.get_logfile(logger)
+            if log_file:
+                log_lines = []
+                try:
+                    with open(log_file, 'r') as f:
+                        all_lines = f.readlines()
+                        # Get last 100 lines, or all if fewer than 100
+                        log_lines = all_lines[-100:] if len(all_lines) > 100 else all_lines
+                except FileNotFoundError:
+                    log_lines = ["No log file found."]
+                except Exception as e:
+                    log_lines = [f"Error reading log file: {str(e)}"]
+
+                return render_template(
+                    'submit.html',
+                    ingested_count=len(ingested_items),
+                    updated_count=len(updated_items),
+                    errors_count=len(errors),
+                    summary_count=len(summary),
+                    log_lines=log_lines,
+                    user_is_admin=utils.user_is_admin(user)
+                )
+        else:
+            ret_msgs.append("There was an exception finding the metadata file")
     else:
-        return redirect(url_for("index", msg="There was an error processing your ingest. My bad :("))
+        ret_msgs.append(f"Get request. user: {user}")
+   
+    return redirect(url_for("index", msg=" || ".join(ret_msgs)))
