@@ -116,6 +116,6 @@ def submit(application):
         else:
             ret_msgs.append("There was an exception finding the metadata file")
     else:
-        ret_msgs.append(f"Incorrect request type: received GET. user: {user}")
+        ret_msgs.append(f"Incorrect request type: received GET. user: {user['email'] if user and "email" in user else "None"}")
    
     return redirect(url_for("index", msg=" || ".join(ret_msgs)))
