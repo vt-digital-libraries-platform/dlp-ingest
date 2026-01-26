@@ -259,12 +259,16 @@ const addListeners = async () => {
         document.getElementById("dynamodb_table_suffix").addEventListener("change", function(event) {
             const envDev = document.getElementById("env_dev");
             const envPprd = document.getElementById("env_pprd");
+            const envOther = document.getElementById("env_other");
 
             // Environment detection logic remains, but field population will be handled by setEnvFields(env)
             if (event.target.value.endsWith("vtdlpdev")) {
                 envDev.checked = true;
             } else if (event.target.value.endsWith("vtdlppprd")) {
                 envPprd.checked = true;
+            }
+            else {
+                envOther.checked = true;
             }
 
             fetchIdentifiers();
