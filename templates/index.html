@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <div id="content" class="tool-description" role="region" aria-label="Instructions">
+    <div id="content" class="tool-description" role="region" aria-label="Login and Instructions">
         {% if msg %}
             <p class="msg">{{msg}}</p>
         {% endif %}
@@ -13,7 +13,7 @@
         {% endif %}
         <ol>
             <li>Ingest Collection metadata file first</li>
-            <li>Ingest Archive metadata file after Collection</li>
+            <li>Ingest Item/Archive metadata file after Collection</li>
         </ol>
     </div>
 {% endblock %}

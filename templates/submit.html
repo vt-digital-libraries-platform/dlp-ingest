@@ -2,7 +2,9 @@
 
 {% block content %}
     <div id="content" role="region" aria-label="Ingest submission results">
-        <h1>VTDLP Ingest - Submit</h1>
+        <h1>Ingest Complete!</h1>
+        <p class="center">Your ingest operation finished successfully ...because you're awesome</p>
+
         <div>
             {% for mesg in get_flashed_messages() %}
                 <p>{{ mesg }}</p>
@@ -10,27 +12,34 @@
         </div>
 
         <h2>Ingest Results</h2>
+        {% if user_is_admin %}
+            <h3>Log Output</h3>
+            <div class="log_output">
+                {% for line in log_lines %}
+                    {{ line }}
+                {% endfor %}
+            </div>
 
-        <div>
-            <a href="/results/ingested.csv" download>
-                <button>Download Ingested Items ({{ ingested_count }})</button>
-            </a>
-        </div>
-        <div>
-            <a href="/results/updated.csv" download>
-                <button>Download Updated Items ({{ updated_count }})</button>
-            </a>
-        </div>
-        <div>
-            <a href="/results/summary.csv" download>
-                <button>Download Summary Sheet ({{ summary_count }})</button>
-            </a>
-        </div>
-        <div>
-            <a href="/results/errors.csv" download>
-                <button>Download Error List ({{ errors_count }})</button>
-            </a>
-        </div>
+            <div>
+                <a href="/results/ingested.csv" download>
+                    <button>Download Ingested Items ({{ ingested_count }})</button>
+                </a>
+            </div>
+            <div>
+                <a href="/results/updated.csv" download>
+                    <button>Download Updated Items ({{ updated_count }})</button>
+                </a>
+            </div>
+            <div>
+                <a href="/results/summary.csv" download>
+                    <button>Download Summary Sheet ({{ summary_count }})</button>
+                </a>
+            </div>
+            <div>
+                <a href="/results/errors.csv" download>
+                    <button>Download Error List ({{ errors_count }})</button>
+                </a>
+            </div>
+        {% endif %}    
     </div>
-    <script src="{{ url_for('static', filename='js/submit.js') }}"></script>
 {% endblock %}

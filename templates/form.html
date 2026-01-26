@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <div id="content" role="region" aria-label="Ingest Configuration">
+    <div id="content" role="region" aria-label="Ingest configuration form">
         <p>This tool ingests media/metadata into the VTDLP Archive system.</p>
         <ol>
             <li>Ingest Collection metadata file first</li>
-            <li>Ingest Archive metadata file after Collection</li>
+            <li>Ingest Item/Archive metadata file after Collection</li>
         </ol>
 
         <div>
@@ -259,7 +259,7 @@
                 
                 <!-- Boolean Options -->
                 <fieldset class="form_section" id="options_section">
-                    <legend>Options</legend>
+                    <legend>Processing Options</legend>
                     <div id="ingest_booleans_help" class="section_text">Set boolean options for ingest</div>
                     
                     <label for="verbose">
