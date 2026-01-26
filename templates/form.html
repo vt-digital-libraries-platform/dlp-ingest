@@ -38,8 +38,10 @@
                         {% endfor %}
 
                         <label for="env_other">
-                            <input type="radio" id="env_other" name="ENV_SELECTION" value="other" aria-describedby="env_help" /> Other (select below)
+                            <input type="radio" id="env_other" name="ENV_SELECTION" value="other" aria-describedby="env_help" />
+                            <span>Other (select below).</span>
                         </label>
+                        <span class="aside">Note: If you choose an "Other" environment, you're responsible for altering the configuration below accordingly.</span>
                     </div>
 
                     <div id="db_table_select" class="hidden" aria-hidden="true">

@@ -256,6 +256,10 @@ h3 {
     margin-bottom: 8px;
 }
 
+.aside {
+    font-size: 1rem;
+}
+
 #collection_identifier:invalid {
     border: 2px solid #b00000;
     background: #fff;
