@@ -62,6 +62,7 @@ const getDefaults = async () => {
 const handleEnvRadioChange = async (event) => {  
     const statusElement = document.getElementById("env_status");
     const evtValue = event.target.value;
+    console.lot(evtValue)
     if (evtValue === "other") {
         const tableSelect = document.getElementById("db_table_select")
         if(tableSelect) {
@@ -78,9 +79,6 @@ const handleEnvRadioChange = async (event) => {
     }
     else {
         try {
-            if(statusElement){
-                statusElement.textContent = "Loading defaults for environment...";
-            }
             const defaults = await getDefaults();
             await setEnvFields(defaults, evtValue);
             await fetchIdentifiers();
@@ -88,7 +86,6 @@ const handleEnvRadioChange = async (event) => {
             
             if (statusElement) {
                 const envName = event.target.value.split("-")[-1];
-                console.log(envName)
                 statusElement.textContent = `${envName} environment selected. Form fields have been populated.`;
                 // Clear after 3 seconds
                 setTimeout(() => {
