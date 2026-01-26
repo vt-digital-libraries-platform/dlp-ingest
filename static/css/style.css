@@ -29,8 +29,6 @@ h3,
 h4,
 h5,
 h6 {
-    background: #fff;
-    /* White background for maximum contrast */
     color: #222;
     /* Ensure all headings meet WCAG AAA */
     text-align: center;
@@ -38,8 +36,6 @@ h6 {
 }
 
 h1 {
-    background: #fff;
-    /* White background for maximum contrast */
     color: #222;
     /* Very dark text for strong contrast - 15.8:1 ratio */
 }
@@ -48,6 +44,14 @@ p, li {
     color: #222;
     font-size: 1.25em;
     line-height: 1.6;
+}
+
+a, a:visited {
+    color: #005a9c;
+}
+
+a:active, a:hover {
+    text-decoration: none;
 }
 
 /* Fieldset description styling */
@@ -267,21 +271,30 @@ h3 {
 }
 
 .header_bar {
-    height: 80px;
+    height: 110px;
 }
 
-.header_bar .logo_title{
+.header_bar p {
+    font-size: 1.0em;
+    margin: 0;
+}
+
+.header_bar .header_left {
     display: block;
     float: left;
 }
-.header_bar .logo_title h1 {
-    display: inline-block;
-}
 
-.header_bar .user_info {
+.header_bar .header_right {
     display: block;
     float: right;
 }
+
+.header_bar .header_left h1 {
+    display: inline-block;
+}
+
+
+
 
 .app_logo {
     height: 39px;         /* 60px * 0.65 = 39px */

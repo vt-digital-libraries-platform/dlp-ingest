@@ -10,16 +10,30 @@
     <body>
         <header>
             <div class="header_bar">
-                <div class="logo_title">
-                    <img src="{{ url_for('static', filename='img/logo.png') }}" alt="App Logo" class="app_logo">
-                    <h1>VTDLP Ingest</h1>
-                </div>
-                {% if user %}
-                    <div class="user_info">
-                        <div>Hi {{user['email']}}!</div>
-                        <div><a href="{{url_for('logout')}}">Logout</a></div>
+                <div class="header_left">
+                    <div class="header_left_top_row">
+                        <img src="{{ url_for('static', filename='img/logo.png') }}" alt="App Logo" class="app_logo">
+                        <h1>VTDLP Ingest</h1>
                     </div>
-                {% endif %}
+                    <div class="header_left_bottom_row">
+                        <p><a href="{{url_for('index')}}">Return home</a></p>
+                    </div>
+                </div>
+                
+                <div class="header_right">
+                    {% if user %}
+                        <div class="user_info">
+                            <p>Hi {{user['email']}}!</p>
+                            <p><a href="{{url_for('logout')}}">Logout</a></p>
+                        </div>
+                    {% else %}
+                        <div class="user_info">
+                            <p>Hi!</p>
+                            <p>You can click <a href="{{ url_for('login', _scheme='https') }}">here</a> to login</p>
+                        </div>
+                    {% endif %}
+                    </div>
+                
             </div>
         </header>
 

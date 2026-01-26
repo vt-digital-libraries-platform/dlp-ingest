@@ -17,7 +17,7 @@ def index():
         if utils.user_is_admin(user):
             return  redirect(url_for("ingest_form"))
         else:
-            msg = f"Hi {user['email']}! Please contact so and so for admin privileges"
+            msg = f"Hi {user['email']}! Please contact a DLP team member for admin privileges"
             return render_template("index.html", msg=msg, user=user)
     else:
         return render_template("index.html", msg=msg)
@@ -26,6 +26,9 @@ def index():
 def ingest_form(application):
     user = session.get('user')
     if(utils.user_is_admin(user) or os.getenv('LOCAL_DEV') == "true"):
+        if not user and os.getenv('LOCAL_DEV') == "true":
+            session['user'] = {'email': 'dev@localhost', 'name': 'Local Dev User'}
+            user = session.get('user')
         envs = utils.get_available_envs(application)
         return render_template("form.html", envs=envs, user=user) 
     else:
@@ -45,7 +48,6 @@ def submit(application):
     if request.method == 'POST' and 'metadata_input' in request.files:
         uploaded = utils.save_uploads(application, collection_identifier, len(request.files.getlist('metadata_input')))
     
-
     if utils.files_exist(application):
         utils.set_environment_overrides(application)
 
@@ -55,15 +57,10 @@ def submit(application):
         result = None
         result = dlp_ingest_main(None, None, metadata_filepath, utils.get_ingestConfig())
         if result:
-            print(f"DEBUG: Result returned by dlp_ingest_main: {result}")
             ingested_items = result.get('ingested', [])
             updated_items = result.get('updated', [])
             errors = result.get('errors', [])
             summary = result.get('summary', [])
-            print(f"DEBUG: ingested_items: {ingested_items}")
-            print(f"DEBUG: updated_items: {updated_items}")
-            print(f"DEBUG: errors: {errors}")
-            print(f"DEBUG: summary: {summary}")
 
         # Write files for download
         results_dir = os.path.join(application.config['APP_SRC_DIR'], 'results')
@@ -89,7 +86,6 @@ def submit(application):
             for line in summary:
                 f.write(f"{line}\n")
 
-        
     return render_template(
         'submit.html',
         ingested_count=len(ingested_items),

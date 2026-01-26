@@ -1,16 +1,14 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <div id="content">
+    <div id="content" role="region" aria-label="Ingest submission results">
         <h1>VTDLP Ingest - Submit</h1>
         <div>
             {% for mesg in get_flashed_messages() %}
                 <p>{{ mesg }}</p>
             {% endfor %}
         </div>
-        <p>
-            <a href="/">Return to Ingest form</a>
-        </p>
+
         <h2>Ingest Results</h2>
 
         <div>
