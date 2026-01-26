@@ -91,6 +91,10 @@ div.ingest_type_radios, div.env_radios {
     margin: 2rem 0;
 }
 
+div#env_status {
+    margin:0;
+}
+
 div#db-table-select {
     margin: 2rem 0;
 }
