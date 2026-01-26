@@ -8,14 +8,10 @@ logger = logging.getLogger(__name__)
 
 def index():
     user = session.get('user')
-    msg = None
-    try:
-        msg = request.args.get('msg', None)
-    except Exception as e:
-        logger.info(f"index: {e}")
+    msg = utils.check_messages()
     if user:
         if utils.user_is_admin(user):
-            return  redirect(url_for("ingest_form"))
+            return  redirect(url_for("ingest_form", msg=msg))
         else:
             if not msg:
                 msg = f"Hi {user['email']}! Please contact a DLP team member for admin privileges"
@@ -26,9 +22,10 @@ def index():
 
 def ingest_form(application):
     user = session.get('user')
+    msg = utils.check_messages()
     if(utils.user_is_admin(user) or os.getenv('LOCAL_DEV') == "true"):
         envs = utils.get_available_envs(application)
-        return render_template("form.html", envs=envs, user=user) 
+        return render_template("form.html", envs=envs, user=user, msg=msg) 
     else:
         return redirect(url_for("index", msg="Not authorized to access page. Please login."))
 
@@ -40,7 +37,7 @@ def submit(application):
     updated_items = []
     errors = []
     summary = []
-    ret_msgs = ["There was an exception processing your ingest. My bad :("]
+    ret_msgs = ["There was an exception processing your ingest. :( My bad. "]
 
     user = session.get('user')
 

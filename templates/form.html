@@ -2,6 +2,9 @@
 
 {% block content %}
     <div id="content" role="region" aria-label="Ingest configuration form">
+        {% if msg %}
+            <p class="msg">{{msg}}</p>
+        {% endif %}
         <p>This tool ingests media/metadata into the VTDLP Archive system.</p>
         <ol>
             <li>Ingest Collection metadata file first</li>

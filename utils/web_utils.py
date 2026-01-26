@@ -42,6 +42,15 @@ env_vars = [
 ]
 
 
+def check_messages():
+    msg = None
+    try:
+        msg = request.args.get('msg', None)
+    except Exception as e:
+        logger.info(f"index: {e}")
+    return msg
+
+
 def get_ingestConfig():
     return ingestConfig
 
