@@ -61,7 +61,7 @@ const getDefaults = async () => {
 
 const handleEnvRadioChange = async (event) => {  
     const statusElement = document.getElementById("env_status");
-    const evtValue = event.target.value.split("-")[-1];
+    const evtValue = event.target.value;
     console.log(evtValue)
     if (evtValue === "other") {
         const tableSelect = document.getElementById("db_table_select")
