@@ -1,3 +1,4 @@
+import logging
 from fixity.checksum_handler import checksum_handler
 
 class GenericType:
@@ -17,6 +18,7 @@ class GenericType:
         self.media_handler = media_handler
         self.metadata_handler = metadata_handler
         self.modified_metadata = ""
+        self.logger = logging.getLogger()
 
     def ingest(self):
         if self.env["MEDIA_INGEST"]:
@@ -36,4 +38,5 @@ class GenericType:
         return self.media_handler.import_digital_objects()
 
     def import_metadata(self):
+        self.logger.debug("GenType.import_meta()")
         self.metadata_handler.ingest()

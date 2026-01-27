@@ -8,7 +8,6 @@ from boto3.dynamodb.conditions import Key, Attr
 from botocore.response import StreamingBody
 import re
 
-logger = logging.getLogger(__name__)
 
 DUPLICATED = "Duplicated"
 
@@ -21,6 +20,7 @@ class GenericMetadata:
         self.single_value_headers = None
         self.multi_value_headers = None
         self.results = []
+        self.logger = logging.getLogger()
 
         try:
             self.dyndb = boto3.resource("dynamodb", region_name=self.env["REGION"])
@@ -34,7 +34,7 @@ class GenericMetadata:
             )
             self.env["mint_table"] = self.dyndb.Table(self.env["DYNAMODB_NOID_TABLE"])
         except Exception as e:
-            logger.error(f"An error occurred connecting to an AWS Dynamo resource: {str(e)}")
+            self.logger.error(f"An error occurred connecting to an AWS Dynamo resource: {str(e)}")
             raise e
 
         try:
@@ -45,17 +45,18 @@ class GenericMetadata:
             raise e
 
         try:
-            headers_file = os.path.join(self.env['APPLICATION_ROOT'],'data','headers_keys.json')
+            headers_file = os.path.join(self.env['APP_SRC_DIR'],'data','headers_keys.json')
             with open(headers_file) as f:
                 headers_keys = json.load(f)
                 self.single_value_headers = headers_keys["single_value_headers"]
                 self.multi_value_headers = headers_keys["multi_value_headers"]
         except Exception as e:
-            logger.error(f"An error occurred reading headers_keys.json: {str(e)}")
+            self.logger.error(f"An error occurred reading headers_keys.json: {str(e)}")
             raise e
 
 
     def ingest(self):
+        logger.debug("reached GenericMetadata.ingest()")
         metadata_stream = self.get_metadata(self.filename)
 
         if "INGEST_TYPE" in self.env and self.env['INGEST_TYPE'] == "collection":
@@ -73,7 +74,7 @@ class GenericMetadata:
         for idx, row in df.iterrows():
             collection_dict = self.process_csv_metadata(row, "Collection")
             if not collection_dict:
-                logger.error(f"Error: Collection {idx+1} has failed to be imported.")
+                self.logger.error(f"Error: Collection {idx+1} has failed to be imported.")
                 return False
             identifier = collection_dict["identifier"]
 
@@ -120,16 +121,18 @@ class GenericMetadata:
 
 
     def batch_import_archives(self, response):
+        self.logger.debug(f"reached batch_import_archives")
         df = self.csv_to_dataframe(io.BytesIO(response["Body"].read()))
         for idx, row in df.iterrows():
+            self.logger.debug(row)
             archive_dict = self.process_csv_metadata(row, "Archive")
             if not archive_dict:
                 continue
             else:
-                logger.debug(f"archive_dict: {archive_dict}")
+                self.logger.debug(f"archive_dict: {archive_dict}")
                 collection = self.get_collection(archive_dict)
                 if collection:
-                    logger.debug(f"collection: {collection}")
+                    self.logger.debug(f"collection: {collection}")
                     archive_dict["collection"] = collection["id"]
                     archive_dict["parent_collection"] = [collection["id"]]
                     archive_dict["heirarchy_path"] = collection["heirarchy_path"]
@@ -144,15 +147,15 @@ class GenericMetadata:
                     
                     existing_archive = self.query_by_index(self.env["archive_table"], "Identifier", archive_dict["identifier"])
                     if existing_archive:
-                        logger.info(f"archive {archive_dict['identifier']} exists in {self.env['archive_table']}")
+                        self.logger.info(f"archive {archive_dict['identifier']} exists in {self.env['archive_table']}")
                         if self.env["UPDATE_METADATA"]:
-                            logger.info(f"...updating")
+                            self.logger.info(f"...updating")
                             self.update_item_in_table(self.env["archive_table"], existing_archive['id'], archive_dict, archive_dict["identifier"])
                         else:
-                            logger.info(f"...skipping")
+                            self.logger.info(f"...skipping")
                             continue
                     else:
-                        logger.info(f"attempting to create new item {archive_dict['identifier']}")
+                        self.logger.info(f"attempting to create new item {archive_dict['identifier']}")
                         self.create_item_in_table(self.env["archive_table"], archive_dict, "Archive")
                 
 

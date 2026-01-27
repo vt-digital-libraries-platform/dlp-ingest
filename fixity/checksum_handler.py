@@ -4,6 +4,8 @@ from boto3.dynamodb.conditions import Attr
 from datetime import datetime
 from io import StringIO
 
+logger = logging.getLogger()
+
 """
     Lambda invocation event must contain: 
         COLLECTION_IDENTIFIER <string>
@@ -24,7 +26,7 @@ try:
     s3_client = boto3.client("s3")
     dynamo_resource = boto3.resource("dynamodb", region_name="us-east-1")
 except Exception as e:
-    logging.error(f"Error instantiating aws services. Quitting: {e}")
+    logger.error(f"Error instantiating aws services. Quitting: {e}")
     raise e
 
 
@@ -146,7 +148,6 @@ def write_summary_to_s3(s3_bucket, s3_results_path, ingest_job, total_files_list
     if len(ingested) + len(existing) == total_files_listed:
         results_string += "All files in checksum lists located successfully.\n"
 
-    logging.info(results_string)
     key = os.path.join(s3_results_path, f"{ingest_job}_summary.txt")
     s3_client.put_object(Bucket=s3_bucket, Key=key, Body=results_string)
 
@@ -197,9 +198,9 @@ def checksum_handler(event, context):
                 obj_keys = get_matching_s3_keys(s3_bucket, collection_path, fileName)
                 key = obj_keys[0] if obj_keys else None
                 if key:
-                    logging.info(f"File found in s3:{s3_bucket}: {key}")
+                    logger.info(f"File found in s3:{s3_bucket}: {key}")
                 else:
-                    logging.warning(f"File not found: {fileName}")
+                    logger.warning(f"File not found: {fileName}")
                     not_found_tuple = (filePath, "not found")
                     if not_found_tuple not in not_found:
                         not_found.append(not_found_tuple)
@@ -208,7 +209,7 @@ def checksum_handler(event, context):
 
                 # Check if fileCharacterization record is already in dynamo
                 if record_exists_in_db(fixity_table_name, key):
-                    logging.info(f"{filePath} already exists in table: {fixity_table_name} as: {key}")
+                    logger.info(f"{filePath} already exists in table: {fixity_table_name} as: {key}")
                     existing_tuple = (filePath, key)
                     if existing_tuple not in existing:
                         existing.append(existing_tuple)
@@ -222,7 +223,7 @@ def checksum_handler(event, context):
                     mime_type = response['ContentType']
                     metadata = create_s3_file_metadata(filePath, response)
                 except Exception as e:
-                    logging.error(f"Error fetching head object for file: {filePath}")
+                    logger.error(f"Error fetching head object for file: {filePath}")
                     
                 ingested_date = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
 
@@ -250,29 +251,24 @@ def checksum_handler(event, context):
                     ingested_tuple = (filePath, key)
                     if ingested_tuple not in ingested:  
                         ingested.append(ingested_tuple)
-                    logging.info(f"File record written to DynamoDB: {filePath}")
+                    logger.info(f"File record written to DynamoDB: {filePath}")
                 except Exception as e:
-                    logging.error(f"Error writing to DynamoDB for file: {filePath}: {e}")
+                    logger.error(f"Error writing to DynamoDB for file: {filePath}: {e}")
 
 # ================================================
 
     # Completed. Log summary info
-    logging.info(f"Completed. Writing results to {s3_bucket}:{s3_results_path}")
-    logging.info(f"Total files listed in checksum file(s): {total_files_listed}")
 
     if len(existing) > 0:
-        logging.info(f"{len(existing)} files were previously ingested and are recorded in dynamo: {existing}")
         write_results_to_s3(s3_bucket, s3_results_path, ingest_job, "previously_ingested", existing)
     if len(not_found) > 0:
-        logging.warning(f"Could not find {len(not_found)} file(s): {not_found}")
         write_results_to_s3(s3_bucket, s3_results_path, ingest_job, "not_found", not_found)
     if len(ingested) > 0:
-        logging.info(f"Found {len(ingested)} file(s) in S3: {ingested}")
         write_results_to_s3(s3_bucket, s3_results_path, ingest_job, "ingested", ingested)
     
     write_summary_to_s3(s3_bucket, s3_results_path, ingest_job, total_files_listed, ingested, existing, not_found)
     
-    logging.info("Process completed")
+    logger.info("Checksum process completed")
     return {
         "statusCode": 200,
         "body": json.dumps({
