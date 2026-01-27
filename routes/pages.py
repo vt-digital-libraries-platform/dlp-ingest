@@ -37,9 +37,17 @@ def submit(application):
     updated_items = []
     errors = []
     summary = []
-    ret_msgs = ["There was an exception processing your ingest. :( My bad. "]
+
+    logger.info("====================================================")
+    logger.info("/submit -- received ingest request. Beginning ingest")
+    logger.info("====================================================")
+    logger.info(request)
 
     user = session.get('user')
+    if user:
+        logger.info(f"User: {user['email']}")
+    else:
+        logger.error("No user session")
 
     utils.set_environment_defaults(application)
 
@@ -48,7 +56,6 @@ def submit(application):
             uploaded = utils.save_uploads(application)
         except Exception as e:
             err = "Error reading uploaded file"
-            ret_msgs.append(err)
             logger.error(err)
 
         if utils.files_exist(application):
@@ -69,7 +76,6 @@ def submit(application):
             else:
                 err = "No response from ingest script dlp_ingest_main()"
                 logger.error(err)
-                ret_msgs.append(err)
 
             # Write files for download
             results_dir = os.path.join(application.config['APP_SRC_DIR'], 'results')
@@ -100,7 +106,6 @@ def submit(application):
             except Exception as e:
                 err = f"Error writing results files: {e}"
                 logger.error(err)
-                ret_msgs.append(err)
 
             # Read the last 100 lines of log_file to show ingest logs
             # Get log_file path from logger config
@@ -122,7 +127,7 @@ def submit(application):
                     err = f"Error reading log file: {str(e)}"
                     logger.error(err)
                     log_lines = [err]
-
+                logging.info("reached render submit template")
                 return render_template(
                     'submit.html',
                     ingested_count=len(ingested_items),
@@ -135,10 +140,8 @@ def submit(application):
         else:
             err = "There was an exception finding the metadata file"
             logger.error(err)
-            ret_msgs.append(err)
     else:
         err = f"Incorrect request type: received GET. user: {user['email'] if user and "email" in user else "None"}"
         logger.error(err)
-        ret_msgs.append(err)
    
-    return redirect(url_for("index", msg=" || ".join(ret_msgs)))
+    return redirect(url_for("index", msg=""))
