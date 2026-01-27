@@ -381,7 +381,7 @@ const addListeners = async () => {
                 progressBar.value = 100;
                 progressText.textContent = "Complete!";
                 // Redirect to a results or success page
-                window.location.href = "/success"; // Change "/success" to your desired URL
+                window.location.href = "/submit"; // Change "/success" to your desired URL
             };
 
             xhr.open("POST", form.action);
