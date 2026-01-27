@@ -66,8 +66,12 @@ def submit(application):
             ingestConfig = utils.get_ingestConfig()
             logger.info(f"Config: {ingestConfig}")
             result = None
+            logger.info("BEGIN INGEST RESULTS---------------------")
+            logger.info("")
             result = dlp_ingest_main(None, None, metadata_filepath, ingestConfig)
             logger.info(f"result: {result}")
+            logger.info("")
+            logger.info("--------------------- ...END INGEST RESULTS")
             if result:
                 ingested_items = result.get('ingested', [])
                 updated_items = result.get('updated', [])

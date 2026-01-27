@@ -110,17 +110,14 @@ def get_identifier():
 def save_uploads(application):
     files = []
     try:
-        i = 0
         for file in request.files.getlist('metadata_input'):
             if file and file.filename.endswith(tuple(application.config['ALLOWED_EXTENSIONS'])):
                 input_filename = get_input_filename(file)
                 files.append(input_filename)
                 file.save(os.path.join(application.config['UPLOADS'], f"{input_filename}"))
-                i += 1
     except Exception as e:
-        print(e)
+        logger.error(f"Error: uploading file. - {e}")
     return files
-
 
 def get_input_filename(file):
     return str(file.filename)
