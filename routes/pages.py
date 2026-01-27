@@ -56,21 +56,25 @@ def submit(application):
 
             # Do the ingest
             metadata_filepath = os.path.join(application.config['UPLOADS'], uploaded[0])
-
+            ingestConfig = utils.get_ingestConfig()
+            logger.info(f"Config: {ingestConfig}")
             result = None
-            result = dlp_ingest_main(None, None, metadata_filepath, utils.get_ingestConfig())
+            result = dlp_ingest_main(None, None, metadata_filepath, ingestConfig)
+            logger.info(f"result: {result}")
             if result:
                 ingested_items = result.get('ingested', [])
                 updated_items = result.get('updated', [])
                 errors = result.get('errors', [])
                 summary = result.get('summary', [])
             else:
-                ret_msgs.append("No response from ingest script dlp_ingest_main()")
+                err = "No response from ingest script dlp_ingest_main()"
+                logger.error(err)
+                ret_msgs.append(err)
 
             # Write files for download
             results_dir = os.path.join(application.config['APP_SRC_DIR'], 'results')
             os.makedirs(results_dir, exist_ok=True)
-
+            logger.info(f"{results_dir} created. Writing results files")
             try:
                 with open(os.path.join(results_dir, 'ingested.csv'), 'w') as f:
                     f.write("item\n")
@@ -91,11 +95,16 @@ def submit(application):
                     f.write("summary\n")
                     for line in summary:
                         f.write(f"{line}\n")
+
+                logger.info(f"Results files written")
             except Exception as e:
-                ret_msgs.append(f"Error writing results files: {e}")
+                err = f"Error writing results files: {e}"
+                logger.error(err)
+                ret_msgs.append(err)
 
             # Read the last 100 lines of log_file to show ingest logs
             # Get log_file path from logger config
+            logger.info(f"reading logfile to render")
             log_file = utils.get_logfile(logger)
             if log_file:
                 log_lines = []
@@ -104,10 +113,15 @@ def submit(application):
                         all_lines = f.readlines()
                         # Get last 100 lines, or all if fewer than 100
                         log_lines = all_lines[-100:] if len(all_lines) > 100 else all_lines
+                        logger.info("read log file")
                 except FileNotFoundError:
-                    log_lines = ["No log file found."]
+                    err = "No log file found."
+                    logger.error(err)
+                    log_lines = [err]
                 except Exception as e:
-                    log_lines = [f"Error reading log file: {str(e)}"]
+                    err = f"Error reading log file: {str(e)}"
+                    logger.error(err)
+                    log_lines = [err]
 
                 return render_template(
                     'submit.html',
@@ -119,8 +133,12 @@ def submit(application):
                     user_is_admin=utils.user_is_admin(user)
                 )
         else:
-            ret_msgs.append("There was an exception finding the metadata file")
+            err = "There was an exception finding the metadata file"
+            logger.error(err)
+            ret_msgs.append(err)
     else:
-        ret_msgs.append(f"Incorrect request type: received GET. user: {user['email'] if user and "email" in user else "None"}")
+        err = f"Incorrect request type: received GET. user: {user['email'] if user and "email" in user else "None"}"
+        logger.error(err)
+        ret_msgs.append(err)
    
     return redirect(url_for("index", msg=" || ".join(ret_msgs)))
