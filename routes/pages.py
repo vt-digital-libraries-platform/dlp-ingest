@@ -75,7 +75,7 @@ def submit(application):
                 errors = result.get('errors', [])
                 summary = result.get('summary', [])
             else:
-                err = "No response from ingest script dlp_ingest_main()"
+                err = "No return value from ingest script dlp_ingest_main()"
                 logger.error(err)
 
             # Write files for download
