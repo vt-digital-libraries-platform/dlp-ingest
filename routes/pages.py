@@ -49,10 +49,10 @@ def submit(application):
         except Exception as e:
             err = "Error reading uploaded file"
             ret_msgs.append(err)
-            logging.error(err)
+            logger.error(err)
 
         if utils.files_exist(application):
-            utils.set_environment_overrides(application)
+            utils.set_environment_overrides()
 
             # Do the ingest
             metadata_filepath = os.path.join(application.config['UPLOADS'], uploaded[0])
