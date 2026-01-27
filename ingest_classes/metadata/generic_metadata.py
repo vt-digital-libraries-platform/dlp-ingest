@@ -184,7 +184,7 @@ class GenericMetadata:
     def get_thumbnail_path_for_archive(self, archive_dict, collection):
         match self.env["MEDIA_TYPE"]:
             case "iiif": 
-                return self.get_thumbnail_path_for_iiif(self, archive_dict, collection)
+                return self.get_thumbnail_path_for_iiif(archive_dict)
             case _:
                 return os.path.join(
                     self.env["APP_IMG_ROOT_PATH"],
