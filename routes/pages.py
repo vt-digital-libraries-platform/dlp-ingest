@@ -126,18 +126,18 @@ def submit(application):
                     log_lines = [err]
                 return render_template(
                     'submit.html',
+                    user=user,
+                    user_is_admin=utils.user_is_admin(user),
                     ingested_count=len(ingested_items),
                     updated_count=len(updated_items),
                     errors_count=len(errors),
                     summary_count=len(summary),
-                    log_lines=log_lines,
-                    user_is_admin=utils.user_is_admin(user)
+                    log_lines=log_lines
                 )
         else:
             err = "There was an exception finding the metadata file"
             logger.error(err)
     else:
-        err = f"Incorrect request type: received GET. user: {user['email'] if user and "email" in user else "None"}"
-        logger.error(err)
+        logger.info("/submit received GET. Redirecting home")
    
     return redirect(url_for("index", msg="There was an exception in the process. Please check the logs. ...my bad"))
