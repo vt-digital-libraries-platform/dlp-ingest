@@ -67,10 +67,7 @@ def submit(application):
             logger.info(f"Config: {ingestConfig}")
             result = None
             logger.info("BEGIN INGEST RESULTS---------------------")
-            logger.info("")
             result = dlp_ingest_main(None, None, metadata_filepath, ingestConfig)
-            logger.info(f"result: {result}")
-            logger.info("")
             logger.info("--------------------- ...END INGEST RESULTS")
             if result:
                 ingested_items = result.get('ingested', [])
@@ -84,7 +81,6 @@ def submit(application):
             # Write files for download
             results_dir = os.path.join(application.config['APP_SRC_DIR'], 'results')
             os.makedirs(results_dir, exist_ok=True)
-            logger.info(f"{results_dir} created. Writing results files")
             try:
                 with open(os.path.join(results_dir, 'ingested.csv'), 'w') as f:
                     f.write("item\n")
@@ -106,14 +102,12 @@ def submit(application):
                     for line in summary:
                         f.write(f"{line}\n")
 
-                logger.info(f"Results files written")
             except Exception as e:
                 err = f"Error writing results files: {e}"
                 logger.error(err)
 
             # Read the last 100 lines of log_file to show ingest logs
             # Get log_file path from logger config
-            logger.info(f"reading logfile to render")
             log_file = utils.get_logfile(logger)
             if log_file:
                 log_lines = []
@@ -122,7 +116,6 @@ def submit(application):
                         all_lines = f.readlines()
                         # Get last 100 lines, or all if fewer than 100
                         log_lines = all_lines[-100:] if len(all_lines) > 100 else all_lines
-                        logger.info("read log file")
                 except FileNotFoundError:
                     err = "No log file found."
                     logger.error(err)
@@ -131,7 +124,6 @@ def submit(application):
                     err = f"Error reading log file: {str(e)}"
                     logger.error(err)
                     log_lines = [err]
-                logging.info("reached render submit template")
                 return render_template(
                     'submit.html',
                     ingested_count=len(ingested_items),
@@ -148,4 +140,4 @@ def submit(application):
         err = f"Incorrect request type: received GET. user: {user['email'] if user and "email" in user else "None"}"
         logger.error(err)
    
-    return redirect(url_for("index", msg=""))
+    return redirect(url_for("index", msg="There was an exception in the process. Please check the logs. ...my bad"))
