@@ -352,48 +352,48 @@ const addListeners = async () => {
         console.error(error)
     }
 
-    try {
-        document.getElementById("ingest_button").addEventListener("click", function(e) {
-            e.preventDefault(); // Prevent normal form submission
+    // try {
+    //     document.getElementById("ingest_button").addEventListener("click", function(e) {
+    //         e.preventDefault(); // Prevent normal form submission
 
-            const identifier = document.getElementById("collection_identifier").value;
-            if (!identifier.trim()) {
-                e.preventDefault();
-                alert("Please fill in the Collection Identifier before submitting.");
-                document.getElementById("collection_identifier").focus();
-            }
+    //         const identifier = document.getElementById("collection_identifier").value;
+    //         if (!identifier.trim()) {
+    //             e.preventDefault();
+    //             alert("Please fill in the Collection Identifier before submitting.");
+    //             document.getElementById("collection_identifier").focus();
+    //         }
 
-            const form = document.querySelector("form");
-            const formData = new FormData(form);
-            const xhr = new XMLHttpRequest();
-            const progressBar = document.getElementById("progress_bar");
-            const progressText = document.getElementById("progress_text");
+    //         const form = document.querySelector("form");
+    //         const formData = new FormData(form);
+    //         const xhr = new XMLHttpRequest();
+    //         const progressBar = document.getElementById("progress_bar");
+    //         const progressText = document.getElementById("progress_text");
 
-            xhr.upload.onprogress = function(event) {
-                if (event.lengthComputable) {
-                    const percent = Math.round((event.loaded / event.total) * 100);
-                    progressBar.value = percent;
-                    progressText.textContent = percent + "%";
-                }
-            };
+    //         xhr.upload.onprogress = function(event) {
+    //             if (event.lengthComputable) {
+    //                 const percent = Math.round((event.loaded / event.total) * 100);
+    //                 progressBar.value = percent;
+    //                 progressText.textContent = percent + "%";
+    //             }
+    //         };
 
-            xhr.onload = function() {
-                progressBar.value = 100;
-                progressText.textContent = "Complete!";
-                // Redirect to a results or success page
-                window.location.href = "/"; // Change "/success" to your desired URL
-            };
+    //         xhr.onload = function() {
+    //             progressBar.value = 100;
+    //             progressText.textContent = "Complete!";
+    //             // Redirect to a results or success page
+    //             window.location.href = "/"; // Change "/success" to your desired URL
+    //         };
 
-            xhr.open("POST", form.action);
-            xhr.send(formData);
+    //         xhr.open("POST", form.action);
+    //         xhr.send(formData);
 
-            progressBar.value = 0;
-            progressText.textContent = "Uploading...";
-        });
-    }
-    catch(error) {
-        console.error(error)
-    }
+    //         progressBar.value = 0;
+    //         progressText.textContent = "Uploading...";
+    //     });
+    // }
+    // catch(error) {
+    //     console.error(error)
+    // }
 
 
     // Section checker: listen for changes on errthang
