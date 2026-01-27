@@ -56,7 +56,6 @@ class GenericMetadata:
 
 
     def ingest(self):
-        self.logger.info("reached GenericMetadata.ingest()")
         metadata_stream = self.get_metadata(self.filename)
 
         if "INGEST_TYPE" in self.env and self.env['INGEST_TYPE'] == "collection":

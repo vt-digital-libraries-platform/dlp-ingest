@@ -87,7 +87,7 @@ def get_fileList_df(s3_bucket, checksum_file_path):
         data = response["Body"].read().decode('utf-8')
         dataframe = pd.read_csv(StringIO(data))
     except Exception as e:
-        logging.error(f"Error fetching/reading file list from {checksum_file_path}. Quitting")
+        logger.error(f"Error fetching/reading file list from {checksum_file_path}. Quitting")
         raise e
 
     return dataframe
@@ -113,7 +113,7 @@ def record_exists_in_db(fixity_table_name, key):
             start_key = response.get("LastEvaluatedKey", None)
             done = start_key is None
     except Exception as e:
-        logging.error(f"An error occurred scanning for {key}: {str(e)}")
+        logger.error(f"An error occurred scanning for {key}: {str(e)}")
 
     return len(source_table_items) > 0
 
@@ -123,7 +123,7 @@ def create_s3_file_metadata(filePath, response):
     try:
         metadata = response['ResponseMetadata']['HTTPHeaders']
     except KeyError:
-        logging.error(f"Error fetching head object for file: {filePath}: {e}")
+        logger.error(f"Error fetching head object for file: {filePath}: {e}")
 
     return metadata
 
@@ -197,9 +197,7 @@ def checksum_handler(event, context):
                 # find file(s) based on collection path and filename
                 obj_keys = get_matching_s3_keys(s3_bucket, collection_path, fileName)
                 key = obj_keys[0] if obj_keys else None
-                if key:
-                    logger.info(f"File found in s3:{s3_bucket}: {key}")
-                else:
+                if not key:
                     logger.warning(f"File not found: {fileName}")
                     not_found_tuple = (filePath, "not found")
                     if not_found_tuple not in not_found:
@@ -251,7 +249,6 @@ def checksum_handler(event, context):
                     ingested_tuple = (filePath, key)
                     if ingested_tuple not in ingested:  
                         ingested.append(ingested_tuple)
-                    logger.info(f"File record written to DynamoDB: {filePath}")
                 except Exception as e:
                     logger.error(f"Error writing to DynamoDB for file: {filePath}: {e}")
 
@@ -268,7 +265,6 @@ def checksum_handler(event, context):
     
     write_summary_to_s3(s3_bucket, s3_results_path, ingest_job, total_files_listed, ingested, existing, not_found)
     
-    logger.info("Checksum process completed")
     return {
         "statusCode": 200,
         "body": json.dumps({
