@@ -91,7 +91,7 @@ class GenericMetadata:
                 if len(collection_dict['heirarchy_path']) > 1:
                     collection_dict["parent_collection"] = [collection_dict['heirarchy_path'][-2]] 
             
-            self.create_item_in_table(self.env["collection_table"], collection_dict, "Collection", idx)
+            self.create_item_in_table(self.env["collection_table"], collection_dict, "Collection")
 
             if "heirarchy_path" in collection_dict:
                 self.update_collection_map(collection_dict["heirarchy_path"][0])
