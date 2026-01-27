@@ -7,6 +7,7 @@ ingestConfig = {}
 
 env_vars = [
     'APPLICATION_ROOT',
+    'APP_SRC_DIR',
     'APP_IMG_ROOT_PATH',
     'AWS_SRC_BUCKET',
     'AWS_DEST_BUCKET',
