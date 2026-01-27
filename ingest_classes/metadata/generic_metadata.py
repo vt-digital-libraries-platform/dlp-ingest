@@ -41,7 +41,7 @@ class GenericMetadata:
             self.env["s3_resource"] = boto3.resource("s3")
             self.env["s3_client"] = boto3.client("s3")
         except Exception as e:
-            logger.error(f"An error occurred connecting to an AWS s3 resource: {str(e)}")
+            self.logger.error(f"An error occurred connecting to an AWS s3 resource: {str(e)}")
             raise e
 
         try:
@@ -56,7 +56,7 @@ class GenericMetadata:
 
 
     def ingest(self):
-        logger.debug("reached GenericMetadata.ingest()")
+        self.logger.debug("reached GenericMetadata.ingest()")
         metadata_stream = self.get_metadata(self.filename)
 
         if "INGEST_TYPE" in self.env and self.env['INGEST_TYPE'] == "collection":
