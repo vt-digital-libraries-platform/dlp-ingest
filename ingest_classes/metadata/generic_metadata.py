@@ -56,7 +56,7 @@ class GenericMetadata:
 
 
     def ingest(self):
-        self.logger.debug("reached GenericMetadata.ingest()")
+        self.logger.info("reached GenericMetadata.ingest()")
         metadata_stream = self.get_metadata(self.filename)
 
         if "INGEST_TYPE" in self.env and self.env['INGEST_TYPE'] == "collection":
@@ -121,18 +121,18 @@ class GenericMetadata:
 
 
     def batch_import_archives(self, response):
-        self.logger.debug(f"reached batch_import_archives")
+        self.logger.info(f"reached batch_import_archives")
         df = self.csv_to_dataframe(io.BytesIO(response["Body"].read()))
         for idx, row in df.iterrows():
-            self.logger.debug(row)
+            self.logger.info(row)
             archive_dict = self.process_csv_metadata(row, "Archive")
             if not archive_dict:
                 continue
             else:
-                self.logger.debug(f"archive_dict: {archive_dict}")
+                self.logger.info(f"archive_dict: {archive_dict}")
                 collection = self.get_collection(archive_dict)
                 if collection:
-                    self.logger.debug(f"collection: {collection}")
+                    self.logger.info(f"collection: {collection}")
                     archive_dict["collection"] = collection["id"]
                     archive_dict["parent_collection"] = [collection["id"]]
                     archive_dict["heirarchy_path"] = collection["heirarchy_path"]

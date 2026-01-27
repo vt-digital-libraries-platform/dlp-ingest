@@ -38,5 +38,5 @@ class GenericType:
         return self.media_handler.import_digital_objects()
 
     def import_metadata(self):
-        self.logger.debug("GenType.import_meta()")
+        self.logger.info("GenType.import_meta()")
         self.metadata_handler.ingest()
