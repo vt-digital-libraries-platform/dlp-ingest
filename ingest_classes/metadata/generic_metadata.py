@@ -1,12 +1,14 @@
 import sys
 import time
-import boto3, http, io, json, os, uuid, urllib.request
+import boto3, http, io, json, logging, os, uuid, urllib.request
 import pandas as pd
 from datetime import datetime, timezone
 from dateutil.parser import parse
 from boto3.dynamodb.conditions import Key, Attr
 from botocore.response import StreamingBody
 import re
+
+logger = logging.getLogger(__name__)
 
 DUPLICATED = "Duplicated"
 
@@ -32,14 +34,14 @@ class GenericMetadata:
             )
             self.env["mint_table"] = self.dyndb.Table(self.env["DYNAMODB_NOID_TABLE"])
         except Exception as e:
-            print(f"An error occurred connecting to an AWS Dynamo resource: {str(e)}")
+            logger.error(f"An error occurred connecting to an AWS Dynamo resource: {str(e)}")
             raise e
 
         try:
             self.env["s3_resource"] = boto3.resource("s3")
             self.env["s3_client"] = boto3.client("s3")
         except Exception as e:
-            print(f"An error occurred connecting to an AWS s3 resource: {str(e)}")
+            logger.error(f"An error occurred connecting to an AWS s3 resource: {str(e)}")
             raise e
 
         try:
@@ -49,7 +51,7 @@ class GenericMetadata:
                 self.single_value_headers = headers_keys["single_value_headers"]
                 self.multi_value_headers = headers_keys["multi_value_headers"]
         except Exception as e:
-            print(f"An error occurred reading headers_keys.json: {str(e)}")
+            logger.error(f"An error occurred reading headers_keys.json: {str(e)}")
             raise e
 
 
@@ -71,7 +73,7 @@ class GenericMetadata:
         for idx, row in df.iterrows():
             collection_dict = self.process_csv_metadata(row, "Collection")
             if not collection_dict:
-                print(f"Error: Collection {idx+1} has failed to be imported.")
+                logger.error(f"Error: Collection {idx+1} has failed to be imported.")
                 return False
             identifier = collection_dict["identifier"]
 
@@ -124,8 +126,10 @@ class GenericMetadata:
             if not archive_dict:
                 continue
             else:
+                logger.debug(f"archive_dict: {archive_dict}")
                 collection = self.get_collection(archive_dict)
                 if collection:
+                    logger.debug(f"collection: {collection}")
                     archive_dict["collection"] = collection["id"]
                     archive_dict["parent_collection"] = [collection["id"]]
                     archive_dict["heirarchy_path"] = collection["heirarchy_path"]
@@ -140,11 +144,15 @@ class GenericMetadata:
                     
                     existing_archive = self.query_by_index(self.env["archive_table"], "Identifier", archive_dict["identifier"])
                     if existing_archive:
+                        logger.info(f"archive {archive_dict['identifier']} exists in {self.env['archive_table']}")
                         if self.env["UPDATE_METADATA"]:
+                            logger.info(f"...updating")
                             self.update_item_in_table(self.env["archive_table"], existing_archive['id'], archive_dict, archive_dict["identifier"])
                         else:
+                            logger.info(f"...skipping")
                             continue
                     else:
+                        logger.info(f"attempting to create new item {archive_dict['identifier']}")
                         self.create_item_in_table(self.env["archive_table"], archive_dict, "Archive")
                 
 

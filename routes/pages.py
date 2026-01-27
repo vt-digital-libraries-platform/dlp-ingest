@@ -54,6 +54,7 @@ def submit(application):
     if request.method == 'POST' and 'metadata_input' in request.files:
         try:
             uploaded = utils.save_uploads(application)
+            logger.info(f"Metadata file uploaded: {uploaded}")
         except Exception as e:
             err = "Error reading uploaded file"
             logger.error(err)
