@@ -42,10 +42,15 @@ def submit(application):
     user = session.get('user')
 
     utils.set_environment_defaults(application)
-    collection_identifier = utils.get_identifier()
+
     if request.method == 'POST' and 'metadata_input' in request.files:
-        uploaded = utils.save_uploads(application, collection_identifier, len(request.files.getlist('metadata_input')))
-    
+        try:
+            uploaded = utils.save_uploads(application)
+        except Exception as e:
+            err = "Error reading uploaded file"
+            ret_msgs.append(err)
+            logging.error(err)
+
         if utils.files_exist(application):
             utils.set_environment_overrides(application)
 
