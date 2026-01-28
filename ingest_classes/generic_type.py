@@ -33,7 +33,9 @@ class GenericType:
             "S3_PREFIX": self.env["COLLECTION_CATEGORY"]
         }
         checksum_handler(checksum_options, None)
-        self.logger.info("Ingest process has completed")
+        self.logger.info("====================================================")
+        self.logger.info("Ingest process completed")
+        self.logger.info("====================================================")
 
     def import_digital_objects(self):
         return self.media_handler.import_digital_objects()

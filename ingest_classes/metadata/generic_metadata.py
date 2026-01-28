@@ -45,7 +45,7 @@ class GenericMetadata:
             raise e
 
         try:
-            headers_file = os.path.join(self.env['APP_SRC_DIR'],'data','headers_keys.json')
+            headers_file = os.path.join(self.env["APP_SRC_DIR"],"data","headers_keys.json")
             with open(headers_file) as f:
                 headers_keys = json.load(f)
                 self.single_value_headers = headers_keys["single_value_headers"]
@@ -58,9 +58,9 @@ class GenericMetadata:
     def ingest(self):
         metadata_stream = self.get_metadata(self.filename)
 
-        if "INGEST_TYPE" in self.env and self.env['INGEST_TYPE'] == "collection":
+        if "INGEST_TYPE" in self.env and self.env["INGEST_TYPE"] == "collection":
             self.batch_import_collections(metadata_stream)
-        elif "INGEST_TYPE" in self.env and self.env['INGEST_TYPE'] == "archive":
+        elif "INGEST_TYPE" in self.env and self.env["INGEST_TYPE"] == "archive":
             self.batch_import_archives(metadata_stream)
 
         return {"statusCode": 200, "body": json.dumps("Finish metadata import.")}
@@ -69,6 +69,8 @@ class GenericMetadata:
 
 
     def batch_import_collections(self, response):
+
+        # process the metadata csv row by row
         df = self.csv_to_dataframe(io.BytesIO(response["Body"].read()))
         for idx, row in df.iterrows():
             collection_dict = self.process_csv_metadata(row, "Collection")
@@ -77,6 +79,21 @@ class GenericMetadata:
                 return False
             identifier = collection_dict["identifier"]
 
+            # make sure a bunch of stuff is set that isn't necessarily in the csv
+            if "id" not in collection_dict or not collection_dict["id"]:
+                collection_dict["id"] = str(uuid.uuid4())
+            
+            if "heirarchy_path" not in collection_dict or not collection_dict["heirarchy_path"]:
+                collection_dict["heirarchy_path"] = self.create_heirarchy_path(collection_dict)
+                
+            if "parent_collection" not in collection_dict or not collection_dict["parent_collection"]:
+                if len(collection_dict["heirarchy_path"]) > 1:
+                    collection_dict["parent_collection"] = [collection_dict["heirarchy_path"][-2]] 
+            
+            if "parent_collection_identifier" not in collection_dict or not collection_dict["parent_collection_identifier"]:
+                if "parent_collection_identifier" in self.env:
+                    collection_dict["parent_collection_identifier"] = self.env["parent_collection_identifier"]
+
             if "thumbnail_path" not in collection_dict or not collection_dict["thumbnail_path"]:
                 collection_dict["thumbnail_path"] = os.path.join(
                     self.env["APP_IMG_ROOT_PATH"],
@@ -84,17 +101,11 @@ class GenericMetadata:
                     identifier,
                     "representative.jpg",
                 )
-                
-            if "id" not in collection_dict:
-                collection_dict["id"] = str(uuid.uuid4())
-            
-            if "heirarchy_path" not in collection_dict:
-                collection_dict["heirarchy_path"] = self.create_heirarchy_path(collection_dict)
-                if len(collection_dict['heirarchy_path']) > 1:
-                    collection_dict["parent_collection"] = [collection_dict['heirarchy_path'][-2]] 
-            
+
+            # put the record in the collection db table
             self.create_item_in_table(self.env["collection_table"], collection_dict, "Collection")
 
+            # after this collection has been created, it needs to be added to the appropriate collectionmap
             if "heirarchy_path" in collection_dict:
                 self.update_collection_map(collection_dict["heirarchy_path"][0])
 
@@ -120,18 +131,14 @@ class GenericMetadata:
 
 
     def batch_import_archives(self, response):
-        self.logger.info(f"reached batch_import_archives")
         df = self.csv_to_dataframe(io.BytesIO(response["Body"].read()))
         for idx, row in df.iterrows():
-            self.logger.info(row)
             archive_dict = self.process_csv_metadata(row, "Archive")
             if not archive_dict:
                 continue
             else:
-                self.logger.info(f"archive_dict: {archive_dict}")
                 collection = self.get_collection(archive_dict)
                 if collection:
-                    self.logger.info(f"collection: {collection}")
                     archive_dict["collection"] = collection["id"]
                     archive_dict["parent_collection"] = [collection["id"]]
                     archive_dict["heirarchy_path"] = collection["heirarchy_path"]
@@ -146,15 +153,11 @@ class GenericMetadata:
                     
                     existing_archive = self.query_by_index(self.env["archive_table"], "Identifier", archive_dict["identifier"])
                     if existing_archive:
-                        self.logger.info(f"archive {archive_dict['identifier']} exists in {self.env['archive_table']}")
                         if self.env["UPDATE_METADATA"]:
-                            self.logger.info(f"...updating")
-                            self.update_item_in_table(self.env["archive_table"], existing_archive['id'], archive_dict, archive_dict["identifier"])
+                            self.update_item_in_table(self.env["archive_table"], existing_archive["id"], archive_dict, archive_dict["identifier"])
                         else:
-                            self.logger.info(f"...skipping")
                             continue
                     else:
-                        self.logger.info(f"attempting to create new item {archive_dict['identifier']}")
                         self.create_item_in_table(self.env["archive_table"], archive_dict, "Archive")
                 
 
@@ -219,7 +222,7 @@ class GenericMetadata:
         # Only allow valid DynamoDB attribute names for both update and remove
             valid_key = lambda k: k and re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", k)
 
-            # Filter out keys that are not in the CSV file and exclude keys containing 'collection' and 'identifier'
+            # Filter out keys that are not in the CSV file and exclude keys containing "collection" and "identifier"
             update_keys = {
                 key: value
                 for key, value in attr_dict.items()
@@ -245,11 +248,11 @@ class GenericMetadata:
             # Add updatedAt to the update keys and set it to the current time in utc format
             update_keys["updatedAt"] = self.utcformat(datetime.now())  
             #Initialize the update expression and attribute values
-            # 'update_expression_names' maps placeholders (e.g., #key) to actual attribute names. This is used to avoid conflicts with DynamoDB reserved keywords
+            # "update_expression_names" maps placeholders (e.g., #key) to actual attribute names. This is used to avoid conflicts with DynamoDB reserved keywords
             update_expression_names = {}
-            # 'expression_attribute_values' maps placeholders (e.g., :value) to actual attribute values
+            # "expression_attribute_values" maps placeholders (e.g., :value) to actual attribute values
             expression_attribute_values = {}
-            # 'update_expression_string' will include all attributes to update
+            # "update_expression_string" will include all attributes to update
             update_expression_string = ""
             remove_expression_string = ""
             #Iterate over the update keys and build the update expression
@@ -278,10 +281,10 @@ class GenericMetadata:
                 else:
                     update_expression = "REMOVE " + remove_expression_string.rstrip(",") # If there are no updates, just remove the attributes
 
-            # Perform the update using the 'id' as the partition key
+            # Perform the update using the "id" as the partition key
             # This sends the update request to DynamoDB with the constructed update expression
             table.update_item(
-                Key={"id": item_id},  # 'id' is the partition key
+                Key={"id": item_id},  # "id" is the partition key
                 UpdateExpression=update_expression,
                 ExpressionAttributeNames=update_expression_names, # Placeholder mappings for attribute names
                 ExpressionAttributeValues=expression_attribute_values # Placeholder mappings for attribute values
@@ -339,13 +342,13 @@ class GenericMetadata:
 
 
     def process_csv_metadata(self, data_row, item_type):
-        attr_dict = {}
+        dict = {}
         for item in data_row.items():
             # Always set the attribute, even if value is empty
-            self.set_attribute(attr_dict, item[0].strip(), str(item[1]).strip().strip("\"").strip())
+            attr_dict = self.set_attribute(attr_dict, item[0].strip(), str(item[1]).strip().strip("\"").strip())
         # Set embargo flag only after all attributes are processed, based on embargo dates only
-        embargo_start = attr_dict.get("embargo_start_date")
-        embargo_end = attr_dict.get("embargo_end_date")
+        embargo_start = dict.get("embargo_start_date")
+        embargo_end = dict.get("embargo_end_date")
 
         # Add embargo date error checking if start date is after end date:
         if embargo_start and embargo_end:
@@ -355,67 +358,68 @@ class GenericMetadata:
                 if start_dt > end_dt:
                     print(f"\033[91m⚠️  Error: Embargo start date ({embargo_start}) is after embargo end date ({embargo_end}) for identifier {attr_dict.get('identifier', 'N/A')}\033[0m")
             except Exception as e:
-                print(f"Error parsing embargo dates for identifier {attr_dict.get('identifier', 'N/A')}: {e}")
+                print(f"Error parsing embargo dates for identifier {dict.get('identifier', 'N/A')}: {e}")
 
         if (embargo_start and str(embargo_start).strip()) or (embargo_end and str(embargo_end).strip()):
             embargo = True
         else:
             embargo = False
-        if ("identifier" not in attr_dict.keys()) or ("title" not in attr_dict.keys()):
-            attr_dict = None
+        if ("identifier" not in dict.keys()) or ("title" not in dict.keys()):
+            dict = None
             print(f"Missing required attribute in this row!")
         else:
-            self.set_attributes_from_env(attr_dict, item_type)
+            dict = self.set_attributes_from_env(dict, item_type)
             
-        return attr_dict
+        return dict
 
 
-    def set_attributes_from_env(self, attr_dict, item_type):
+    def set_attributes_from_env(self, dict, item_type):
         if item_type == "Collection":
-            attr_dict["collection_category"] = self.env["COLLECTION_CATEGORY"]
-            if "parent_collection_identifier" not in attr_dict.keys() and len(self.env["PARENT_COLLECTION_IDENTIFIER"]) > 0:
-                attr_dict["parent_collection_identifier"] = [self.env["PARENT_COLLECTION_IDENTIFIER"]]
+            dict["collection_category"] = self.env["COLLECTION_CATEGORY"]
+            if "parent_collection_identifier" not in dict.keys() and len(self.env["PARENT_COLLECTION_IDENTIFIER"]) > 0:
+                dict["parent_collection_identifier"] = [self.env["PARENT_COLLECTION_IDENTIFIER"]]
         
         elif item_type == "Archive":
-            attr_dict["item_category"] = self.env["COLLECTION_CATEGORY"]
+            dict["item_category"] = self.env["COLLECTION_CATEGORY"]
         
-        if "visibility" not in attr_dict.keys():
-            attr_dict["visibility"] = True
+        if "visibility" not in dict.keys():
+            dict["visibility"] = True
 
-        self.handle_options(attr_dict)
+        dict = self.handle_options(dict)
+
+        return dict
 
 
-
-    def handle_options(self, attr_dict):
-        return
+    def handle_options(self, dict):
+        return dict
         
 
 
-    def set_attribute(self, attr_dict, attr, value):
+    def set_attribute(self, dict, attr, value):
         lower_attr = attr.lower().replace(" ", "_")
-        # Map 'Note' to 'embargo_note'
+        # Map "Note" to "embargo_note"
         if lower_attr == "note":
             lower_attr = "embargo_note"
         if attr == "visibility" or attr == "explicit_content" or attr == "explicit":
             if str(value).strip() == "":
-                attr_dict[lower_attr] = True
+                dict[lower_attr] = True
             elif str(value).lower() == "true":
-                attr_dict[lower_attr] = True
+                dict[lower_attr] = True
             else:
-                attr_dict[lower_attr] = False
+                dict[lower_attr] = False
         elif attr == "embargo_start_date" or attr == "embargo_end_date":
-            self.print_index_date(attr_dict, value, lower_attr)
+            self.print_index_date(dict, value, lower_attr)
         elif attr == "start_date" or attr == "end_date":
-            self.print_index_date(attr_dict, value, lower_attr)
+            self.print_index_date(dict, value, lower_attr)
         elif attr == "parent_collection_identifier":
             parent = self.query_by_index(self.env["collection_table"], "Identifier", value)
 
             if parent is not None:
                 parent_collection_id = parent["id"]
-                attr_dict["parent_collection"] = [parent_collection_id]
-                attr_dict["parent_collection_identifier"] = [value]
+                dict["parent_collection"] = [parent_collection_id]
+                dict["parent_collection_identifier"] = [value]
         elif attr == "thumbnail_path":
-            attr_dict[lower_attr] = os.path.join(
+            dict[lower_attr] = os.path.join(
                 self.env["APP_IMG_ROOT_PATH"],
                 self.env["COLLECTION_CATEGORY"],
                 value,
@@ -423,13 +427,13 @@ class GenericMetadata:
             )
         elif attr == "filename":
             if value.endswith(".pdf") or value.endswith(".jpg"):
-                attr_dict["thumbnail_path"] = os.path.join(
+                dict["thumbnail_path"] = os.path.join(
                     self.env["APP_IMG_ROOT_PATH"],
                     self.env["COLLECTION_CATEGORY"],
                     "thumbnail",
                     value.replace(".pdf", ".jpg"),
                 )
-                attr_dict["manifest_url"] = os.path.join(
+                dict["manifest_url"] = os.path.join(
                     self.env["APP_IMG_ROOT_PATH"],
                     self.env["COLLECTION_CATEGORY"],
                     "pdf",
@@ -437,21 +441,24 @@ class GenericMetadata:
                 )
             elif "video.vt.edu/media" in value:
                 thumbnail = value.split("_")[1]
-                attr_dict["thumbnail_path"] = os.path.join(
+                dict["thumbnail_path"] = os.path.join(
                     self.env["APP_IMG_ROOT_PATH"],
                     self.env["COLLECTION_CATEGORY"],
                     "thumbnail",
                     thumbnail,
                     ".png",
                 )
-                attr_dict["manifest_url"] = value
+                dict["manifest_url"] = value
         else:
             extracted_value = self.extract_attribute(attr, value)
             # Always set the attribute, even if extracted_value is falsy (empty string, empty list, etc.)
-            attr_dict[lower_attr] = extracted_value
+            dict[lower_attr] = extracted_value
+
+        return dict
+
 
     def print_index_date(self, attr_dict, value, attr):
-        # If the value is None, 'None', or an empty string, set the attribute to an empty string.
+        # If the value is None, "None", or an empty string, set the attribute to an empty string.
         # This is to ensure that the attribute is removed from the table if it is not set.
         if value is None or str(value).strip().lower() == "none" or not str(value).strip():
             attr_dict[attr] = ""
@@ -635,7 +642,7 @@ class GenericMetadata:
                 print("Collection map creation SIMULATED.")
             else:
                 print(
-                    f"Error: parent is None or parent['identifier'] is not a top level collection"
+                    f"Error: parent is None or {parent['identifier']} is not a top level collection"
                 )
 
 

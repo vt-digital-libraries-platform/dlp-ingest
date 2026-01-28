@@ -18,7 +18,7 @@ def get_identifiers(application):
         response = table.scan(ProjectionExpression='identifier')
         identifiers = [item['identifier'] for item in response.get('Items', [])]
     except Exception as e:
-        logger.info(f"get_identifiers: {e}")
+        logger.error(f"get_identifiers: {e}")
 
     return jsonify({'identifiers': identifiers})
 

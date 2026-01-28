@@ -207,7 +207,6 @@ def checksum_handler(event, context):
 
                 # Check if fileCharacterization record is already in dynamo
                 if record_exists_in_db(fixity_table_name, key):
-                    logger.info(f"{filePath} already exists in table: {fixity_table_name} as: {key}")
                     existing_tuple = (filePath, key)
                     if existing_tuple not in existing:
                         existing.append(existing_tuple)
