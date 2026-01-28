@@ -202,7 +202,7 @@ class GenericMetadata:
             json_url = urllib.request.urlopen(archive_dict["manifest_url"])
             return json.loads(json_url.read())["thumbnail"]["@id"]
         except Exception as e:
-            print(f"Error fetching thumbnail for IIIF archive {archive_dict['identifier']}: {str(e)}")
+            self.logger.error(f"Error fetching thumbnail for IIIF archive {archive_dict['identifier']}: {str(e)}")
             return None
 
 
@@ -242,7 +242,7 @@ class GenericMetadata:
             ]
             # If there are no keys to update or remove, return False
             if not update_keys and not remove_keys:
-                print(f"No attributes to update or remove for Identifier ({identifier}).")
+                self.logger.info(f"No attributes to update or remove for Identifier ({identifier}).")
                 return False  # no attributes to update or remove
 
             # Add updatedAt to the update keys and set it to the current time in utc format
@@ -291,7 +291,7 @@ class GenericMetadata:
             )
             return True  # Indicate success
         except Exception as e:
-            print(f"Error updating Identifier ({identifier}) in {table}: {str(e)}")
+            self.logger.error(f"Error updating Identifier ({identifier}) in {table}: {str(e)}")
             return False  # Indicate failure
 
     def create_item_in_table(self, table, attr_dict, item_type):
@@ -309,15 +309,15 @@ class GenericMetadata:
         success = False
         try:
             if self.env["DRY_RUN"]:
-                print(f"PutItem SIMULATED: {attr_dict['identifier']}")
+                self.logger.info(f"PutItem SIMULATED: {attr_dict['identifier']}")
             else:
                 newRecord = table.put_item(Item=attr_dict)
                 success = (newRecord["ResponseMetadata"]["HTTPStatusCode"] == 200)
                 if success:
-                    print(f"PutItem succeeded: {attr_dict['identifier']}")
+                    self.logger.info(f"PutItem succeeded: {attr_dict['identifier']}")
         except Exception as e:
-            print(e)
-            print(f"Error PutItem failed: {attr_dict['identifier']}")
+            self.logger.info(e)
+            self.logger.info(f"Error PutItem failed: {attr_dict['identifier']}")
         if short_id:
             if success:
                 long_url = os.path.join(
@@ -356,9 +356,9 @@ class GenericMetadata:
                 start_dt = parse(str(embargo_start))
                 end_dt = parse(str(embargo_end))
                 if start_dt > end_dt:
-                    print(f"\033[91m⚠️  Error: Embargo start date ({embargo_start}) is after embargo end date ({embargo_end}) for identifier {attr_dict.get('identifier', 'N/A')}\033[0m")
+                    self.logger.error(f"\033[91m⚠️  Error: Embargo start date ({embargo_start}) is after embargo end date ({embargo_end}) for identifier {attr_dict.get('identifier', 'N/A')}\033[0m")
             except Exception as e:
-                print(f"Error parsing embargo dates for identifier {dict.get('identifier', 'N/A')}: {e}")
+                self.logger.error(f"Error parsing embargo dates for identifier {dict.get('identifier', 'N/A')}: {e}")
 
         if (embargo_start and str(embargo_start).strip()) or (embargo_end and str(embargo_end).strip()):
             embargo = True
@@ -366,7 +366,7 @@ class GenericMetadata:
             embargo = False
         if ("identifier" not in dict.keys()) or ("title" not in dict.keys()):
             dict = None
-            print(f"Missing required attribute in this row!")
+            self.logger.error(f"Missing required attribute in this row!")
         else:
             dict = self.set_attributes_from_env(dict, item_type)
             
@@ -475,18 +475,18 @@ class GenericMetadata:
             # "yyyy/MM/dd HH:mm:ss||yyyy/MM/dd||yyyy/MM||yyyy/M||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||yyyy-MM||yyyy-M||yyyyMM||yyyy||epoch_millis"
             attr_dict[attr] = parsed_date.strftime("%Y/%m/%d")
         except ValueError:
-            print(f"Error - Unknown date format: {value} for {attr}")
+            self.logger.error(f"Error - Unknown date format: {value} for {attr}")
         except OverflowError:
-            print(f"Error - Invalid date range: {value} for {attr}")
+            self.logger.error(f"Error - Invalid date range: {value} for {attr}")
         except BaseException as e:
-            print(f"Error - Unexpected error: {value} for {attr}, Exception: {e}")
+            self.logger.error(f"Error - Unexpected error: {value} for {attr}, Exception: {e}")
 
 
     def query_by_index(self, table, index_name, value):
 
         if not table or not index_name or not value:
-            print(f"Error: arg is None for query_by_index()")
-            print(f"table: {table or 'None'}, index_name: {index_name or 'None'}, value: {value or 'None'}")
+            self.logger.error(f"Error: arg is None for query_by_index()")
+            self.logger.error(f"table: {table or 'None'}, index_name: {index_name or 'None'}, value: {value or 'None'}")
             return None
         index_key = index_name.lower()
         response = None
@@ -514,7 +514,7 @@ class GenericMetadata:
             if "Items" in response and len(response["Items"]) == 1:
                 ret_val = response["Items"][0]
         except Exception as e:
-            print(f"Error querying {table} by {index_name}: {str(e)}")
+            self.logger.error(f"Error querying {table} by {index_name}: {str(e)}")
             pass
         return ret_val
 
@@ -598,7 +598,7 @@ class GenericMetadata:
                 start_key = response.get("LastEvaluatedKey", None)
                 done = start_key is None
         except Exception as e:
-            print(f"An error occurred: {str(e)}")
+            self.logger.error(f"An error occurred: {str(e)}")
             raise e
         return source_table_items
 
@@ -639,9 +639,9 @@ class GenericMetadata:
                 )
         else:
             if self.env["DRY_RUN"]:
-                print("Collection map creation SIMULATED.")
+                self.logger.info("Collection map creation SIMULATED.")
             else:
-                print(
+                self.logger.error(
                     f"Error: parent is None or {parent['identifier']} is not a top level collection"
                 )
 
@@ -658,7 +658,7 @@ class GenericMetadata:
 
     def create_NOID_record(self, noid, item, long_url, short_url, now):
         if self.env["DRY_RUN"]:
-            print("create_NOID_record: New NOID SIMULATED.")
+            self.logger.info("create_NOID_record: New NOID SIMULATED.")
             return "12345678"
         category = None
         if "collection_category" in item:
@@ -685,7 +685,7 @@ class GenericMetadata:
 
     def delete_NOID_record(self, noid):
         if self.env["DRY_RUN"]:
-            print("delete_NOID: SIMULATED.")
+            self.logger.info("delete_NOID: SIMULATED.")
         else:
             self.env["mint_table"].delete_item(Key={"short_id": noid})
-            print(f"delete_NOID: {noid}")
+            self.logger.info(f"delete_NOID: {noid}")
