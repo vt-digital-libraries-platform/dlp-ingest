@@ -69,7 +69,7 @@ class GenericMetadata:
 
 
     def batch_import_collections(self, response):
-
+        self.logger.info("Parsing collection metadata")
         # process the metadata csv row by row
         df = self.csv_to_dataframe(io.BytesIO(response["Body"].read()))
         for idx, row in df.iterrows():
@@ -110,27 +110,9 @@ class GenericMetadata:
                 self.update_collection_map(collection_dict["heirarchy_path"][0])
 
 
-    def create_heirarchy_path(self, collection_dict):
-        heirarchy_path = []
-        parent = None
-        parent_identifier = None
-        if "parent_collection_identifier" in collection_dict:
-            parent_identifier = collection_dict["parent_collection_identifier"]
-        elif "PARENT_COLLECTION_IDENTIFIER" in self.env and self.env["PARENT_COLLECTION_IDENTIFIER"] != "":
-            parent_identifier = self.env["PARENT_COLLECTION_IDENTIFIER"]
-        
-        if parent_identifier:
-            parent = self.query_by_index(self.env["collection_table"], "Identifier", parent_identifier)
-
-        if parent and "heirarchy_path" in parent:
-            heirarchy_path = parent["heirarchy_path"] 
-            
-        heirarchy_path.append(collection_dict["id"])    
-            
-        return heirarchy_path
-
 
     def batch_import_archives(self, response):
+        self.logger.info("Parsing archive metadata")
         df = self.csv_to_dataframe(io.BytesIO(response["Body"].read()))
         for idx, row in df.iterrows():
             archive_dict = self.process_csv_metadata(row, "Archive")
@@ -164,11 +146,14 @@ class GenericMetadata:
     
     def archive_exists(self, table, identifier):
         items = self.query_by_index(table, "Identifier", identifier)
+
         return items and len(items) >= 1
+
 
     def get_metadata(self, filename):
         body_encoded = open(filename).read().encode()
         stream = StreamingBody(io.BytesIO(body_encoded), len(body_encoded))
+
         return {"Body": stream}
     
 
@@ -180,14 +165,17 @@ class GenericMetadata:
             encoding="utf-8",
             dtype={"Start Date": str, "End Date": str},
         )
+
         return df
     
 
     def get_thumbnail_path_for_archive(self, archive_dict, collection):
         match self.env["MEDIA_TYPE"]:
-            case "iiif": 
+            case "iiif":
+
                 return self.get_thumbnail_path_for_iiif(archive_dict)
             case _:
+
                 return os.path.join(
                     self.env["APP_IMG_ROOT_PATH"],
                     self.env["COLLECTION_CATEGORY"],
@@ -200,13 +188,16 @@ class GenericMetadata:
     def get_thumbnail_path_for_iiif(self, archive_dict):
         try:
             json_url = urllib.request.urlopen(archive_dict["manifest_url"])
+
             return json.loads(json_url.read())["thumbnail"]["@id"]
         except Exception as e:
             self.logger.error(f"Error fetching thumbnail for IIIF archive {archive_dict['identifier']}: {str(e)}")
+
             return None
 
 
     def get_table_name(self, table_name):
+
         return f"{table_name}-{self.env['DYNAMODB_TABLE_SUFFIX']}" 
 
 
@@ -333,12 +324,14 @@ class GenericMetadata:
                 self.create_NOID_record(short_id, attr_dict, long_url, short_url, utc_now)
             else:
                 self.delete_NOID_record(short_id)
+
         return attr_dict["id"]
 
 
     def utcformat(self, dt, timespec="milliseconds"):
         # convert datetime to string in UTC format (YYYY-mm-ddTHH:MM:SS.mmmZ)
         iso_str = dt.astimezone(timezone.utc).isoformat("T", timespec)
+
         return iso_str.replace("+00:00", "Z")
 
 
@@ -370,7 +363,7 @@ class GenericMetadata:
             self.logger.error(f"Missing required attribute in this row!")
         else:
             dict = self.set_attributes_from_env(dict, item_type)
-            
+
         return dict
 
 
@@ -394,7 +387,6 @@ class GenericMetadata:
     def handle_options(self, dict):
         return dict
         
-
 
     def set_attribute(self, dict, attr, value):
         lower_attr = attr.lower().replace(" ", "_")
@@ -564,6 +556,26 @@ class GenericMetadata:
             for idx, val in enumerate(values):
                 values[idx] = val.strip()
             return values
+        
+
+    def create_heirarchy_path(self, collection_dict):
+        heirarchy_path = []
+        parent = None
+        parent_identifier = None
+        if "parent_collection_identifier" in collection_dict:
+            parent_identifier = collection_dict["parent_collection_identifier"]
+        elif "PARENT_COLLECTION_IDENTIFIER" in self.env and self.env["PARENT_COLLECTION_IDENTIFIER"] != "":
+            parent_identifier = self.env["PARENT_COLLECTION_IDENTIFIER"]
+        
+        if parent_identifier:
+            parent = self.query_by_index(self.env["collection_table"], "Identifier", parent_identifier)
+
+        if parent and "heirarchy_path" in parent:
+            heirarchy_path = parent["heirarchy_path"] 
+            
+        heirarchy_path.append(collection_dict["id"])    
+            
+        return heirarchy_path
 
 
     def walk_collection(self, parent):
