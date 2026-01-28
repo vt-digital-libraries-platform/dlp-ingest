@@ -311,6 +311,7 @@ class GenericMetadata:
             if self.env["DRY_RUN"]:
                 self.logger.info(f"PutItem SIMULATED: {attr_dict['identifier']}")
             else:
+                attr_dict["__typename"] = item_type
                 newRecord = table.put_item(Item=attr_dict)
                 success = (newRecord["ResponseMetadata"]["HTTPStatusCode"] == 200)
                 if success:
