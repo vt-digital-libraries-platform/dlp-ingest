@@ -345,7 +345,7 @@ class GenericMetadata:
         dict = {}
         for item in data_row.items():
             # Always set the attribute, even if value is empty
-            attr_dict = self.set_attribute(attr_dict, item[0].strip(), str(item[1]).strip().strip("\"").strip())
+            dict = self.set_attribute(dict, item[0].strip(), str(item[1]).strip().strip("\"").strip())
         # Set embargo flag only after all attributes are processed, based on embargo dates only
         embargo_start = dict.get("embargo_start_date")
         embargo_end = dict.get("embargo_end_date")
