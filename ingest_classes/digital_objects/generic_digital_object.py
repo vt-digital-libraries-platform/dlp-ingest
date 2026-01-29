@@ -39,51 +39,42 @@ class GenericDigitalObject:
 
 
     def import_collection_objects(self, source_bucket, source_dir, dest_bucket):
-        self.logger.error(self.assets)
         for asset in self.assets["collection"]:
             formatted_asset = None
-            self.logger.error(f"asset: {asset}")
-            local_asset = self.assets["collection"][asset]
-            self.logger.error(f"self.assets['collection'][asset]: {self.assets['collection'][asset]}")
-            if type(local_asset) is not list:
-                local_asset = [local_asset]
-                for item in self.assets["collection"][asset]:
-                    self.logger.error(f"item r? : {item}")
-                    # exact, case sensitive search
-                    formatted_asset = item.replace("<variable>", "")
-                    asset_path = os.path.join(source_dir, formatted_asset)
-                    success = False
+            local_asset = self.assets["collection"][asset] # this is the filename idiot
 
-                    self.logger.info(source_dir)
-                    self.logger.info(formatted_asset)
+            # exact, case sensitive search
+            formatted_asset = local_asset.replace("<variable>", "")
+            success = False
+            matches = None
+            try:
+                matches = get_matching_s3_keys(source_bucket.name, source_dir, formatted_asset)
+            except Exception as e:
+                self.logger.error(e)
 
-                    try:
-                        for key in get_matching_s3_keys(
-                            source_bucket.name, source_dir, formatted_asset
-                        ):
-                            success = self.format_and_copy(
-                                source_bucket, source_dir, key, dest_bucket
-                            )
-                    except Exception as e:
-                        self.logger.error(e)
+            if matches:
+                for key in matches:
+                    success = self.format_and_copy(source_bucket, source_dir, key, dest_bucket)
+            
+            if not success:
+                matches = None
+                matching_key = None
+                # case insensitive search
+                asset_path = os.path.join(source_dir, formatted_asset)
+                asset_path_no_filename = asset_path.replace(
+                    asset_path.split("/")[-1], ""
+                )
+                try:
+                    matches = get_matching_s3_keys(source_bucket.name, asset_path_no_filename)
+                except Exception as e:
+                    self.logger.error(e)
 
-
-                    if not success:
-                        # case insensitive search
-                        asset_path_no_filename = asset_path.replace(
-                            asset_path.split("/")[-1], ""
-                        )
-                        matching_key = None
-                        for key in get_matching_s3_keys(
-                            source_bucket.name, asset_path_no_filename
-                        ):
-                            if key.lower() == asset_path.lower():
-                                matching_key = key
-                                success = self.format_and_copy(
-                                    source_bucket, source_dir, matching_key, dest_bucket
-                                )
-                        if matching_key is None:
-                            self.logger.info("No match found.")
+                for key in matches:
+                    if key.lower() == asset_path.lower():
+                        matching_key = key
+                        success = self.format_and_copy(source_bucket, source_dir, matching_key, dest_bucket)
+                if matching_key is None:
+                    self.logger.info("No match found.")
 
 
 
