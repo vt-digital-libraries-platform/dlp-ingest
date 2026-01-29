@@ -42,12 +42,13 @@ class GenericDigitalObject:
         self.logger.error(self.assets)
         for asset in self.assets["collection"]:
             formatted_asset = None
-            self.logger.error(asset)
-            local_assets = self.assets["collection"][asset]
-            if type(local_assets) is not list:
-                local_assets = [local_assets]
+            self.logger.error(f"asset: {asset}")
+            local_asset = self.assets["collection"][asset]
+            self.logger.error(f"self.assets['collection'][asset]: {self.assets['collection'][asset]}")
+            if type(local_asset) is not list:
+                local_asset = [local_asset]
                 for item in self.assets["collection"][asset]:
-                    self.logger.error(item)
+                    self.logger.error(f"item r? : {item}")
                     # exact, case sensitive search
                     formatted_asset = item.replace("<variable>", "")
                     asset_path = os.path.join(source_dir, formatted_asset)
