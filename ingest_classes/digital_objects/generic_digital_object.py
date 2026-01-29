@@ -51,8 +51,9 @@ class GenericDigitalObject:
                     asset_path = os.path.join(source_dir, formatted_asset)
                     success = False
 
-                    self.logger.info(source_bucket)
-                    self.logger.info(dest_bucket)
+                    self.logger.info(source_dir)
+                    self.logger.info(formatted_asset)
+                    
                     try:
                         for key in get_matching_s3_keys(
                             source_bucket.name, source_dir, formatted_asset
