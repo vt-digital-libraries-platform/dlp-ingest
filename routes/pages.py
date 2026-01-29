@@ -39,7 +39,7 @@ def submit(application):
     summary = []
 
     logger.info("====================================================")
-    logger.info("/submit -- received ingest request. Beginning ingest")
+    logger.info("/submit -- received ingest request. Beginning ingest process")
     logger.info("====================================================")
     logger.info(request)
 
