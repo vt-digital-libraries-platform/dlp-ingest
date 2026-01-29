@@ -41,11 +41,12 @@ class GenericDigitalObject:
     def import_collection_objects(self, source_bucket, source_dir, dest_bucket):
         for asset in self.assets["collection"]:
             formatted_asset = None
-            
+            self.logger.error(asset)
             local_assets = self.assets["collection"][asset]
             if type(local_assets) is not list:
                 local_assets = [local_assets]
                 for item in self.assets["collection"][asset]:
+                    self.logger.error(item)
                     # exact, case sensitive search
                     formatted_asset = item.replace("<variable>", "")
                     asset_path = os.path.join(source_dir, formatted_asset)
@@ -53,7 +54,7 @@ class GenericDigitalObject:
 
                     self.logger.info(source_dir)
                     self.logger.info(formatted_asset)
-                    
+
                     try:
                         for key in get_matching_s3_keys(
                             source_bucket.name, source_dir, formatted_asset
