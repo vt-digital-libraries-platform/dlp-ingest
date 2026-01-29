@@ -46,7 +46,7 @@ class ThreeDMetadata(GenericMetadata):
                         "manifest.json",
                     )
 
-                    archive_dict["thumbnail_path"] = self.get_thumbnail_path_for_archive(archive_dict)
+                    archive_dict["thumbnail_path"] = self.get_thumbnail_path_for_archive(archive_dict, collection)
                         
 
                     # set archive options
