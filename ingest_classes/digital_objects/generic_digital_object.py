@@ -39,6 +39,7 @@ class GenericDigitalObject:
 
 
     def import_collection_objects(self, source_bucket, source_dir, dest_bucket):
+        self.logger.error(self.assets)
         for asset in self.assets["collection"]:
             formatted_asset = None
             self.logger.error(asset)
