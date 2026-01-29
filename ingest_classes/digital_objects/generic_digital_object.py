@@ -57,9 +57,9 @@ class GenericDigitalObject:
                     success = self.format_and_copy(source_bucket, source_dir, key, dest_bucket)
             
             if not success:
+                # case insensitive search
                 matches = None
                 matching_key = None
-                # case insensitive search
                 asset_path = os.path.join(source_dir, formatted_asset)
                 asset_path_no_filename = asset_path.replace(
                     asset_path.split("/")[-1], ""
@@ -84,62 +84,62 @@ class GenericDigitalObject:
             source_dir, dest_dir = self.get_bucket_paths(row)
             for asset in self.assets["item"]:
                 success = False
+
+                # if we're supposed to generate thumbnails then just skip the copy here
                 if asset == "thumbnail" and self.env["GENERATE_THUMBNAILS"]:
                     continue
                 
+                # exact, case sensitive search
                 formatted_asset = None
-                local_assets = self.assets["item"][asset]
-                if type(local_assets) is not list:
-                    local_assets = [local_assets]
-                    for item in local_assets:
-                        success = False
-                        formatted_asset = (
-                            self.assets["item"][asset]
-                                .replace("<item_identifier>", row["identifier"])
-                                .replace("<variable>", "")
+                local_asset = self.assets["item"][asset]
+                success = False
+                formatted_asset = local_asset.replace("<item_identifier>", row["identifier"]).replace("<variable>", "")
+                matches = None
+                try:
+                    matches = get_matching_s3_keys(source_bucket.name, source_dir, formatted_asset)
+                except Exception as e:
+                    self.logger.error(e)
+                for key in matches:
+                    success = self.format_and_copy(source_bucket, source_dir, key, dest_bucket, dest_dir)
+
+                if not success:
+                    # case insensitive search
+                    asset_path = os.path.join(source_dir, "")
+                    matching_key = None
+                    matches = None
+                    try:
+                        matches = get_matching_s3_keys(source_bucket.name, source_dir)
+                    except Exception as e:
+                        self.logger.error(e)
+
+                    for key in matches:
+                        if key.lower() == asset_path.lower() and not key.endswith("/"):
+                            matching_key = key
+                            success = self.format_and_copy(source_bucket,source_dir,matching_key,dest_bucket)
+
+                    if matching_key is None:
+                        self.logger.error(f"No match found for identifier {row['identifier']}")
+
+                # Generate a thumbnail for the object if requested
+                try:
+                    if (
+                        success
+                        and self.env["GENERATE_THUMBNAILS"]
+                        and key.endswith(self.assets["options"]["asset_src"])
+                    ):
+                        target_key = os.path.join(dest_dir, os.path.basename(key))
+                        thumbnail_key = target_key.replace(
+                            f".{self.assets['options']['asset_src']}",
+                            "_thumbnail.jpg",
                         )
-
-
-                        for key in get_matching_s3_keys(source_bucket.name, source_dir, formatted_asset):
-                            success = self.format_and_copy(
-                                source_bucket, source_dir, key, dest_bucket, dest_dir
-                            )
-
-                        if not success:
-                            asset_path = os.path.join(source_dir, "")
-                            matching_key = None
-                            for key in get_matching_s3_keys(source_bucket.name, source_dir):
-                                if key.lower() == asset_path.lower() and not key.endswith("/"):
-                                    matching_key = key
-                                    success = self.format_and_copy(
-                                        source_bucket,
-                                        source_dir,
-                                        matching_key,
-                                        dest_bucket,
-                                    )
-                            if matching_key is None:
-                                self.logger.error(f"No match found for identifier {row['identifier']}")
-
-                        # Generate a thumbnail for the object if requested
-                        try:
-                            if (
-                                success
-                                and self.env["GENERATE_THUMBNAILS"]
-                                and key.endswith(self.assets["options"]["asset_src"])
-                            ):
-                                target_key = os.path.join(dest_dir, os.path.basename(key))
-                                thumbnail_key = target_key.replace(
-                                    f".{self.assets['options']['asset_src']}",
-                                    "_thumbnail.jpg",
-                                )
-                                self.call_thumbnail_service(
-                                    self.env["AWS_SRC_BUCKET"],
-                                    key,
-                                    self.env["AWS_DEST_BUCKET"],
-                                    thumbnail_key,
-                                )
-                        except Exception as e:
-                            self.logger.info(e)
+                        self.call_thumbnail_service(
+                            self.env["AWS_SRC_BUCKET"],
+                            key,
+                            self.env["AWS_DEST_BUCKET"],
+                            thumbnail_key,
+                        )
+                except Exception as e:
+                    self.logger.info(e)
 
 
     def call_thumbnail_service(self, src_bucket, src_key, dest_bucket, dest_key):
