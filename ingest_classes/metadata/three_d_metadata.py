@@ -64,23 +64,23 @@ class ThreeDMetadata(GenericMetadata):
                         "Identifier",
                         archive_dict["identifier"],
                     )
-                    if existing_item is not None and "archiveOptions" in existing_item:
-                        archive_dict["archiveOptions"] = {
-                            **existing_item["archiveOptions"],
-                            **self.archive_option_additions,
-                        }
-                    else:
-                        archive_dict["archiveOptions"] = self.archive_option_additions
-                    
-                    existing_archive = self.query_by_index(self.env["archive_table"], "Identifier", archive_dict["identifier"])
-                    if existing_archive:
+                    if existing_item is not None:
+                        if "archiveOptions" in existing_item:
+                            archive_dict["archiveOptions"] = {
+                                **existing_item["archiveOptions"],
+                                **self.archive_option_additions,
+                            }
+                        else:
+                            archive_dict["archiveOptions"] = self.archive_option_additions
+
                         if self.env["UPDATE_METADATA"]:
-                            self.update_item_in_table(self.env["archive_table"], existing_archive["id"], archive_dict, archive_dict["identifier"])
+                            self.update_item_in_table(self.env["archive_table"], existing_item["id"], archive_dict, archive_dict["identifier"])
                         else:
                             continue
                     else:
                         self.logger.info(f"before save {archive_dict}")
                         self.create_item_in_table(self.env["archive_table"], archive_dict, "Archive")
+                        
 
 
 
