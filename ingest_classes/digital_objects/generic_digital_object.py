@@ -34,7 +34,7 @@ class GenericDigitalObject:
 
         if "INGEST_TYPE" in self.env and self.env["INGEST_TYPE"] == "archive":
         # item assets
-            results = self.import_item_objects(df, source_bucket, source_dir, dest_bucket)
+            results = self.import_item_objects(df, source_bucket, dest_bucket)
 
 
 
