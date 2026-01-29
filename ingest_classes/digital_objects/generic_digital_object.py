@@ -50,12 +50,20 @@ class GenericDigitalObject:
                     formatted_asset = item.replace("<variable>", "")
                     asset_path = os.path.join(source_dir, formatted_asset)
                     success = False
-                    for key in get_matching_s3_keys(
-                        source_bucket.name, source_dir, formatted_asset
-                    ):
-                        success = self.format_and_copy(
-                            source_bucket, source_dir, key, dest_bucket
-                        )
+
+                    self.logger.info(source_bucket)
+                    self.logger.info(dest_bucket)
+                    try:
+                        for key in get_matching_s3_keys(
+                            source_bucket.name, source_dir, formatted_asset
+                        ):
+                            success = self.format_and_copy(
+                                source_bucket, source_dir, key, dest_bucket
+                            )
+                    except Exception as e:
+                        self.logger.error(e)
+
+
                     if not success:
                         # case insensitive search
                         asset_path_no_filename = asset_path.replace(
@@ -146,15 +154,11 @@ class GenericDigitalObject:
             "dest_bucket": dest_bucket,
             "dest_key": dest_key,
         }
-        self.logger.info("Calling thumbnail service with payload:")
-        self.logger.info(payload)
-        response = self.lambda_client.invoke(
+        self.lambda_client.invoke(
             FunctionName="vtdlp-thumbnail-service",
             InvocationType='Event',
             Payload=bytes(json.dumps(payload), "utf8"),
         )
-        self.logger.info("Thumbnail service response:")
-        self.logger.info(response)
 
     def log_results(self, num_successful, successful_copies, num_failed, failed_copies):
         success_msg = f"Successfully copied {num_successful} files.\n"
@@ -191,12 +195,14 @@ class GenericDigitalObject:
             failed_copies.append(key)
         return num_successful, successful_copies, num_failed, failed_copies
 
+
     def format_and_copy(
         self, source_bucket, source_dir, key, dest_bucket, dest_dir=None
     ):
         filename = key.split("/")[-1]
         dest_key = os.path.join((dest_dir or source_dir), filename).replace(" ", "_")
         return self.s3_copy(source_bucket, key, dest_bucket, dest_key)
+
 
     def s3_copy(self, source_bucket, source_key, dest_bucket, dest_key):
         if self.env["VERBOSE"]:
@@ -226,9 +232,7 @@ class GenericDigitalObject:
             return False
 
     def get_buckets(self):
-        return self.s3_resource.Bucket(
-            self.env["AWS_SRC_BUCKET"]
-        ), self.s3_resource.Bucket(self.env["AWS_DEST_BUCKET"])
+        return self.s3_resource.Bucket(self.env["AWS_SRC_BUCKET"]), self.s3_resource.Bucket(self.env["AWS_DEST_BUCKET"])
 
     def get_bucket_paths(self, row):
         src_dir = os.path.join(
