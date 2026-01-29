@@ -9,7 +9,6 @@ class ThreeDMetadata(GenericMetadata):
         self.env = env
         self.filename = filename
         self.bucket = bucket
-        self.archive_option_additions = {}
         self.logger = logging.getLogger()
         super().__init__(self.env, self.filename, self.bucket, self.assets)
 
@@ -50,12 +49,12 @@ class ThreeDMetadata(GenericMetadata):
                         
 
                     # set archive options
-                    self.archive_option_additions = self.set_archive_options(
-                        archive_dict
-                    )
+                    archive_option_additions = self.set_archive_options(archive_dict)
+                    archive_dict["archiveOptions"] = archive_option_additions
+
                     if archive_dict["thumbnail_path"] is None:
                         try:
-                            archive_dict["thumbnail_path"] = self.archive_option_additions["assets"]["morpho_thumb"]
+                            archive_dict["thumbnail_path"] = archive_option_additions["assets"]["morpho_thumb"]
                         except Exception as e:
                             self.logger.error(f"Unable to set thumbnail_path for archive: {archive_dict["identifier"]}")
 
@@ -65,13 +64,13 @@ class ThreeDMetadata(GenericMetadata):
                         archive_dict["identifier"],
                     )
                     if existing_item is not None:
-                        if "archiveOptions" in existing_item:
-                            archive_dict["archiveOptions"] = {
-                                **existing_item["archiveOptions"],
-                                **self.archive_option_additions,
-                            }
-                        else:
-                            archive_dict["archiveOptions"] = self.archive_option_additions
+                    #     if "archiveOptions" in existing_item:
+                    #         archive_dict["archiveOptions"] = {
+                    #             **existing_item["archiveOptions"],
+                    #             **archive_option_additions,
+                    #         }
+                    #     else:
+                    # archive_dict["archiveOptions"] = archive_option_additions
 
                         if self.env["UPDATE_METADATA"]:
                             self.update_item_in_table(self.env["archive_table"], existing_item["id"], archive_dict, archive_dict["identifier"])
@@ -80,7 +79,7 @@ class ThreeDMetadata(GenericMetadata):
                     else:
                         self.logger.info(f"before save {archive_dict}")
                         self.create_item_in_table(self.env["archive_table"], archive_dict, "Archive")
-                        
+                            
 
 
 
