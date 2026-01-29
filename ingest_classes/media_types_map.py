@@ -10,10 +10,8 @@ media_types_map = {
         "assets": {
             "collection": {
                 "thumbnail": "representative.jpg",
-                "metadata": [
-                    "<variable>_collection_metadata.csv",
-                    "<variable>_archive_metadata.csv",
-                ],
+                "collection_metadata": "<variable>_collection_metadata.csv",
+                "item_metadata": "<variable>_archive_metadata.csv"
             },
             "item": {},
         },
@@ -24,10 +22,8 @@ media_types_map = {
         "assets": {
             "collection": {
                 "thumbnail": "representative.jpg",
-                "metadata": [
-                    "<variable>_collection_metadata.csv",
-                    "<variable>_archive_metadata.csv",
-                ],
+                "collection_metadata": "<variable>_collection_metadata.csv",
+                "item_metadata": "<variable>_archive_metadata.csv"
             },
             "item": {
                 "pdf": "<variable>.pdf",
@@ -42,10 +38,8 @@ media_types_map = {
         "assets": {
             "collection": {
                 "thumbnail": "representative.jpg",
-                "metadata": [
-                    "<variable>_collection_metadata.csv",
-                    "<variable>_archive_metadata.csv",
-                ],
+                "collection_metadata": "<variable>_collection_metadata.csv",
+                "item_metadata": "<variable>_archive_metadata.csv"
             },
             "item": {
                 "iiif_manifest": "manifest.json",
@@ -61,10 +55,8 @@ media_types_map = {
         "assets": {
             "collection": {
                 "thumbnail": "representative.jpg",
-                "metadata": [
-                    "<variable>_collection_metadata.csv",
-                    "<variable>_archive_metadata.csv",
-                ],
+                "collection_metadata": "<variable>_collection_metadata.csv",
+                "item_metadata": "<variable>_archive_metadata.csv"
             },
             "item": {
                 "gltf_config": "3D/GLB/<item_identifier>.glb",
