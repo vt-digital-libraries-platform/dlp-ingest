@@ -28,13 +28,11 @@ class GenericDigitalObject:
         source_dir = os.path.join(
             self.env["COLLECTION_CATEGORY"], self.env["COLLECTION_IDENTIFIER"]
         )
-        if "INGEST_TYPE" in self.env and self.env["INGEST_TYPE"] == "collection":
         # collection assets
-            results = self.import_collection_objects(source_bucket, source_dir, dest_bucket)
+        results = self.import_collection_objects(source_bucket, source_dir, dest_bucket)
 
-        if "INGEST_TYPE" in self.env and self.env["INGEST_TYPE"] == "archive":
         # item assets
-            results = self.import_item_objects(df, source_bucket, dest_bucket)
+        results = self.import_item_objects(df, source_bucket, dest_bucket)
 
 
 
@@ -117,7 +115,7 @@ class GenericDigitalObject:
                             matching_key = key
                             success = self.format_and_copy(source_bucket,source_dir,matching_key,dest_bucket)
 
-                    if matching_key is None:
+                if success is None:
                         self.logger.error(f"No match found for identifier {row['identifier']}")
 
                 # Generate a thumbnail for the object if requested

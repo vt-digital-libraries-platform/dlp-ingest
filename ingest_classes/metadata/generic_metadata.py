@@ -172,10 +172,21 @@ class GenericMetadata:
     def get_thumbnail_path_for_archive(self, archive_dict, collection):
         match self.env["MEDIA_TYPE"]:
             case "iiif":
-
                 return self.get_thumbnail_path_for_iiif(archive_dict)
+            case "3d":
+                thumb = None
+                thumb = self.get_thumbnail_path_for_iiif(archive_dict)
+                if not thumb:
+                    thumb = os.path.join(
+                        self.env["APP_IMG_ROOT_PATH"],
+                        self.env["COLLECTION_CATEGORY"],
+                        collection["identifier"],
+                        archive_dict["identifier"],
+                        "3d",
+                        f"{archive_dict['identifier']}_thumbnail.jpg",
+                    )
+                return thumb
             case _:
-
                 return os.path.join(
                     self.env["APP_IMG_ROOT_PATH"],
                     self.env["COLLECTION_CATEGORY"],
@@ -188,16 +199,13 @@ class GenericMetadata:
     def get_thumbnail_path_for_iiif(self, archive_dict):
         try:
             json_url = urllib.request.urlopen(archive_dict["manifest_url"])
-
             return json.loads(json_url.read())["thumbnail"]["@id"]
         except Exception as e:
             self.logger.error(f"Error fetching thumbnail for IIIF archive {archive_dict['identifier']}: {str(e)}")
-
             return None
 
 
     def get_table_name(self, table_name):
-
         return f"{table_name}-{self.env['DYNAMODB_TABLE_SUFFIX']}" 
 
 

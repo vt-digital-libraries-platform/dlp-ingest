@@ -1,4 +1,4 @@
-import io, json, os, urllib
+import io, json, logging, os, urllib
 from utils.s3_tools import get_matching_s3_keys
 from ingest_classes.metadata.generic_metadata import GenericMetadata
 
@@ -10,29 +10,28 @@ class ThreeDMetadata(GenericMetadata):
         self.filename = filename
         self.bucket = bucket
         self.archive_option_additions = {}
+        self.logger = logging.getLogger()
         super().__init__(self.env, self.filename, self.bucket, self.assets)
 
     def batch_import_archives(self, response):
         df = self.csv_to_dataframe(io.BytesIO(response["Body"].read()))
         for idx, row in df.iterrows():
-            print("")
             archive_dict = self.process_csv_metadata(row, "Archive")
+            self.logger.info(f"archive: {archive_dict}")
             if not archive_dict:
-                print(f"Error: Archive {idx+1} has failed to be imported.")
-                break
+                self.logger.error(f"Error: reading item on line {idx+1} from csv.")
+                continue
             else:
                 collection = self.get_collection(archive_dict)
+                self.logger.info(f"collection: {collection}")
                 if not collection:
-                    print(f"Error: Collection not found for Archive {idx+1} in dynamo.")
-                    break
-                collection_identifier = (
-                    collection["identifier"]
-                    if collection
-                    else self.env["COLLECTION_IDENTIFIER"]
-                )
+                    self.logger.error(f"Error: Collection not found in dynamo for item at row {idx+1}.")
+                    continue
+
+                collection_identifier = collection["identifier"] if collection else self.env["COLLECTION_IDENTIFIER"]
                 if collection_identifier is None:
-                    print(f"Error: Collection not found for Archive {idx+1}. in env.")
-                    break
+                    self.logger.error(f"Error: Collection not found for Archive {idx+1}. in env.")
+                    continue
                 else:
                     archive_dict["collection"] = collection["id"]
                     archive_dict["parent_collection"] = [collection["id"]]
@@ -46,15 +45,9 @@ class ThreeDMetadata(GenericMetadata):
                         archive_dict["identifier"],
                         "manifest.json",
                     )
-                    try:
-                        json_url = urllib.request.urlopen(archive_dict["manifest_url"])
-                        archive_dict["thumbnail_path"] = json.loads(json_url.read())["thumbnail"]["@id"]
-                    except Exception as e:
-                        print(f"INFO: Manifest not found for {archive_dict['identifier']}, url: {archive_dict['manifest_url']}")
-                        archive_dict["thumbnail_path"] = None
-                        archive_dict.pop("manifest_url", None)
-                        
 
+                    archive_dict["thumbnail_path"] = self.get_thumbnail_path_for_archive(archive_dict)
+                        
 
                     # set archive options
                     self.archive_option_additions = self.set_archive_options(
@@ -64,16 +57,7 @@ class ThreeDMetadata(GenericMetadata):
                         try:
                             archive_dict["thumbnail_path"] = self.archive_option_additions["assets"]["morpho_thumb"]
                         except Exception as e:
-                            pass
-                    if archive_dict["thumbnail_path"] is None:
-                        archive_dict["thumbnail_path"] = os.path.join(
-                            self.env["APP_IMG_ROOT_PATH"],
-                            self.env["COLLECTION_CATEGORY"],
-                            collection_identifier,
-                            archive_dict["identifier"],
-                            "3d",
-                            f"{archive_dict['identifier']}_thumbnail.jpg",
-                        )
+                            self.logger.error(f"Unable to set thumbnail_path for archive: {archive_dict["identifier"]}")
 
                     existing_item = self.query_by_index(
                         self.env["archive_table"],
@@ -87,16 +71,16 @@ class ThreeDMetadata(GenericMetadata):
                         }
                     else:
                         archive_dict["archiveOptions"] = self.archive_option_additions
-                    try:
-                        self.create_or_update(
-                            self.env["archive_table"],
-                            archive_dict,
-                            "Archive",
-                            idx,
-                            existing_item,
-                        )
-                    except Exception as e:
-                        print(f"Error: Archive {idx+1}:{archive_dict['identifier']} has failed to be imported.")
+                    
+                    existing_archive = self.query_by_index(self.env["archive_table"], "Identifier", archive_dict["identifier"])
+                    if existing_archive:
+                        if self.env["UPDATE_METADATA"]:
+                            self.update_item_in_table(self.env["archive_table"], existing_archive["id"], archive_dict, archive_dict["identifier"])
+                        else:
+                            continue
+                    else:
+                        self.logger.info(f"before save {archive_dict}")
+                        self.create_item_in_table(self.env["archive_table"], archive_dict, "Archive")
 
 
 
@@ -211,61 +195,3 @@ class ThreeDMetadata(GenericMetadata):
  
         return {"assets": archive_assets, "config": archive_config}
 
-
-
-    def create_or_update(self, table, attr_dict, item_type, idx, existing_item=None):
-        if existing_item is None or len(existing_item) == 0:
-            return self.create_item_in_table(table, attr_dict, item_type, idx)
-        else:
-            return self.update_item_in_table(table, attr_dict, existing_item, idx)
-
-    def get_update_params(self, attr_dict, existing_item):
-        append_list = [
-            "format",
-            "tags"
-        ]
-        update_expression = ["set "]
-        update_values = dict()
-        exp_attr_names = {
-            "collection": "#col",
-            "date": "#dt",
-            "format": "#fmt",
-            "location": "#loc",
-            "references": "#ref",
-            "type": "#tp",
-        }
-        used_keys = {}
-        for key, val in attr_dict.items():
-            try:
-                exp_key = exp_attr_names[key]
-                used_keys[exp_attr_names[key]] = key
-            except KeyError:
-                exp_key = key
-            update_expression.append(f" {exp_key} = :{key}_val,")
-            if key in append_list and type(val) == list:
-                # NOTE TO SELF: This concats the two lists and removes duplicates
-                update_values[f":{key}_val"] = list(set((existing_item[key] if key in existing_item else []) + val))
-            else:
-                update_values[f":{key}_val"] = val
-
-        return "".join(update_expression)[:-1], update_values, used_keys
-
-    def update_item_in_table(self, table, attr_dict, existing_item, idx):
-        update_expression, update_values, used_keys = self.get_update_params(attr_dict, existing_item)
-        if self.env["DRY_RUN"]:
-            print(f"Update item simulated for {existing_item['id']}")
-            print(f"Update Values: {update_values}")
-        else:
-            print(f"Updating item {existing_item['id']}")
-            print(f"Update Values: {update_values}")
-            try:
-                response = table.update_item(
-                    Key={"id": existing_item["id"]},
-                    UpdateExpression=update_expression,
-                    ExpressionAttributeValues=update_values,
-                    ExpressionAttributeNames=used_keys,
-                    ReturnValues="UPDATED_NEW",
-                )
-
-            except Exception as e:
-                print(e)
