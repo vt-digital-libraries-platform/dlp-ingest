@@ -177,6 +177,9 @@ class GenericMetadata:
                 thumb = None
                 thumb = self.get_thumbnail_path_for_iiif(archive_dict)
                 if not thumb:
+                    # most 3ds don't have a manifest, so get rid of it
+                    del archive_dict["manifest_url"]
+
                     thumb = os.path.join(
                         self.env["APP_IMG_ROOT_PATH"],
                         self.env["COLLECTION_CATEGORY"],
@@ -199,7 +202,8 @@ class GenericMetadata:
     def get_thumbnail_path_for_iiif(self, archive_dict):
         try:
             json_url = urllib.request.urlopen(archive_dict["manifest_url"])
-            return json.loads(json_url.read())["thumbnail"]["@id"]
+            if json_url:
+                return json.loads(json_url.read())["thumbnail"]["@id"]
         except Exception as e:
             self.logger.error(f"Error fetching thumbnail for IIIF archive {archive_dict['identifier']}: {str(e)}")
             return None
