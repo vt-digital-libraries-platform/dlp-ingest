@@ -178,7 +178,7 @@ class GenericMetadata:
                 thumb = self.get_thumbnail_path_for_iiif(archive_dict)
                 if not thumb:
                     # most 3ds don't have a manifest, so get rid of it
-                    del archive_dict["manifest_url"]
+                    archive_dict["manifest_url"] = ""
 
                     thumb = os.path.join(
                         self.env["APP_IMG_ROOT_PATH"],
