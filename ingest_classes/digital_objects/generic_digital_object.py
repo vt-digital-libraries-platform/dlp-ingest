@@ -80,24 +80,21 @@ class GenericDigitalObject:
         # item assets
         for idx, row in df.iterrows():
             source_dir, dest_dir = self.get_bucket_paths(row)
-            self.logger.info(f"self.assets['item']: {self.assets['item']}")
             for asset in self.assets["item"]:
                 success = False
-                self.logger.info(f"asset: {asset}")
                 # if we're supposed to generate thumbnails then just skip the copy here
                 if asset == "thumbnail" and self.env["GENERATE_THUMBNAILS"]:
                     break
                 
-                # exact, case sensitive search
+                
                 formatted_asset = None
                 local_asset = self.assets["item"][asset]
-                self.logger.info(f"local_asset: {local_asset}")
                 success = False
                 formatted_asset = local_asset.replace("<item_identifier>", row["identifier"]).replace("<variable>", "")
-                self.logger.info(f"formatted_asset: {formatted_asset}")
                 matches = None
                 matching_key = None
 
+                # exact, case sensitive search
                 try:
                     matches = get_matching_s3_keys(source_bucket.name, source_dir, formatted_asset)
                 except Exception as e:
@@ -106,7 +103,6 @@ class GenericDigitalObject:
                 if matches:
                     for key in matches:
                         matching_key = key
-                        self.logger.info(f"line 109: matching_key: {matching_key}")
                         success = self.format_and_copy(source_bucket, source_dir, key, dest_bucket, dest_dir)
                         
                         if success and self.env["GENERATE_THUMBNAILS"]:
@@ -125,7 +121,6 @@ class GenericDigitalObject:
                         for key in matches:
                             if key.lower() == asset_path.lower() and not key.endswith("/"):
                                 matching_key = key
-                                self.logger.info(f"line 126: matching_key: {matching_key}")
                                 success = self.format_and_copy(source_bucket,source_dir,matching_key,dest_bucket)
                                 if success and self.env["GENERATE_THUMBNAILS"]:
                                     self.generate_thumbnail(matching_key, dest_dir)
