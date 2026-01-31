@@ -66,7 +66,6 @@ def submit(application):
             metadata_filepath = os.path.join(application.config['UPLOADS'], uploaded[0])
             ingestConfig = utils.get_ingestConfig()
             logger.info(f"Config: {ingestConfig}")
-            result = None
             logger.info("BEGIN INGEST RESULTS---------------------")
             result = dlp_ingest_main(None, None, metadata_filepath, ingestConfig)
             logger.info("--------------------- ...END INGEST RESULTS")

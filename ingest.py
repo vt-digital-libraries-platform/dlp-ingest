@@ -12,7 +12,6 @@ def set_environment(app_config=None):
     if app_config is not None:
         for key, value in app_config.items():
             env[key] = value
-            logger.info(f"{key}: {value}")
         return
     # otherwise, load from environment variables (when run via CLI or Lambda)
     else:
