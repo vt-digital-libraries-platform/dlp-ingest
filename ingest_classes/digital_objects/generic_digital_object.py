@@ -66,11 +66,11 @@ class GenericDigitalObject:
                     matches = get_matching_s3_keys(source_bucket.name, asset_path_no_filename)
                 except Exception as e:
                     self.logger.error(e)
-
-                for key in matches:
-                    if key.lower() == asset_path.lower():
-                        matching_key = key
-                        success = self.format_and_copy(source_bucket, source_dir, matching_key, dest_bucket)
+                if matches:
+                    for key in matches:
+                        if key.lower() == asset_path.lower():
+                            matching_key = key
+                            success = self.format_and_copy(source_bucket, source_dir, matching_key, dest_bucket)
                 if matching_key is None:
                     self.logger.info("No match found.")
 
@@ -97,8 +97,10 @@ class GenericDigitalObject:
                     matches = get_matching_s3_keys(source_bucket.name, source_dir, formatted_asset)
                 except Exception as e:
                     self.logger.error(e)
-                for key in matches:
-                    success = self.format_and_copy(source_bucket, source_dir, key, dest_bucket, dest_dir)
+
+                if matches:
+                    for key in matches:
+                        success = self.format_and_copy(source_bucket, source_dir, key, dest_bucket, dest_dir)
 
                 if not success:
                     # case insensitive search
@@ -110,10 +112,11 @@ class GenericDigitalObject:
                     except Exception as e:
                         self.logger.error(e)
 
-                    for key in matches:
-                        if key.lower() == asset_path.lower() and not key.endswith("/"):
-                            matching_key = key
-                            success = self.format_and_copy(source_bucket,source_dir,matching_key,dest_bucket)
+                    if matches:
+                        for key in matches:
+                            if key.lower() == asset_path.lower() and not key.endswith("/"):
+                                matching_key = key
+                                success = self.format_and_copy(source_bucket,source_dir,matching_key,dest_bucket)
 
                 if success is None:
                         self.logger.error(f"No match found for identifier {row['identifier']}")
