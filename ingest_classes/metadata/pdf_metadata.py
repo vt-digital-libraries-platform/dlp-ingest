@@ -1,4 +1,4 @@
-import io, os
+import io, logging, os
 from utils.s3_tools import get_matching_s3_keys
 from ingest_classes.metadata.generic_metadata import GenericMetadata
 
@@ -10,33 +10,21 @@ class PDFMetadata(GenericMetadata):
         self.filename = filename
         self.bucket = bucket
         self.archive_option_additions = {}
+        self.logger = logging.getLogger()
         super().__init__(self.env, self.filename, self.bucket, self.assets)
 
     def batch_import_archives(self, response):
         df = self.csv_to_dataframe(io.BytesIO(response["Body"].read()))
         for idx, row in df.iterrows():
-            print("")
             archive_dict = self.process_csv_metadata(row, "Archive")
             if not archive_dict:
-                print(f"Error: Archive {idx+1} has failed to be imported.")
-                self.log_result(
-                    False,
-                    idx,
-                    1,
-                    False,
-                )
+                self.logger.error(f"Error: Archive {idx+1} has failed to be imported.")
                 break
             else:
                 collection = self.get_collection(archive_dict)
                 if not collection:
-                    print(f"Error: Collection not found for Archive {idx+1}.")
-                    print("Error: Archive must belong to a collection to be ingested")
-                    self.log_result(
-                        archive_dict,
-                        idx,
-                        3,
-                        False,
-                    )
+                    self.logger.error(f"Error: Collection not found for Archive {idx+1}.")
+                    self.logger.error("Error: Archive must belong to a collection to be ingested")
                     break
                 collection_identifier = (
                     collection["identifier"]
@@ -44,14 +32,8 @@ class PDFMetadata(GenericMetadata):
                     else self.env["COLLECTION_IDENTIFIER"]
                 )
                 if collection_identifier is None:
-                    print(f"Error: Collection not found for Archive {idx+1}.")
-                    print("Error: Archive must belong to a collection to be ingested")
-                    self.log_result(
-                        archive_dict,
-                        idx,
-                        3,
-                        False,
-                    )
+                    self.logger.error(f"Error: Collection not found for Archive {idx+1}.")
+                    self.logger.error("Error: Archive must belong to a collection to be ingested")
                     break
                 else:
                     archive_dict["collection"] = collection["id"]
@@ -74,7 +56,7 @@ class PDFMetadata(GenericMetadata):
                             self.env["archive_table"], archive_dict, "Archive", idx
                         )
                     else:
-                        print(archive_dict["thumbnail_path"] or f"No thumbnail path for {archive_dict['identifier']}")
+                        self.logger.error(archive_dict["thumbnail_path"] or f"No thumbnail path for {archive_dict['identifier']}")
 
     def asset_path(self, archive_dict, collection_identifier, asset_type=None):
         if asset_type is None:
@@ -88,7 +70,7 @@ class PDFMetadata(GenericMetadata):
             )
             suffix = self.assets["item"][asset_type].replace("<variable>", "")
         except Exception as e:
-            print(e)
+            self.logger.error(e)
             return ""
         asset_url = ""
         for key in get_matching_s3_keys(self.env["AWS_DEST_BUCKET"], prefix, suffix):
@@ -99,8 +81,8 @@ class PDFMetadata(GenericMetadata):
         matching_key = None
         for key in get_matching_s3_keys(self.env["AWS_DEST_BUCKET"], asset_path):
             matching_key = key
-            print(f"Key: {key}")
-            print(f"Match")
+            self.logger.info(f"Key: {key}")
+            self.logger.info(f"Match")
         if matching_key is None:
             # try ignoring the filename case
             asset_path_no_filename = asset_path.replace(asset_path.split("/")[-1], "")
@@ -109,10 +91,10 @@ class PDFMetadata(GenericMetadata):
             ):
                 if key.lower() == asset_path.lower():
                     matching_key = key
-                    print(f"Key: {key}")
-                    print(f"Match")
+                    self.logger.info(f"Key: {key}")
+                    self.logger.info(f"Match")
             if matching_key is None:
-                print(f"Couldn't find key for: {asset_path}.")
+                self.logger.error(f"Couldn't find key for: {asset_path}.")
 
         return matching_key
 
