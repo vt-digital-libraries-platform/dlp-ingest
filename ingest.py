@@ -62,8 +62,6 @@ def set_environment(app_config=None):
             os.getenv("UPDATE_METADATA") is not None and os.getenv("UPDATE_METADATA").lower() == "true"
         )
 
-        print(env)
-
 
 def new_media_type_handler(env, filename, bucket):
     media_type = media_types_map[env["MEDIA_TYPE"]]

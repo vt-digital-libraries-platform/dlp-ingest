@@ -105,7 +105,6 @@ class GenericDigitalObject:
                         matching_key = key
                         success = self.format_and_copy(source_bucket, source_dir, key, dest_bucket, dest_dir)
                         
-                        self.logger.info(f"generate boolean: {self.env["GENERATE_THUMBNAILS"]}")
                         if success and self.env["GENERATE_THUMBNAILS"]:
                             self.generate_thumbnail(matching_key, dest_dir)
                 else:
@@ -133,10 +132,6 @@ class GenericDigitalObject:
     def generate_thumbnail(self, matching_key, dest_dir):
         # Generate a thumbnail for the object if requested
         # try:
-        self.logger.info(f"self.assets['options']: {self.assets['options']}")
-        self.logger.info(f"key (endswith asset_src?): {matching_key}")
-
-        self.logger.info("generating thumb for {matching_key}")
         target_key = os.path.join(dest_dir, os.path.basename(matching_key))
         thumbnail_key = target_key.replace(
             f".{self.assets['options']['asset_src']}",
