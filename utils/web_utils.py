@@ -109,7 +109,8 @@ def set_environment_overrides():
 
 
 def set_environment_booleans():
-    logger.info(f"setting booleans: {ingestConfig}")
+    logger.info(f"ingestConfig: {ingestConfig}")
+    logger.info(f"form: {request.form.items()}")
     for key in env_vars:
         # if key not in ingestConfig.keys():
         #     logger.info(f"Not in ingestConfig")
