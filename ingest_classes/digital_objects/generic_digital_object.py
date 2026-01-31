@@ -108,8 +108,10 @@ class GenericDigitalObject:
                         matching_key = key
                         self.logger.info(f"line 109: matching_key: {matching_key}")
                         success = self.format_and_copy(source_bucket, source_dir, key, dest_bucket, dest_dir)
-                        self.logger.info(f"line 111: success: {success}")
-                if not success:
+                        
+                        if success and self.env["GENERATE_THUMBNAILS"]:
+                            self.generate_thumbnail(matching_key, dest_dir)
+                else:
                     # case insensitive search
                     asset_path = os.path.join(source_dir, "")
                     matching_key = None
@@ -125,33 +127,34 @@ class GenericDigitalObject:
                                 matching_key = key
                                 self.logger.info(f"line 126: matching_key: {matching_key}")
                                 success = self.format_and_copy(source_bucket,source_dir,matching_key,dest_bucket)
-                                self.logger.info(f"line 128: success: {success}")
-                    if success is None:
-                            self.logger.error(f"No match found for identifier {row['identifier']}")
+                                if success and self.env["GENERATE_THUMBNAILS"]:
+                                    self.generate_thumbnail(matching_key, dest_dir)
+                                
+                                if not success:
+                                    self.logger.error(f"No match found for identifier {row['identifier']}")
 
-                # Generate a thumbnail for the object if requested
-                # try:
-                self.logger.info(f"self.assets['options']: {self.assets['options']}")
-                self.logger.info(f"key (endswith asset_src?): {matching_key}")
-                if (
-                    success
-                    and self.env["GENERATE_THUMBNAILS"]
-                ):
-                    self.logger.info("generating thumb for {matching_key}")
-                    target_key = os.path.join(dest_dir, os.path.basename(matching_key))
-                    thumbnail_key = target_key.replace(
-                        f".{self.assets['options']['asset_src']}",
-                        "_thumbnail.jpg",
-                    )
-                    response = self.call_thumbnail_service(
-                        self.env["AWS_SRC_BUCKET"],
-                        key,
-                        self.env["AWS_DEST_BUCKET"],
-                        thumbnail_key,
-                    )
-                    self.logger.info(f"response from thumbnail lambda {response}")
-                # except Exception as e:
-                #     self.logger.info(e)
+                
+    def generate_thumbnail(self, matching_key, dest_dir):
+        # Generate a thumbnail for the object if requested
+        # try:
+        self.logger.info(f"self.assets['options']: {self.assets['options']}")
+        self.logger.info(f"key (endswith asset_src?): {matching_key}")
+
+        self.logger.info("generating thumb for {matching_key}")
+        target_key = os.path.join(dest_dir, os.path.basename(matching_key))
+        thumbnail_key = target_key.replace(
+            f".{self.assets['options']['asset_src']}",
+            "_thumbnail.jpg",
+        )
+        response = self.call_thumbnail_service(
+            self.env["AWS_SRC_BUCKET"],
+            matching_key,
+            self.env["AWS_DEST_BUCKET"],
+            thumbnail_key,
+        )
+        self.logger.info(f"response from thumbnail lambda {response}")
+    # except Exception as e:
+    #     self.logger.info(e)
 
 
     def call_thumbnail_service(self, src_bucket, src_key, dest_bucket, dest_key):
