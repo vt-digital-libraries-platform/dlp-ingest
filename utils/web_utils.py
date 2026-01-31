@@ -110,8 +110,8 @@ def set_environment_overrides():
 
 def set_environment_booleans():
     for key in env_vars:
-        if key in request.form.items():
-            field = request.form.get(key)
+        field = request.form.get(key)
+        if(field):
             logger.info(f"field: {field}")
             if isinstance(field, str) and field.lower() == "true":
                 ingestConfig[key] = True
