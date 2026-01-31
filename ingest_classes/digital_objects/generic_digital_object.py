@@ -136,9 +136,9 @@ class GenericDigitalObject:
                 if (
                     success
                     and self.env["GENERATE_THUMBNAILS"]
-                    and key.endswith(self.assets["options"]["asset_src"])
+                    and matching_key.endswith(self.assets["options"]["asset_src"])
                 ):
-                    
+                    self.logger.info("generating thumb for {matching_key}")
                     target_key = os.path.join(dest_dir, os.path.basename(matching_key))
                     thumbnail_key = target_key.replace(
                         f".{self.assets['options']['asset_src']}",
