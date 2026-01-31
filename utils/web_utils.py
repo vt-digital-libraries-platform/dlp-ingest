@@ -98,7 +98,7 @@ def set_environment_defaults(application):
 
     if defaults:
         set_environment(defaults.items())
-        set_environment({'APP_SRC_DIR': application.config['APP_SRC_DIR']})
+        set_environment({'APP_SRC_DIR': application.config['APP_SRC_DIR']}.items())
     else:
         logger.info(f"Error loading environment defaults from {env_file}")
 
