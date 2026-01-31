@@ -6,7 +6,6 @@ logger = logging.getLogger()
 ingestConfig = {}
 
 env_vars = [
-    'APPLICATION_ROOT',
     'APP_SRC_DIR',
     'APP_IMG_ROOT_PATH',
     'AWS_SRC_BUCKET',
@@ -99,9 +98,28 @@ def set_environment_defaults(application):
 
     if defaults:
         set_environment(defaults.items())
-        set_environment({'APP_SRC_DIR': application.config['APP_SRC_DIR']}.items())
+        set_environment({'APP_SRC_DIR': application.config['APP_SRC_DIR']})
     else:
         logger.info(f"Error loading environment defaults from {env_file}")
+
+
+def set_environment_overrides():
+    set_environment(request.form.items())
+    set_environment_booleans()
+
+
+def set_environment_booleans():
+    logger.info(f"setting booleans: {ingestConfig}")
+    for key in env_vars:
+        # if key not in ingestConfig.keys():
+        #     logger.info(f"Not in ingestConfig")
+        #     set_environment({key: False})
+        # Convert string values to booleans
+        logger.info(f"{key}: {request.form.get(key)}")
+        if key in ingestConfig and isinstance(ingestConfig[key], str) and ingestConfig[key].lower() == "true":
+            ingestConfig[key] = True
+        elif key in ingestConfig and isinstance(ingestConfig[key], str) and ingestConfig[key].lower() == "false":
+            ingestConfig[key] = False
 
 
 def get_identifier():
@@ -135,23 +153,6 @@ def get_files(application):
     except Exception as e:
         pass
     return files
-
-
-def set_environment_overrides():
-    set_environment(request.form.items())
-    set_environment_booleans()
-
-
-
-def set_environment_booleans():
-    for key in env_vars:
-        if key not in ingestConfig.keys():
-            set_environment({key: False}.items())
-        # Convert string values to booleans
-        if key in ingestConfig and isinstance(ingestConfig[key], str) and ingestConfig[key].lower() == "true":
-            ingestConfig[key] = True
-        elif key in ingestConfig and isinstance(ingestConfig[key], str) and ingestConfig[key].lower() == "false":
-            ingestConfig[key] = False
 
 
 def user_is_admin(user):
