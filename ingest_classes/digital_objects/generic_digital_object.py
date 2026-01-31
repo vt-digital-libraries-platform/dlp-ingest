@@ -151,11 +151,12 @@ class GenericDigitalObject:
             "dest_bucket": dest_bucket,
             "dest_key": dest_key,
         }
-        self.lambda_client.invoke(
+        response = self.lambda_client.invoke(
             FunctionName="vtdlp-thumbnail-service",
             InvocationType='Event',
             Payload=bytes(json.dumps(payload), "utf8"),
         )
+        return response
 
     def log_results(self, num_successful, successful_copies, num_failed, failed_copies):
         success_msg = f"Successfully copied {num_successful} files.\n"
