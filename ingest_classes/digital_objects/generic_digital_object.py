@@ -86,7 +86,7 @@ class GenericDigitalObject:
                 self.logger.info(f"asset: {asset}")
                 # if we're supposed to generate thumbnails then just skip the copy here
                 if asset == "thumbnail" and self.env["GENERATE_THUMBNAILS"]:
-                    continue
+                    break
                 
                 # exact, case sensitive search
                 formatted_asset = None
@@ -136,7 +136,6 @@ class GenericDigitalObject:
                 if (
                     success
                     and self.env["GENERATE_THUMBNAILS"]
-                    and matching_key.endswith(self.assets["options"]["asset_src"])
                 ):
                     self.logger.info("generating thumb for {matching_key}")
                     target_key = os.path.join(dest_dir, os.path.basename(matching_key))
