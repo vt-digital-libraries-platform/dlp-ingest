@@ -70,12 +70,6 @@ def get_logfile(logger):
     return None
 
 
-def set_environment(env_values):
-    for key, value in env_values:
-        if str(key).upper() in env_vars:
-            ingestConfig[str(key).upper()] = value
-
-
 def environment_json(env):
     envs = ["dev", "pprd", "prod"]
     env_json = {}
@@ -84,6 +78,12 @@ def environment_json(env):
         for field in env[key]:
             env_json[key] = env[field]
     return env_json
+
+
+def set_environment(env_values):
+    for key, value in env_values:
+        if str(key).upper() in env_vars:
+            ingestConfig[str(key).upper()] = value
 
 
 def set_environment_defaults(application):
@@ -109,9 +109,10 @@ def set_environment_overrides():
 
 
 def set_environment_booleans():
-    for key in env_vars:
-        value = request.form.get(key)
-        ingestConfig[key] = value
+    pass
+    # for key in env_vars:
+    #     value = request.form.get(key)
+    #     ingestConfig[key] = value
             # if isinstance(value, str) and value.lower() == "true":
             #     ingestConfig[key] = True
             # elif isinstance(value, str) and value.lower() == "false":
