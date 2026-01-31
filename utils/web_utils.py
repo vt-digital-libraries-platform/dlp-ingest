@@ -109,9 +109,9 @@ def set_environment_overrides():
 
 
 def set_environment_booleans():
-    logger.info(f"ingestConfig: {ingestConfig}")
-    for item in request.form.items():
-        logger.info(f"form: {item}")
+    # logger.info(f"ingestConfig: {ingestConfig}")
+    # for item in request.form.items():
+    #     logger.info(f"form: {item}")
 
     for key in env_vars:
         # if key not in ingestConfig.keys():
@@ -119,10 +119,14 @@ def set_environment_booleans():
         #     set_environment({key: False})
         # Convert string values to booleans
         # logger.info(f"{key}: {request.form.get(key)}")
-        if key in ingestConfig and isinstance(ingestConfig[key], str) and ingestConfig[key].lower() == "true":
-            ingestConfig[key] = True
-        elif key in ingestConfig and isinstance(ingestConfig[key], str) and ingestConfig[key].lower() == "false":
-            ingestConfig[key] = False
+        field = None
+        if key in request.form.items():
+            field = request.form.get(key)
+            logger.info(field)
+            if isinstance(field, str) and field.lower() == "true":
+                ingestConfig[key] = True
+            elif isinstance(field, str) and field.lower() == "false":
+                ingestConfig[key] = False
 
 
 def get_identifier():
