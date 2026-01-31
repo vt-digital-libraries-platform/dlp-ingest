@@ -105,6 +105,7 @@ class GenericDigitalObject:
                         matching_key = key
                         success = self.format_and_copy(source_bucket, source_dir, key, dest_bucket, dest_dir)
                         
+                        self.logger.info(f"generate boolean: {self.env["GENERATE_THUMBNAILS"]}")
                         if success and self.env["GENERATE_THUMBNAILS"]:
                             self.generate_thumbnail(matching_key, dest_dir)
                 else:
