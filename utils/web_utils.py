@@ -83,7 +83,14 @@ def environment_json(env):
 def set_environment(env_values):
     for key, value in env_values:
         if str(key).upper() in env_vars:
-            ingestConfig[str(key).upper()] = value
+            # convert string booleans from form into actual booleans
+            if isinstance(value, str) and value.lower() == "true":
+                ingestConfig[str(key).upper()] = True
+            elif isinstance(value, str) and value.lower() == "false":
+                ingestConfig[str(key).upper()] = False
+            # or just add the value to the config as is
+            else:
+                ingestConfig[str(key).upper()] = value
 
 
 def set_environment_defaults(application):
@@ -105,18 +112,16 @@ def set_environment_defaults(application):
 
 def set_environment_overrides():
     set_environment(request.form.items())
-    set_environment_booleans()
+#     set_environment_booleans()
 
 
-def set_environment_booleans():
-    pass
-    # for key in env_vars:
-    #     value = request.form.get(key)
-    #     ingestConfig[key] = value
-            # if isinstance(value, str) and value.lower() == "true":
-            #     ingestConfig[key] = True
-            # elif isinstance(value, str) and value.lower() == "false":
-            #     ingestConfig[key] = False
+# def set_environment_booleans():
+    
+#     for key in env_vars:
+#         if isinstance(ingestConfig[key], str) and ingestConfig[key].lower() == "true":
+#             ingestConfig[key] = True
+#         elif isinstance(ingestConfig[key], str) and ingestConfig[key].lower() == "false":
+#             ingestConfig[key] = False
 
 
 def get_identifier():
