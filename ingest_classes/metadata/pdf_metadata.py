@@ -46,16 +46,15 @@ class PDFMetadata(GenericMetadata):
                         archive_dict, collection_identifier, "thumbnail"
                     )
                     self.archive_option_additions = self.set_archive_option_additions()
-                    
-                    if (
-                        "thumbnail_path" in archive_dict
-                        and len(archive_dict["thumbnail_path"]) > 0
-                    ):
-                        self.create(
-                            self.env["archive_table"], archive_dict, "Archive", idx
-                        )
+
+                    existing_archive = self.query_by_index(self.env["archive_table"], "Identifier", archive_dict["identifier"])
+                    if existing_archive:
+                        if self.env["UPDATE_METADATA"]:
+                            self.update_item_in_table(self.env["archive_table"], existing_archive["id"], archive_dict, archive_dict["identifier"])
+                        else:
+                            continue
                     else:
-                        self.logger.error(archive_dict["thumbnail_path"] or f"No thumbnail path for {archive_dict['identifier']}")
+                        self.create_item_in_table(self.env["archive_table"], archive_dict, "Archive")
 
 
     def asset_path(self, archive_dict, collection_identifier, asset_type=None):
