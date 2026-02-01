@@ -16,13 +16,11 @@ class ThreeDMetadata(GenericMetadata):
         df = self.csv_to_dataframe(io.BytesIO(response["Body"].read()))
         for idx, row in df.iterrows():
             archive_dict = self.process_csv_metadata(row, "Archive")
-            self.logger.info(f"archive: {archive_dict}")
             if not archive_dict:
                 self.logger.error(f"Error: reading item on line {idx+1} from csv.")
                 continue
             else:
                 collection = self.get_collection(archive_dict)
-                self.logger.info(f"collection: {collection}")
                 if not collection:
                     self.logger.error(f"Error: Collection not found in dynamo for item at row {idx+1}.")
                     continue
@@ -64,20 +62,10 @@ class ThreeDMetadata(GenericMetadata):
                         archive_dict["identifier"],
                     )
                     if existing_item is not None:
-                    #     if "archiveOptions" in existing_item:
-                    #         archive_dict["archiveOptions"] = {
-                    #             **existing_item["archiveOptions"],
-                    #             **archive_option_additions,
-                    #         }
-                    #     else:
-                    # archive_dict["archiveOptions"] = archive_option_additions
-
                         if self.env["UPDATE_METADATA"]:
                             self.update_item_in_table(self.env["archive_table"], existing_item["id"], archive_dict, archive_dict["identifier"])
-                        else:
-                            continue
+                        
                     else:
-                        self.logger.info(f"before save {archive_dict}")
                         self.create_item_in_table(self.env["archive_table"], archive_dict, "Archive")
                             
 
