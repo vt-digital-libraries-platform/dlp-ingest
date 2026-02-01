@@ -42,6 +42,7 @@ class PDFMetadata(GenericMetadata):
                     archive_dict["manifest_url"] = self.asset_path(
                         archive_dict, collection_identifier, "pdf"
                     )
+                    self.logger.info(f"manifest: {archive_dict['manifest_url']}")
                     archive_dict["thumbnail_path"] = self.asset_path(
                         archive_dict, collection_identifier, "thumbnail"
                     )
@@ -60,6 +61,7 @@ class PDFMetadata(GenericMetadata):
     def asset_path(self, archive_dict, collection_identifier, asset_type=None):
         if asset_type is None:
             asset_type = self.assets["options"]["asset_src"]
+        self.logger.info(f"asset type: {asset_type}")
         asset_url = ""
         try:
             prefix = os.path.join(
@@ -68,11 +70,16 @@ class PDFMetadata(GenericMetadata):
                 archive_dict["identifier"],
             )
             suffix = self.assets["item"][asset_type].replace("<item_identifier>", archive_dict["identifier"])
+            self.logger.info(f"prefix: {prefix}")
+            self.logger.info(f"suffix: {suffix}")
         except Exception as e:
             self.logger.error(e)
             return ""
-        for key in get_matching_s3_keys(self.env["AWS_DEST_BUCKET"], prefix, suffix):
-            asset_url = os.path.join(self.env["APP_IMG_ROOT_PATH"], key)
+        matches = get_matching_s3_keys(self.env["AWS_DEST_BUCKET"], prefix, suffix)
+        if matches:
+            for key in matches:
+                asset_url = os.path.join(self.env["APP_IMG_ROOT_PATH"], key)
+        self.logger.info(f"asset_url: {asset_url}")
         return asset_url
 
 
