@@ -26,8 +26,8 @@ media_types_map = {
                 "item_metadata": "<variable>_archive_metadata.csv"
             },
             "item": {
-                "pdf": "<variable>.pdf",
-                "thumbnail": "<variable>thumbnail.jpg",
+                "pdf": "<item_identifier>.pdf",
+                "thumbnail": "<item_identifier>_thumbnail.jpg",
             },
             "options": {"asset_src": "pdf"},
         },
