@@ -45,9 +45,8 @@ class PDFMetadata(GenericMetadata):
                     archive_dict["thumbnail_path"] = self.asset_path(
                         archive_dict, collection_identifier, "thumbnail"
                     )
-                    self.archive_option_additions = self.set_archive_option_additions(
-                        archive_dict
-                    )
+                    self.archive_option_additions = self.set_archive_option_additions()
+                    
                     if (
                         "thumbnail_path" in archive_dict
                         and len(archive_dict["thumbnail_path"]) > 0
