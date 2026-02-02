@@ -1,10 +1,10 @@
 # DLP Ingest UI
 
-A web-based user interface for ingesting digital library metadata into DynamoDB, built with Flask and designed with WCAG 2.1 Level AA accessibility compliance.
+A web-based user interface for ingesting digital library metadata into DynamoDB, and media assets (digital objects) into S3. It is built with Flask and designed with WCAG 2.1 Level AA accessibility compliance.
 
 ## Overview
 
-The DLP Ingest UI provides a web form for uploading CSV metadata files to DynamoDB. You select an environment (dev, preprod, or prod), choose whether you're uploading collection or archive metadata, upload your CSV file, and the system processes it.
+The DLP Ingest UI provides a web form for uploading CSV metadata files, parsing their data, and writing it to DynamoDB. You select an environment (dev, preprod, or prod), choose whether you're uploading media assets, collection metadata, or archive metadata, upload your CSV file, and the system processes it.
 
 ## Prerequisites
 
@@ -29,7 +29,7 @@ Your AWS credentials must have permissions for:
 ```bash
 git clone https://github.com/vt-digital-libraries-platform/dlp-ingest.git
 cd dlp-ingest
-git checkout ui-merge-lee
+git checkout main
 ```
 
 ### 2. Create and Activate Virtual Environment
@@ -62,7 +62,7 @@ dev:
   noid_scheme: "ark:/"
   noid_naa: "<your-naa-number>"
 
-preprod:
+pprd:
   aws_src_bucket: "<your-preprod-source-bucket>"
   aws_dest_bucket: "<your-preprod-destination-bucket>"
   collection_category: "<your-collection-category>"
@@ -120,7 +120,7 @@ This will:
 
 1. Activate the virtual environment
 2. Install/update dependencies
-3. Start the Gunicorn server on `http://localhost:8002`
+3. Start the Gunicorn server on `http://localhost:8000`
 
 ### Manual Start
 
@@ -128,7 +128,7 @@ Alternatively, start the server manually:
 
 ```bash
 source bin/activate
-gunicorn -w 1 --threads 15 -b 0.0.0.0:8002 src.application:application
+gunicorn -w 1 --threads 15 -b 0.0.0.0:8000 src.application:application
 ```
 
 ### Accessing the Application
@@ -136,36 +136,30 @@ gunicorn -w 1 --threads 15 -b 0.0.0.0:8002 src.application:application
 Open your web browser and navigate to:
 
 ```
-http://localhost:8002
+http://localhost:8000
 ```
 
 ## Using the Application
 
-### 1. Select DynamoDB Table
-
-The first dropdown allows you to select your target DynamoDB table. Choose from available Collection or Archive tables.
-
-**Tip:** The table name format is `Collection-{suffix}` or `Archive-{suffix}`, where the suffix indicates the environment (e.g., `vtdlpdev`, `vtdlppprd`, `vtdlpprd`).
-
-### 2. Select Ingest Type
+### 1. Select Ingest Type
 
 Choose the type of ingest operation:
 
 - **Items/Archives**: Ingest individual item or archive metadata
 - **Collection(s)**: Ingest collection-level metadata
 
-### 3. Select Environment
+
+
+### 2. Select Environment
 
 Choose the environment you're ingesting to (Dev, Preprod, or Prod) using the radio buttons. This will automatically populate all form fields with environment-specific defaults from your `env_defaults.yml` configuration.
 
 You can either:
 
 - **Select a predefined environment** (Dev, Preprod, Prod) - recommended
-- **Select "Other"** - manually configure all settings
+- **Select "Other"** - You will be presented with a dropdown list where you can choose any existing Amplify backend. You will need to manually configure all form settings. 
 
-**Note:** The environment selection is separate from the table selection in step 1. The table dropdown determines which specific DynamoDB table to use, while the environment selection populates all the other form fields (S3 buckets, URLs, etc.) with your configured defaults.
-
-### 4. Configure Settings
+### 3. Configure Settings
 
 Fill in the required fields across the form sections:
 
@@ -174,7 +168,7 @@ Fill in the required fields across the form sections:
 - **DynamoDB Configuration**: NOID and file character tables
 - **Endpoints**: CloudFront endpoint, site URL, and short URL path
 - **NOID Configuration**: Scheme and NAA (Name Assigning Authority)
-- **Media Configuration**: Media type (image, video, audio, etc.)
+- **Media Configuration**: Media type (image, video, audio, etc.) and options specific to that type
 
 **Auto-Population:** Many fields are automatically populated based on the selected environment. Review and adjust as needed.
 
