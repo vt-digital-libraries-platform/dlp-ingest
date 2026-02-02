@@ -8,3 +8,4 @@ results
 results_files
 log/*
 !log/.keep
+config/env_defaults.yml

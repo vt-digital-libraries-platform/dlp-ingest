@@ -18,7 +18,6 @@ class ThreeDDigitalObject(GenericDigitalObject):
         src_dir = os.path.join(
             self.env["COLLECTION_CATEGORY"],
             self.env["COLLECTION_IDENTIFIER"],
-            self.env["COLLECTION_SUBDIRECTORY"],
             row["identifier"],
             "3D",
             "GLB"

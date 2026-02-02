@@ -240,14 +240,12 @@ class GenericDigitalObject:
         src_dir = os.path.join(
             self.env["COLLECTION_CATEGORY"],
             self.env["COLLECTION_IDENTIFIER"],
-            self.env["COLLECTION_SUBDIRECTORY"],
-            row["identifier"],
+            row["identifier"]
         )
         dest_dir = os.path.join(
             self.env["COLLECTION_CATEGORY"],
             self.env["COLLECTION_IDENTIFIER"],
-            row["identifier"],
-            self.env["ITEM_SUBDIRECTORY"],
+            row["identifier"]
         )
         return src_dir, dest_dir
 
