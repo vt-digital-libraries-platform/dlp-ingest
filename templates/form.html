@@ -6,10 +6,16 @@
             <p class="msg">{{msg}}</p>
         {% endif %}
         <p>This tool ingests media/metadata into the VTDLP Archive system.</p>
-        <ol>
-            <li>Ingest Collection metadata file first</li>
-            <li>Ingest Item/Archive metadata file after Collection</li>
-        </ol>
+        {% if not user %}
+            <div>
+                <p>Please click <a href="{{ url_for('login', _scheme='https') }}">here</a> to login. Then:</p>
+            </div>
+        {% endif %}
+    <ol class="instruction_list">
+        <li>First, ingest the media assets (digital objects) for your collection and it's items. For this step you should submit your archive metadata csv. </li>
+        <li>Next, ingest your Collection metadata.</li>
+        <li>Finally, ingest your Item/Archive metadata.</li>
+    </ol>
 
         <div>
             <form action="{{ url_for('submit') }}" method="post" enctype="multipart/form-data" aria-label="VTDLP Ingest Form">

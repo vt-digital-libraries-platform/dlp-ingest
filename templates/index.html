@@ -8,12 +8,13 @@
         <p>This tool ingests media/metadata into the VTDLP Archive system.</p>
         {% if not user %}
             <div>
-                <p>First, please click <a href="{{ url_for('login', _scheme='https') }}">here</a> to login. Then:</p>
+                <p>Please click <a href="{{ url_for('login', _scheme='https') }}">here</a> to login.</p>
             </div>
         {% endif %}
-        <ol>
-            <li>Ingest Collection metadata file first</li>
-            <li>Ingest Item/Archive metadata file after Collection</li>
+        <ol class="instruction_list">
+            <li>First, ingest the media assets (digital objects) for your collection and it's items. For this step you should submit your archive metadata csv. </li>
+            <li>Next, ingest your Collection metadata.</li>
+            <li>Finally, ingest your Item/Archive metadata.</li>
         </ol>
     </div>
 {% endblock %}

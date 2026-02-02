@@ -65,6 +65,10 @@ a:active, a:hover {
     color: #555;
 }
 
+ol.instruction_list li {
+    margin-bottom: 1rem;
+}
+
 form {
     background-color: white;
     padding: 30px;
