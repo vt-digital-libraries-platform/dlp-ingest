@@ -269,22 +269,22 @@ tail -100 startup.log
 
 ```
 dlp-ingest/
-├── src/
-│   ├── application.py           # Flask app and routes
-│   ├── ingest.py               # Core ingest logic
-│   ├── config/
-│   │   ├── available_envs.yml  # Environment configurations
-│   │   └── env_defaults.yml    # Default values per environment
-│   ├── ingest_classes/
-│   │   └── metadata/
-│   │       └── generic_metadata.py  # Metadata handling
-│   ├── static/
-│   │   ├── css/
-│   │   │   └── style.css       # WCAG-compliant styles
-│   │   └── js/
-│   │       └── index.js        # Client-side functionality
-│   └── templates/
-│       └── index.html          # Main form interface
+
+├── application.py           # Flask app and routes
+├── ingest.py               # Core ingest logic
+├── config/
+│   ├── available_envs.yml  # Environment configurations
+│   └── env_defaults.yml    # Default values per environment
+├── ingest_classes/
+│   └── metadata/
+│       └── generic_metadata.py  # Metadata handling
+├── static/
+│   ├── css/
+│   │   └── style.css       # WCAG-compliant styles
+│   └── js/
+│       └── index.js        # Client-side functionality
+├── templates/
+│   └── index.html          # Main form interface
 ├── dev_startup.sh              # Development startup script
 ├── requirements.txt            # Python dependencies
 └── README.md                   # This file
@@ -292,7 +292,7 @@ dlp-ingest/
 
 ### Making Changes
 
-1. Create a feature branch from `ui-merge-lee`
+1. Create a feature branch from `main`
 2. Make your changes
 3. Test locally using `dev_startup.sh`
 4. Commit with descriptive messages
