@@ -1,4 +1,4 @@
-# DLP Ingest UI
+# DLP Ingest Service
 
 A web-based user interface for ingesting digital library metadata into DynamoDB, and media assets (digital objects) into S3. It is built with Flask and designed with WCAG 2.1 Level AA accessibility compliance.
 
