@@ -4,7 +4,7 @@ A web-based user interface for ingesting digital library metadata into DynamoDB,
 
 ## Overview
 
-The DLP Ingest UI provides a web form for uploading CSV metadata files, parsing their data, and writing it to DynamoDB. You select an environment (dev, preprod, or prod), choose whether you're uploading media assets, collection metadata, or archive metadata, upload your CSV file, and the system processes it.
+The DLP Ingest Service provides a web form for transferring and formatting media assets (digital objects) into S3, as well as uploading CSV metadata files, parsing their data, and writing it to DynamoDB. You select an environment (dev, preprod, or prod), choose whether you're uploading media assets, collection metadata, or archive metadata, upload your CSV file, and the system processes it.
 
 ## Prerequisites
 
@@ -19,7 +19,10 @@ Before you begin, ensure you have the following installed:
 
 Your AWS credentials must have permissions for:
 
-- DynamoDB (read/write access to Collection and Archive tables)
+- DynamoDB 
+  - (read/write access to Collection and Archive tables)
+  - (read/write access to file characterization table)
+  - (read/write access to NOID (short url redirect) table)
 - S3 (read/write access to source and destination buckets)
 
 ## Installation
@@ -188,7 +191,7 @@ Click "Start Ingest" to begin the upload. A progress bar will show the upload st
 After the ingest completes, you'll be redirected to a success page that shows:
 
 - **Ingest Status**: Confirmation that the upload completed
-- **Log Output**: The last 100 lines from `startup.log` showing any errors, warnings, or processing details from the ingest operation
+- **Log Output**: The last 100 lines from the configured log file showing any errors, warnings, or processing details from the ingest operation
 
 The log output is displayed in a scrollable box, allowing you to review what happened during the ingest process without needing to check the log file manually.
 
@@ -215,12 +218,12 @@ This application is designed with WCAG 2.1 Level AA compliance:
 
 ### Port Already in Use
 
-If port 8002 is already in use:
+If port 8000 is already in use:
 
 ```bash
-# Kill processes on port 8002
-pkill -f "gunicorn.*8002"
-lsof -ti:8002 | xargs kill -9
+# Kill processes on port 8000
+pkill -f "gunicorn.*8000"
+lsof -ti:8000 | xargs kill -9
 ```
 
 ### AWS Credentials Error
