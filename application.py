@@ -18,7 +18,6 @@ logging.basicConfig(
 logger.info("----------------------------------------")
 logger.info("Starting instance...")
 
-
 app_secret = os.environ.get('APP_SECRET')
 
 application = Flask(__name__)

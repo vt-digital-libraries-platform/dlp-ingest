@@ -7,6 +7,8 @@ import utils.web_utils as utils
 logger = logging.getLogger(__name__)
 
 def index():
+    if os.environ.get('LOCAL_DEV') == 'true':
+        session['user'] = {"email": "user@email.com","cognito:groups": ["admin"]}
     user = session.get('user')
     msg = utils.check_messages()
     if user:
