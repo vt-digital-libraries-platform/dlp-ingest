@@ -7,8 +7,12 @@ import utils.web_utils as utils
 logger = logging.getLogger(__name__)
 
 def index():
+    # Create a user for local dev, if appropriate.
+    # If someone has enough permissions to set env vars on our machines, 
+    # they probably have more interesting things to do than mess with this.
     if os.environ.get('LOCAL_DEV') == 'true':
         session['user'] = {"email": "user@email.com","cognito:groups": ["admin"]}
+
     user = session.get('user')
     msg = utils.check_messages()
     if user:
@@ -25,7 +29,7 @@ def index():
 def ingest_form(application):
     user = session.get('user')
     msg = utils.check_messages()
-    if(utils.user_is_admin(user) or os.getenv('LOCAL_DEV') == "true"):
+    if utils.user_is_admin(user):
         envs = utils.get_available_envs(application)
         return render_template("form.html", envs=envs, user=user, msg=msg) 
     else:
@@ -76,9 +80,11 @@ def submit(application):
                 updated_items = result.get('updated', [])
                 errors = result.get('errors', [])
                 summary = result.get('summary', [])
-            else:
-                err = "No return value from ingest script dlp_ingest_main()"
-                logger.error(err)
+            # TODO: return a results object from ingest process
+            # ...and log an error if you don't get it
+            # else:
+            #     err = "No return value from ingest script dlp_ingest_main()"
+            #     logger.error(err)
 
             # Write files for download
             results_dir = os.path.join(application.config['APP_SRC_DIR'], 'results')

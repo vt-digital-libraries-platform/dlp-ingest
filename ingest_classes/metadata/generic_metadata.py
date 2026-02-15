@@ -62,10 +62,7 @@ class GenericMetadata:
             self.batch_import_collections(metadata_stream)
         elif "INGEST_TYPE" in self.env and self.env["INGEST_TYPE"] == "archive":
             self.batch_import_archives(metadata_stream)
-
         return {"statusCode": 200, "body": json.dumps("Finish metadata import.")}
-    
- 
 
 
     def batch_import_collections(self, response):
@@ -91,8 +88,12 @@ class GenericMetadata:
                     collection_dict["parent_collection"] = [collection_dict["heirarchy_path"][-2]] 
             
             if "parent_collection_identifier" not in collection_dict or not collection_dict["parent_collection_identifier"]:
-                if "parent_collection_identifier" in self.env:
+                if "parent_collection_identifier" in self.env and self.env["parent_collection_identifier"] != collection_dict["identifier"]:
                     collection_dict["parent_collection_identifier"] = self.env["parent_collection_identifier"]
+
+            # if you've found a parent collection, log it out. that's a big deal.
+            if "parent_collection_identifier" in collection_dict and collection_dict["parent_collection_identifier"]:
+                self.logger.info(f"Collection {collection_dict['identifier']} will be created as a sub-collection of: {str(collection_dict['parent_collection_identifier'])}")
 
             if "thumbnail_path" not in collection_dict or not collection_dict["thumbnail_path"]:
                 collection_dict["thumbnail_path"] = os.path.join(
@@ -102,8 +103,19 @@ class GenericMetadata:
                     "representative.jpg",
                 )
 
-            # put the record in the collection db table
-            self.create_item_in_table(self.env["collection_table"], collection_dict, "Collection")
+            existing_collection = self.query_by_index(self.env["collection_table"], "Identifier", collection_dict["identifier"])
+            if existing_collection:
+                if self.env["UPDATE_METADATA"]:
+                    self.logger.info(f"Collection with identifier {collection_dict['identifier']} already exists. Updating existing record.")
+                    self.update_item_in_table(self.env["collection_table"], existing_collection["id"], collection_dict, collection_dict["identifier"])
+                else:
+                    self.logger.warning(f"Collection with identifier {collection_dict['identifier']} already exists. Select the UPDATE_METADATA option to update existing records.")
+                    self.logger.warning("Skipping this record...")
+                    continue
+            else:
+                self.logger.info(f"Creating Collection with identifier {collection_dict['identifier']}.")
+                self.create_item_in_table(self.env["collection_table"], collection_dict, "Collection")
+                
 
             # after this collection has been created, it needs to be added to the appropriate collectionmap
             if "heirarchy_path" in collection_dict:
@@ -123,6 +135,7 @@ class GenericMetadata:
                 if collection:
                     archive_dict["collection"] = collection["id"]
                     archive_dict["parent_collection"] = [collection["id"]]
+                    archive_dict["parent_collection_identifier"] = [collection["identifier"]]
                     archive_dict["heirarchy_path"] = collection["heirarchy_path"]
                     archive_dict["manifest_url"] = os.path.join(
                         self.env["APP_IMG_ROOT_PATH"],
@@ -133,27 +146,41 @@ class GenericMetadata:
                     )
                     archive_dict["thumbnail_path"] = self.get_thumbnail_path_for_archive(archive_dict, collection)
                     
+                    # if you can't find the thumbnail for an iiif item, skip it, because that means the manifest couldn't be found or read
+                    # Currently this includes "iiif" and "3d_iiif" media types.
+                    if "iiif" in str(self.env["MEDIA_TYPE"]) and ("thumbnail_path" not in archive_dict or not archive_dict["thumbnail_path"]):
+                        self.logger.warning(f"Could not find or read the manifest for Item {archive_dict['identifier']}")
+                        self.logger.warning(f"Looked here for the manifest: {archive_dict['manifest_url']}")
+                        self.logger.warning(f"Skipping this record.")
+                        continue
+
+                    if "parent_collection_identifier" not in archive_dict or not archive_dict["parent_collection_identifier"]:
+                        if "parent_collection_identifier" in self.env and self.env["parent_collection_identifier"] != collection_dict["identifier"]:
+                            archive_dict["parent_collection_identifier"] = self.env["parent_collection_identifier"]
+
                     existing_archive = self.query_by_index(self.env["archive_table"], "Identifier", archive_dict["identifier"])
                     if existing_archive:
                         if self.env["UPDATE_METADATA"]:
+                            self.logger.info(f"Item with identifier {archive_dict['identifier']} already exists. Updating existing record.")
                             self.update_item_in_table(self.env["archive_table"], existing_archive["id"], archive_dict, archive_dict["identifier"])
                         else:
+                            self.logger.warning(f"Item with identifier {archive_dict['identifier']} already exists. Select the UPDATE_METADATA option to update existing records.")
+                            self.logger.warning("Skipping this record...")
                             continue
                     else:
+                        self.logger.info(f"Creating Item with identifier {archive_dict['identifier']}.")
                         self.create_item_in_table(self.env["archive_table"], archive_dict, "Archive")
                 
 
     
     def archive_exists(self, table, identifier):
         items = self.query_by_index(table, "Identifier", identifier)
-
         return items and len(items) >= 1
 
 
     def get_metadata(self, filename):
         body_encoded = open(filename).read().encode()
         stream = StreamingBody(io.BytesIO(body_encoded), len(body_encoded))
-
         return {"Body": stream}
     
 
@@ -165,7 +192,6 @@ class GenericMetadata:
             encoding="utf-8",
             dtype={"Start Date": str, "End Date": str},
         )
-
         return df
     
 
@@ -202,7 +228,7 @@ class GenericMetadata:
 
     def get_thumbnail_path_for_iiif(self, archive_dict):
         try:
-            json_url = urllib.request.urlopen(archive_dict["manifest_url"])
+            json_url = urllib.request.urlopen(archive_dict["manifest_url"])            
             if json_url:
                 return json.loads(json_url.read())["thumbnail"]["@id"]
         except Exception as e:
@@ -344,15 +370,33 @@ class GenericMetadata:
     def utcformat(self, dt, timespec="milliseconds"):
         # convert datetime to string in UTC format (YYYY-mm-ddTHH:MM:SS.mmmZ)
         iso_str = dt.astimezone(timezone.utc).isoformat("T", timespec)
-
         return iso_str.replace("+00:00", "Z")
+
+
+    def valid_key(self, key):
+        return (
+            key is not None and 
+            isinstance(key, str) and 
+            str(key).strip() != "" and 
+            not key.lower().startswith("unnamed")
+        )
+
+
+    def valid_value(self, value):
+        return (
+            value is not None and (
+            isinstance(value, str) and 
+            str(value).strip() != "") or
+            isinstance(value, bool)
+        )
 
 
     def process_csv_metadata(self, data_row, item_type):
         dict = {}
-        for item in data_row.items():
-            # Always set the attribute, even if value is empty
-            dict = self.set_attribute(dict, item[0].strip(), str(item[1]).strip().strip("\"").strip())
+        items = data_row.items()
+        for key, value in items:
+            if(self.valid_key(key) and self.valid_value(value)):
+                dict = self.set_attribute(dict, key.strip(), str(value).strip().strip("\"").strip())
         # Set embargo flag only after all attributes are processed, based on embargo dates only
         embargo_start = dict.get("embargo_start_date")
         embargo_end = dict.get("embargo_end_date")
@@ -363,7 +407,7 @@ class GenericMetadata:
                 start_dt = parse(str(embargo_start))
                 end_dt = parse(str(embargo_end))
                 if start_dt > end_dt:
-                    self.logger.error(f"\033[91m⚠️  Error: Embargo start date ({embargo_start}) is after embargo end date ({embargo_end}) for identifier {attr_dict.get('identifier', 'N/A')}\033[0m")
+                    self.logger.error(f"\033[91m⚠️  Error: Embargo start date ({embargo_start}) is after embargo end date ({embargo_end}) for identifier {dict.get('identifier', 'N/A')}\033[0m")
             except Exception as e:
                 self.logger.error(f"Error parsing embargo dates for identifier {dict.get('identifier', 'N/A')}: {e}")
 
