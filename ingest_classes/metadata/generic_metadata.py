@@ -420,12 +420,6 @@ class GenericMetadata:
             self.logger.error(f"Missing required attribute in this row!")
         else:
             dict = self.set_attributes_from_env(dict, item_type)
-            # Visibility logic: show item only if visibility is True and embargo is False
-            visibility = dict.get("visibility", True)
-            if visibility and not embargo:
-                dict["visibility"] = True
-            else:
-                dict["visibility"] = False
 
         return dict
 
