@@ -37,6 +37,7 @@ class GenericDigitalObject:
 
 
     def import_collection_objects(self, source_bucket, source_dir, dest_bucket):
+        self.logger.info(f"Beginning collection asset copy")
         for asset in self.assets["collection"]:
             formatted_asset = None
             local_asset = self.assets["collection"][asset] # this is the filename idiot
@@ -78,14 +79,15 @@ class GenericDigitalObject:
 
     def import_item_objects(self, df, source_bucket, dest_bucket):
         # item assets
+        self.logger.info(f"Beginning item asset copy")
         for idx, row in df.iterrows():
             source_dir, dest_dir = self.get_bucket_paths(row)
+            self.logger.info(f"identifier: {row['identifier']}, source_dir: {source_dir}, dest_dir: {dest_dir}")
             for asset in self.assets["item"]:
                 success = False
                 # if we're supposed to generate thumbnails then just skip the copy here
                 if asset == "thumbnail" and self.env["GENERATE_THUMBNAILS"]:
                     break
-                
                 
                 formatted_asset = None
                 local_asset = self.assets["item"][asset]
@@ -131,21 +133,21 @@ class GenericDigitalObject:
                 
     def generate_thumbnail(self, matching_key, dest_dir):
         # Generate a thumbnail for the object if requested
-        # try:
-        target_key = os.path.join(dest_dir, os.path.basename(matching_key))
-        thumbnail_key = target_key.replace(
-            f".{self.assets['options']['asset_src']}",
-            "_thumbnail.jpg",
-        )
-        response = self.call_thumbnail_service(
-            self.env["AWS_SRC_BUCKET"],
-            matching_key,
-            self.env["AWS_DEST_BUCKET"],
-            thumbnail_key,
-        )
-        self.logger.info(f"response from thumbnail lambda {response}")
-    # except Exception as e:
-    #     self.logger.info(e)
+        try:
+            target_key = os.path.join(dest_dir, os.path.basename(matching_key))
+            thumbnail_key = target_key.replace(
+                f".{self.assets['options']['asset_src']}",
+                "_thumbnail.jpg",
+            )
+            response = self.call_thumbnail_service(
+                self.env["AWS_SRC_BUCKET"],
+                matching_key,
+                self.env["AWS_DEST_BUCKET"],
+                thumbnail_key,
+            )
+            self.logger.info(f"response from thumbnail lambda {response}")
+        except Exception as e:
+            self.logger.error(e)
 
 
     def call_thumbnail_service(self, src_bucket, src_key, dest_bucket, dest_key):
@@ -162,41 +164,6 @@ class GenericDigitalObject:
         )
         return response
 
-    def log_results(self, num_successful, successful_copies, num_failed, failed_copies):
-        success_msg = f"Successfully copied {num_successful} files.\n"
-        self.logger.info()
-        self.logger.info("----------------")
-        self.logger.info(success_msg)
-        failed_msg = f"Failed to copy {num_failed} files.\n"
-        self.logger.info(failed_msg)
-        now = datetime.datetime.now()
-        output_path = os.path.join(self.env["SCRIPT_ROOT"], "results_files")
-        pathlib.Path(output_path).mkdir(parents=True, exist_ok=True)
-        out_filename = os.path.join(
-            output_path, str(now).replace(" ", "_") + "_ingest_results.txt"
-        )
-        with open(out_filename, "w") as f:
-            f.write(failed_msg)
-            for item in failed_copies:
-                f.write(f"{item}\n")
-            f.write(
-                "------------------------------------------------------------------\n"
-            )
-            f.write(success_msg)
-            for item in successful_copies:
-                f.write(f"{item}\n")
-
-    def log_copy(
-        self, key, success, num_successful, successful_copies, num_failed, failed_copies
-    ):
-        if success:
-            num_successful = num_successful + 1
-            successful_copies.append(key)
-        else:
-            num_failed = num_failed + 1
-            failed_copies.append(key)
-        return num_successful, successful_copies, num_failed, failed_copies
-
 
     def format_and_copy(
         self, source_bucket, source_dir, key, dest_bucket, dest_dir=None
@@ -208,10 +175,7 @@ class GenericDigitalObject:
 
     def s3_copy(self, source_bucket, source_key, dest_bucket, dest_key):
         if self.env["VERBOSE"]:
-            self.logger.info("Copying:")
-            self.logger.info(f"{source_bucket.name}:{source_key}")
-            self.logger.info("to:")
-            self.logger.info(f"{dest_bucket.name}:{dest_key}")
+            self.logger.info(f"Copying: {source_bucket.name}:{source_key}, To: {dest_bucket.name}:{dest_key}")
         if not dest_key.endswith("/"):
             if self.env["DRY_RUN"]:
                 self.logger.info(f"DRYRUN: s3 copy: simulated")
@@ -227,7 +191,7 @@ class GenericDigitalObject:
                     )
                     return True
                 except Exception as e:
-                    self.logger.info(e)
+                    self.logger.error(e)
                     return False
             
         else:

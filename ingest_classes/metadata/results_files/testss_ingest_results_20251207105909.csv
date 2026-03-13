@@ -1,2 +1,0 @@
-row_in_metadata,identifier,succeeded,message
-2,testss,True,Error Row 2: Identifier (testss) already exists in Dynamo table. Succeeded: True

@@ -43,12 +43,12 @@ media_types_map = {
             },
             "item": {
                 "iiif_manifest": "manifest.json",
-                "x3d_config": "3D/X3D/LowRes/LowRes_<item_identifier>_X3D.x3d",
-                "x3d_src_img": "3D/X3D/LowRes/LowRes_<item_identifier>_X3D.png",
-                "morpho_thumb": "Morphosource Thumbnails/HighRes_<item_identifier>_thumbnail.png",
+                "gltf_config": "3D/GLB/<item_identifier>.glb",
+                "env_config": "studio.env",
+                "thumbnail": "<item_identifier>_thumbnail.jpg",
             },
         },
-        "extensions": ["x3d"],
+        "extensions": ["glb", "gltf"],
         "handler": ThreeDType,
     },
     "3d": {
@@ -64,7 +64,7 @@ media_types_map = {
                 "thumbnail": "<item_identifier>_thumbnail.jpg",
             },
         },
-        "extensions": ["glb, gltf"],
+        "extensions": ["glb", "gltf"],
         "handler": ThreeDType,
     }
 }
