@@ -103,6 +103,10 @@ class GenericMetadata:
                     "representative.jpg",
                 )
 
+            # set "archived" to true for the immediate future.
+            if "archived" not in collection_dict:
+                collection_dict["archived"] = True
+
             existing_collection = self.query_by_index(self.env["collection_table"], "Identifier", collection_dict["identifier"])
             if existing_collection:
                 if self.env["UPDATE_METADATA"]:
@@ -155,8 +159,12 @@ class GenericMetadata:
                         continue
 
                     if "parent_collection_identifier" not in archive_dict or not archive_dict["parent_collection_identifier"]:
-                        if "parent_collection_identifier" in self.env and self.env["parent_collection_identifier"] != collection_dict["identifier"]:
+                        if "parent_collection_identifier" in self.env and self.env["parent_collection_identifier"] != collection["identifier"]:
                             archive_dict["parent_collection_identifier"] = self.env["parent_collection_identifier"]
+
+                    # set "archived" to true for the immediate future.
+                    if "archived" not in archive_dict:
+                        archive_dict["archived"] = True
 
                     existing_archive = self.query_by_index(self.env["archive_table"], "Identifier", archive_dict["identifier"])
                     if existing_archive:
