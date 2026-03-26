@@ -115,26 +115,23 @@ class ThreeDMetadata(GenericMetadata):
                 else archive_3d_asset_path
             )
             asset_val = self.assets["item"][asset]
-            if type(asset_val) != list:
-                asset_val = [asset_val]
-                asset_list = []
-                for item_asset in asset_val:
-                    asset_path = os.path.join(
-                        adjusted_path,
-                        os.path.basename(item_asset).replace(
-                            "<item_identifier>", archive_dict["identifier"]
-                        ),
-                    )
-                    asset_path = asset_path.replace(self.env["APP_IMG_ROOT_PATH"], "")
-                    if asset_path:
-                        key = self.key_by_asset_path(asset_path)
-                    if key:
-                        asset_full_path = os.path.join(
-                            self.env["APP_IMG_ROOT_PATH"], key
-                        )
-                        asset_list.append(asset_full_path)
 
-                archive_assets[asset] = asset_list
+            if type(asset_val) == str:
+
+                asset_path = os.path.join(
+                    adjusted_path,
+                    os.path.basename(asset_val).replace(
+                        "<item_identifier>", archive_dict["identifier"]
+                    )
+                )
+                asset_path = asset_path.replace(self.env["APP_IMG_ROOT_PATH"], "")
+                if asset_path:
+                    key = self.key_by_asset_path(asset_path)
+                if key:
+                    asset_full_path = os.path.join(
+                        self.env["APP_IMG_ROOT_PATH"], key
+                    )
+            archive_assets[asset] = asset_full_path
             
         if "x3d_config" in archive_assets:
             if "iiif_manifest" in archive_assets:
@@ -147,32 +144,38 @@ class ThreeDMetadata(GenericMetadata):
             else:
                 archive_assets["media_type"] = "3d-model/gltf"
 
+        archive_assets["env_config"] = "https://d21nnzi4oh5qvs.cloudfront.net/federated/3d/gltf/studio.env"
+
         # start config
         archive_config["_3d"] = {}
-        archive_config["_3d"]["rotation"] = {}
-        
-        if "3D_OPTIONS-ROTATION-X" in self.env:
-            archive_config["_3d"]["rotation"]["horizontal"] = self.env["3D_OPTIONS-ROTATION-X"]
-        if "3D_OPTIONS-ROTATION-Y" in self.env:
-            archive_config["_3d"]["rotation"]["vertical"] = self.env["3D_OPTIONS-ROTATION-Y"]
+        archive_config["_3d"]["rotation"] = {
+            "horizontal": 0,
+            "vertical": 0
+        }
+        archive_config["_3d"]["scale_factor"] = "1"
 
-        if "3D_OPTIONS-SCALE" in self.env:
-            archive_config["_3d"]["scale_factor"] = self.env["3D_OPTIONS-SCALE"]
+        if "3D_OPTIONS_ROTATION_X" in self.env:
+            archive_config["_3d"]["rotation"]["horizontal"] = self.env["3D_OPTIONS_ROTATION_X"]
+        if "3D_OPTIONS_ROTATION_Y" in self.env:
+            archive_config["_3d"]["rotation"]["vertical"] = self.env["3D_OPTIONS_ROTATION_Y"]
 
-        if "3D_OPTIONS-ADDONS" in self.env and self.env["3D_OPTIONS-ADDONS"]:
+        if "3D_OPTIONS_SCALE" in self.env:
+            archive_config["_3d"]["scale_factor"] = self.env["3D_OPTIONS_SCALE"]
+
+        if "3D_OPTIONS_ADDONS" in self.env and self.env["3D_OPTIONS_ADDONS"]:
             archive_config["_3d"]["addOns"] = []
-            if self.env["3D_OPTIONS-ADDONS"] == "flash_card":
+            if self.env["3D_OPTIONS_ADDONS"] == "flash_card":
                 flash_card = {}
                 flash_card["type"] = "flash_card"
-                if "3D_OPTIONS-FLASH_CARD-OPTIONS-TEXT-BACK" in self.env:
+                if "3D_OPTIONS_FLASH_CARD_OPTIONS_TEXT_BACK" in self.env:
                     flash_card["back"] = {
                         "type": "metadata",
-                        "value": self.env["3D_OPTIONS-FLASH_CARD-OPTIONS-TEXT-BACK"]
+                        "value": self.env["3D_OPTIONS_FLASH_CARD_OPTIONS_TEXT_BACK"]
                     }
-                if "3D_OPTIONS-FLASH_CARD-OPTIONS-TEXT-FRONT" in self.env:
+                if "3D_OPTIONS_FLASH_CARD_OPTIONS_TEXT_FRONT" in self.env:
                     flash_card["front"] = {
                         "type": "string",
-                        "value": self.env["3D_OPTIONS-FLASH_CARD-OPTIONS-TEXT-FRONT"]
+                        "value": self.env["3D_OPTIONS_FLASH_CARD_OPTIONS_TEXT_FRONT"]
                     }
                 archive_config["_3d"]["addOns"].append(flash_card)
  

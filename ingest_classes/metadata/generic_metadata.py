@@ -169,6 +169,7 @@ class GenericMetadata:
 
                     # set "archived" to true for the immediate future.
                     if "archived" not in archive_dict:
+                        self.logger.info(f"Setting 'archived' to True for Archive {archive_dict['identifier']}")
                         archive_dict["archived"] = True
 
                     existing_archive = self.query_by_index(self.env["archive_table"], "Identifier", archive_dict["identifier"])
@@ -210,7 +211,7 @@ class GenericMetadata:
 
     # Checks all the dates for the row at the same time.
     # Returns false if ANY fail
-    def validate_archive_dates(archive_dict):
+    def validate_archive_dates(self, archive_dict):
         date_fields = ["embargo_end_date", "embargo_start_date", "end_date", "start_date"]
         date_formats = ["%Y/%m/%d %H:%M:%S","%Y/%m/%d", "%Y/%m", "%Y-%m-%d %H:%M:%S","%Y-%m-%d", "%Y-%m", "%Y"]
         all_valid = True
@@ -364,6 +365,8 @@ class GenericMetadata:
     def create_item_in_table(self, table, attr_dict, item_type):
         if "id" not in attr_dict:
             attr_dict["id"] = str(uuid.uuid4())
+
+        attr_dict["archived"] = True
 
         short_id = self.mint_NOID()
         if short_id:
