@@ -133,8 +133,13 @@ class GenericMetadata:
         for idx, row in df.iterrows():
             archive_dict = self.process_csv_metadata(row, "Archive")
             if not archive_dict:
+                self.logger.error(f"Error: Archive row {idx+1} could not be parsed.")
                 continue
             else:
+                dates_valid = self.validate_archive_dates(archive_dict)
+                if not dates_valid:
+                    self.logger.error(f"Error: Archive {archive_dict.get('identifier', 'N/A')} has invalid date formats. Skipping this record.")
+                    continue
                 collection = self.get_collection(archive_dict)
                 if collection:
                     archive_dict["collection"] = collection["id"]
@@ -198,10 +203,34 @@ class GenericMetadata:
             na_values="NaN",
             keep_default_na=False,
             encoding="utf-8",
-            dtype={"Start Date": str, "End Date": str},
+            dtype={"date": str, "end_date": str, "start_date": str, "embargo_start_date": str, "embargo_end_date": str}
         )
         return df
     
+
+    # Checks all the dates for the row at the same time.
+    # Returns false if ANY fail
+    def validate_archive_dates(archive_dict):
+        date_fields = ["embargo_end_date", "embargo_start_date", "end_date", "start_date"]
+        date_formats = ["%Y/%m/%d %H:%M:%S","%Y/%m/%d", "%Y/%m", "%Y-%m-%d %H:%M:%S","%Y-%m-%d", "%Y-%m", "%Y"]
+        all_valid = True
+        for field in date_fields:
+            field_valid = False
+            if field in archive_dict and archive_dict[field]:
+                for fmt in date_formats:
+                    try:
+                        datetime.strptime(archive_dict[field], fmt)
+                        field_valid = True
+                        break  # if parsing is successful, break out of the loop
+                    except ValueError:
+                        continue  # if parsing fails, try the next format
+            else:
+                field_valid = True
+            if not field_valid:
+                all_valid = False
+
+        return all_valid
+
 
     def get_thumbnail_path_for_archive(self, archive_dict, collection):
         match self.env["MEDIA_TYPE"]:

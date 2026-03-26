@@ -20,6 +20,10 @@ class ThreeDMetadata(GenericMetadata):
                 self.logger.error(f"Error: reading item on line {idx+1} from csv.")
                 continue
             else:
+                dates_valid = self.validate_archive_dates(archive_dict)
+                if not dates_valid:
+                    self.logger.error(f"Error: Archive {archive_dict.get('identifier', 'N/A')} has invalid date formats. Skipping this record.")
+                    continue
                 collection = self.get_collection(archive_dict)
                 if not collection:
                     self.logger.error(f"Error: Collection not found in dynamo for item at row {idx+1}.")
@@ -111,7 +115,8 @@ class ThreeDMetadata(GenericMetadata):
                 else archive_3d_asset_path
             )
             asset_val = self.assets["item"][asset]
-            if type(asset_val) == list:
+            if type(asset_val) != list:
+                asset_val = [asset_val]
                 asset_list = []
                 for item_asset in asset_val:
                     asset_path = os.path.join(
@@ -130,35 +135,26 @@ class ThreeDMetadata(GenericMetadata):
                         asset_list.append(asset_full_path)
 
                 archive_assets[asset] = asset_list
+            
+        if "x3d_config" in archive_assets:
+            if "iiif_manifest" in archive_assets:
+                archive_assets["media_type"] = "3d_2diiif"
             else:
-                asset_path = os.path.join(
-                    adjusted_path,
-                    os.path.basename(asset_val).replace(
-                        "<item_identifier>", archive_dict["identifier"]
-                    ),
-                )
-                asset_path = asset_path.replace(self.env["APP_IMG_ROOT_PATH"], "")
-                if asset_path:
-                    key = self.key_by_asset_path(asset_path)
-                if key:
-                    archive_assets[asset] = os.path.join(
-                        self.env["APP_IMG_ROOT_PATH"], key
-                    )
-                archive_assets["env_config"] = os.path.join(
-                        self.env["APP_IMG_ROOT_PATH"], "federated/3d/gltf/studio.env"
-                    )
-                archive_assets["scale_factor"] = "75"
-
-        archive_assets["media_type"] = "3d-model/gltf"
+                archive_assets["media_type"] = "3d-model/x3dom"
+        elif "gltf_config" in archive_assets:
+            if "iiif_manifest" in archive_assets:
+                archive_assets["media_type"] = "3d_2diiif"
+            else:
+                archive_assets["media_type"] = "3d-model/gltf"
 
         # start config
         archive_config["_3d"] = {}
         archive_config["_3d"]["rotation"] = {}
         
         if "3D_OPTIONS-ROTATION-X" in self.env:
-            archive_config["_3d"]["rotation"]["x"] = self.env["3D_OPTIONS-ROTATION-X"]
+            archive_config["_3d"]["rotation"]["horizontal"] = self.env["3D_OPTIONS-ROTATION-X"]
         if "3D_OPTIONS-ROTATION-Y" in self.env:
-            archive_config["_3d"]["rotation"]["y"] = self.env["3D_OPTIONS-ROTATION-Y"]
+            archive_config["_3d"]["rotation"]["vertical"] = self.env["3D_OPTIONS-ROTATION-Y"]
 
         if "3D_OPTIONS-SCALE" in self.env:
             archive_config["_3d"]["scale_factor"] = self.env["3D_OPTIONS-SCALE"]

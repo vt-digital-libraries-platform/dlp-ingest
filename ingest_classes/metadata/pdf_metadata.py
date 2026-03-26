@@ -19,13 +19,17 @@ class PDFMetadata(GenericMetadata):
             archive_dict = self.process_csv_metadata(row, "Archive")
             if not archive_dict:
                 self.logger.error(f"Error: Archive {idx+1} has failed to be imported.")
-                break
+                continue
             else:
+                dates_valid = self.validate_archive_dates(archive_dict)
+                if not dates_valid:
+                    self.logger.error(f"Error: Archive {archive_dict.get('identifier', 'N/A')} has invalid date formats. Skipping this record.")
+                    continue
                 collection = self.get_collection(archive_dict)
                 if not collection:
                     self.logger.error(f"Error: Collection not found for Archive {idx+1}.")
                     self.logger.error("Error: Archive must belong to a collection to be ingested")
-                    break
+                    continue
                 collection_identifier = (
                     collection["identifier"]
                     if collection
@@ -34,7 +38,7 @@ class PDFMetadata(GenericMetadata):
                 if collection_identifier is None:
                     self.logger.error(f"Error: Collection not found for Archive {idx+1}.")
                     self.logger.error("Error: Archive must belong to a collection to be ingested")
-                    break
+                    continue
                 else:
                     archive_dict["collection"] = collection["id"]
                     archive_dict["parent_collection"] = [collection["id"]]
@@ -42,7 +46,7 @@ class PDFMetadata(GenericMetadata):
                     archive_dict["manifest_url"] = self.asset_path(
                         archive_dict, collection_identifier, "pdf"
                     )
-                    self.logger.info(f"manifest: {archive_dict['manifest_url']}")
+                    self.logger.info(f"pdf: {archive_dict['manifest_url']}")
                     archive_dict["thumbnail_path"] = self.asset_path(
                         archive_dict, collection_identifier, "thumbnail"
                     )
