@@ -16,7 +16,7 @@ class PDFMetadata(GenericMetadata):
     def batch_import_archives(self, response):
         df = self.csv_to_dataframe(io.BytesIO(response["Body"].read()))
         for idx, row in df.iterrows():
-            archive_dict = self.process_csv_metadata(row, "Archive")
+            archive_dict = self.process_metadata_and_env(row, "Archive")
             if not archive_dict:
                 self.logger.error(f"Error: Archive {idx+1} has failed to be imported.")
                 continue

@@ -15,7 +15,7 @@ class ThreeDMetadata(GenericMetadata):
     def batch_import_archives(self, response):
         df = self.csv_to_dataframe(io.BytesIO(response["Body"].read()))
         for idx, row in df.iterrows():
-            archive_dict = self.process_csv_metadata(row, "Archive")
+            archive_dict = self.process_metadata_and_env(row, "Archive")
             if not archive_dict:
                 self.logger.error(f"Error: reading item on line {idx+1} from csv.")
                 continue
@@ -38,14 +38,15 @@ class ThreeDMetadata(GenericMetadata):
                     archive_dict["parent_collection"] = [collection["id"]]
                     archive_dict["heirarchy_path"] = collection["heirarchy_path"]
                     
-                    # try to load iiif manifest and get thumbnail, in case it's a 3d + iiif record
-                    archive_dict["manifest_url"] = os.path.join(
-                        self.env["APP_IMG_ROOT_PATH"],
-                        self.env["COLLECTION_CATEGORY"],
-                        collection_identifier,
-                        archive_dict["identifier"],
-                        "manifest.json",
-                    )
+                    # try to load iiif manifest, in case it's a 3d + iiif record
+                    if "iiif" in self.env["MEDIA_TYPE"]:
+                        archive_dict["manifest_url"] = os.path.join(
+                            self.env["APP_IMG_ROOT_PATH"],
+                            self.env["COLLECTION_CATEGORY"],
+                            collection_identifier,
+                            archive_dict["identifier"],
+                            "manifest.json",
+                        )
 
                     archive_dict["thumbnail_path"] = self.get_thumbnail_path_for_archive(archive_dict, collection)
                         
@@ -54,7 +55,7 @@ class ThreeDMetadata(GenericMetadata):
                     archive_option_additions = self.set_archive_options(archive_dict)
                     archive_dict["archiveOptions"] = archive_option_additions
 
-                    if archive_dict["thumbnail_path"] is None:
+                    if "thumbnail_path" not in archive_dict or archive_dict["thumbnail_path"] is None:
                         try:
                             archive_dict["thumbnail_path"] = archive_option_additions["assets"]["morpho_thumb"]
                         except Exception as e:

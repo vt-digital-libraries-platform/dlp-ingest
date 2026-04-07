@@ -259,6 +259,32 @@
                         </div>        
                     </fieldset>
                 </fieldset>
+
+                <!-- Visibility and embargo Options -->
+                <fieldset class="form_section" id="visibility_and_embargo_section">
+                    <legend>Visibility and Embargo Options</legend>
+                    <div id="ingest_visibility_help" class="section_text">Set whether records should be visible or hidden. NOTE: These settings will be applied to all ingest records.</div>
+                    
+                    <div class="visibility_radios" role="radiogroup" aria-labelledby="ingest_visibility_help" aria-required="true">
+                        <label for="ingest_visibility_true">
+                            <input type="radio" id="ingest_visibility_true" name="VISIBILITY" value="true" aria-describedby="ingest_visibility_help" checked /> Visible
+                        </label>
+                        <label for="ingest_visibility_false">
+                            <input type="radio" id="ingest_visibility_false" name="VISIBILITY" value="false" aria-describedby="ingest_visibility_help" /> Hidden
+                        </label>
+                    </div>
+
+                    <div id="ingest_embargo_help" class="section_text">Set start and end dates for embargo, if applicable. NOTE: These settings will be applied to all ingest records.</div>
+                
+                    <div id="embargo_dates">
+                        <label for="embargo_start_date">Embargo Start Date:</label>
+                        <input type="date" id="embargo_start_date" name="EMBARGO_START_DATE" aria-describedby="ingest_embargo_help">
+
+                        <label for="embargo_end_date">Embargo End Date:</label>
+                        <input type="date" id="embargo_end_date" name="EMBARGO_END_DATE" aria-describedby="ingest_embargo_help">
+                    </div>
+                    
+                </fieldset>
                 
                 <!-- Boolean Options -->
                 <fieldset class="form_section" id="options_section">

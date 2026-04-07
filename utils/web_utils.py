@@ -16,6 +16,8 @@ env_vars = [
     'DYNAMODB_TABLE_SUFFIX',
     'DYNAMODB_NOID_TABLE',
     'DYNAMODB_FILE_CHAR_TABLE',
+    'EMBARGO_START_DATE',
+    'EMBARGO_END_DATE',
     'ENV_SELECTION',
     'GENERATE_THUMBNAILS',
     'INGEST_TYPE',
@@ -31,6 +33,7 @@ env_vars = [
     'SHORT_URL_PATH',
     'UPDATE_METADATA',
     'VERBOSE',
+    'VISIBILITY',
     '3D_OPTIONS_ROTATION_X',
     '3D_OPTIONS_ROTATION_Y',
     '3D_OPTIONS_SCALE',
@@ -59,6 +62,13 @@ def get_available_envs(application):
         envs = yaml.safe_load(f)
 
     return envs or []
+
+
+def clear_logfile(logger):
+    logfile = get_logfile(logger)
+    if logfile:
+        with open(logfile, 'w'):
+            pass
 
 
 def get_logfile(logger):
@@ -110,16 +120,6 @@ def set_environment_defaults(application):
 
 def set_environment_overrides():
     set_environment(request.form.items())
-#     set_environment_booleans()
-
-
-# def set_environment_booleans():
-    
-#     for key in env_vars:
-#         if isinstance(ingestConfig[key], str) and ingestConfig[key].lower() == "true":
-#             ingestConfig[key] = True
-#         elif isinstance(ingestConfig[key], str) and ingestConfig[key].lower() == "false":
-#             ingestConfig[key] = False
 
 
 def get_identifier():

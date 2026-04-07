@@ -44,10 +44,12 @@ def submit(application):
     errors = []
     summary = []
 
+    # Clear the logfile each run
+    utils.clear_logfile(logger)
+
     logger.info("====================================================")
     logger.info("/submit -- received ingest request. Beginning ingest process")
     logger.info("====================================================")
-    logger.info(request)
 
     user = session.get('user')
     if user:
@@ -72,7 +74,7 @@ def submit(application):
             metadata_filepath = os.path.join(application.config['UPLOADS'], uploaded[0])
             ingestConfig = utils.get_ingestConfig()
             logger.info(f"Config: {ingestConfig}")
-            logger.info("BEGIN INGEST RESULTS---------------------")
+            logger.info("INGEST RESULTS---------------------")
             result = dlp_ingest_main(None, None, metadata_filepath, ingestConfig)
             logger.info("--------------------- ...END INGEST RESULTS")
             if result:
@@ -140,7 +142,8 @@ def submit(application):
                     updated_count=len(updated_items),
                     errors_count=len(errors),
                     summary_count=len(summary),
-                    log_lines=log_lines
+                    log_lines=log_lines,
+                    ingest_config=ingestConfig
                 )
         else:
             err = "There was an exception finding the metadata file"

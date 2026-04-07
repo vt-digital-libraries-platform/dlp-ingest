@@ -70,7 +70,7 @@ class GenericMetadata:
         # process the metadata csv row by row
         df = self.csv_to_dataframe(io.BytesIO(response["Body"].read()))
         for idx, row in df.iterrows():
-            collection_dict = self.process_csv_metadata(row, "Collection")
+            collection_dict = self.process_metadata_and_env(row, "Collection")
             if not collection_dict:
                 self.logger.error(f"Error: Collection {idx+1} has failed to be imported.")
                 return False
@@ -131,7 +131,7 @@ class GenericMetadata:
         self.logger.info("Parsing archive metadata")
         df = self.csv_to_dataframe(io.BytesIO(response["Body"].read()))
         for idx, row in df.iterrows():
-            archive_dict = self.process_csv_metadata(row, "Archive")
+            archive_dict = self.process_metadata_and_env(row, "Archive")
             if not archive_dict:
                 self.logger.error(f"Error: Archive row {idx+1} could not be parsed.")
                 continue
@@ -140,6 +140,14 @@ class GenericMetadata:
                 if not dates_valid:
                     self.logger.error(f"Error: Archive {archive_dict.get('identifier', 'N/A')} has invalid date formats. Skipping this record.")
                     continue
+                else:
+                    if "embargo_start_date" in archive_dict:
+                        self.logger.info(f"Setting embargo_start_date: {archive_dict['embargo_start_date']} for record {archive_dict.get('identifier', 'N/A')}")
+                    if "embargo_end_date" in archive_dict:
+                        self.logger.info(f"Setting embargo_end_date: {archive_dict['embargo_end_date']} for record {archive_dict.get('identifier', 'N/A')}")
+                    if "visibility" in archive_dict:
+                        self.logger.info(f"Setting visibility: {archive_dict['visibility']} for record {archive_dict.get('identifier', 'N/A')}")
+                
                 collection = self.get_collection(archive_dict)
                 if collection:
                     archive_dict["collection"] = collection["id"]
@@ -169,7 +177,6 @@ class GenericMetadata:
 
                     # set "archived" to true for the immediate future.
                     if "archived" not in archive_dict:
-                        self.logger.info(f"Setting 'archived' to True for Archive {archive_dict['identifier']}")
                         archive_dict["archived"] = True
 
                     existing_archive = self.query_by_index(self.env["archive_table"], "Identifier", archive_dict["identifier"])
@@ -237,7 +244,7 @@ class GenericMetadata:
         match self.env["MEDIA_TYPE"]:
             case "iiif":
                 return self.get_thumbnail_path_for_iiif(archive_dict)
-            case "3d":
+            case "3d_2diiif":
                 thumb = None
                 thumb = self.get_thumbnail_path_for_iiif(archive_dict)
                 if not thumb:
@@ -254,6 +261,15 @@ class GenericMetadata:
                         f"{archive_dict['identifier']}_thumbnail.jpg",
                     )
                 return thumb
+            case "3d":
+                return os.path.join(
+                    self.env["APP_IMG_ROOT_PATH"],
+                    self.env["COLLECTION_CATEGORY"],
+                    collection["identifier"],
+                    archive_dict["identifier"],
+                    "3d",
+                    f"{archive_dict['identifier']}_thumbnail.jpg",
+                )
             case _:
                 return os.path.join(
                     self.env["APP_IMG_ROOT_PATH"],
@@ -431,35 +447,37 @@ class GenericMetadata:
         )
 
 
-    def process_csv_metadata(self, data_row, item_type):
+    def process_metadata_and_env(self, data_row, item_type):
         dict = {}
         items = data_row.items()
+        identifier = None
         for key, value in items:
             if(self.valid_key(key) and self.valid_value(value)):
                 dict = self.set_attribute(dict, key.strip(), str(value).strip().strip("\"").strip())
-        # Set embargo flag only after all attributes are processed, based on embargo dates only
-        embargo_start = dict.get("embargo_start_date")
-        embargo_end = dict.get("embargo_end_date")
 
-        # Add embargo date error checking if start date is after end date:
-        if embargo_start and embargo_end:
-            try:
-                start_dt = parse(str(embargo_start))
-                end_dt = parse(str(embargo_end))
-                if start_dt > end_dt:
-                    self.logger.error(f"\033[91m⚠️  Error: Embargo start date ({embargo_start}) is after embargo end date ({embargo_end}) for identifier {dict.get('identifier', 'N/A')}\033[0m")
-            except Exception as e:
-                self.logger.error(f"Error parsing embargo dates for identifier {dict.get('identifier', 'N/A')}: {e}")
-
-        if (embargo_start and str(embargo_start).strip()) or (embargo_end and str(embargo_end).strip()):
-            embargo = True
-        else:
-            embargo = False
         if ("identifier" not in dict.keys()) or ("title" not in dict.keys()):
             dict = None
             self.logger.error(f"Missing required attribute in this row!")
         else:
             dict = self.set_attributes_from_env(dict, item_type)
+
+
+        if dict is not None:
+            identifier = dict.get("identifier", None)
+            # Set embargo flag only after all attributes are processed, based on embargo dates only
+            embargo_start = dict.get("embargo_start_date")
+            embargo_end = dict.get("embargo_end_date")
+
+            # Add embargo date error checking if start date is after end date:
+            if embargo_start and embargo_end:
+                try:
+                    start_dt = parse(str(embargo_start))
+                    end_dt = parse(str(embargo_end))
+                    if start_dt > end_dt:
+                        self.logger.error(f"\033[91m⚠️  Error: Embargo start date ({embargo_start}) is after embargo end date ({embargo_end}) for identifier {identifier}\033[0m")
+                        dict = None
+                except Exception as e:
+                    self.logger.error(f"Error parsing embargo dates for identifier {identifier}: {e}")
 
         return dict
 
@@ -473,8 +491,14 @@ class GenericMetadata:
         elif item_type == "Archive":
             dict["item_category"] = self.env["COLLECTION_CATEGORY"]
         
-        if "visibility" not in dict.keys():
-            dict["visibility"] = True
+        if "visibility" not in dict.keys() and "VISIBILITY" in self.env:
+            dict["visibility"] = self.env["VISIBILITY"]
+
+        if "embargo_start_date" not in dict.keys() and "EMBARGO_START_DATE" in self.env and self.env["EMBARGO_START_DATE"] != "":
+            dict["embargo_start_date"] = self.env["EMBARGO_START_DATE"]
+
+        if "embargo_end_date" not in dict.keys() and "EMBARGO_END_DATE" in self.env and self.env["EMBARGO_END_DATE"] != "":
+            dict["embargo_end_date"] = self.env["EMBARGO_END_DATE"]
 
         dict = self.handle_options(dict)
 
@@ -497,10 +521,10 @@ class GenericMetadata:
                 dict[lower_attr] = True
             else:
                 dict[lower_attr] = False
-        elif attr == "embargo_start_date" or attr == "embargo_end_date":
-            self.print_index_date(dict, value, lower_attr)
-        elif attr == "start_date" or attr == "end_date":
-            self.print_index_date(dict, value, lower_attr)
+        # elif attr == "embargo_start_date" or attr == "embargo_end_date":
+        #     self.print_index_date(dict, value, lower_attr)
+        # elif attr == "start_date" or attr == "end_date":
+        #     self.print_index_date(dict, value, lower_attr)
         elif attr == "parent_collection_identifier":
             parent = self.query_by_index(self.env["collection_table"], "Identifier", value)
 

@@ -112,6 +112,15 @@ div#db-table-select {
     margin-top: 10px;
 }
 
+input[type="date"] {
+    margin-bottom: 1rem;
+    color: #222;
+    border: 1px solid #444;
+    /* High contrast border - 8.6:1 ratio */
+    border-radius: 4px;
+    font-size: 1rem;
+    box-sizing: border-box;
+}
 
 input[type="text"], 
 input[type="file"],
@@ -125,7 +134,7 @@ select {
     border: 1px solid #444;
     /* High contrast border - 8.6:1 ratio */
     border-radius: 4px;
-    font-size: 14px;
+    font-size: 1rem;
     box-sizing: border-box;
 }
 
@@ -218,7 +227,7 @@ input.short {
 }
 
 /* Make section headings green */
-h3 {
+h2.logs, h3 {
     color: #4CAF50; /* Green */
     font-size: 1.25em;   
     font-weight: bold;

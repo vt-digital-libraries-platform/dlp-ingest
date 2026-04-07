@@ -2,8 +2,8 @@
 
 {% block content %}
     <div id="content" role="region" aria-label="Ingest submission results">
-        <h1>Ingest Complete!</h1>
-        <p class="center">Your ingest operation finished successfully ...because you're awesome</p>
+        <h1>Processing Complete</h1>
+        <p class="center">Ingest process has completed. Please review the logs below for ingest results.</p>
 
         <div>
             {% for mesg in get_flashed_messages() %}
@@ -11,9 +11,21 @@
             {% endfor %}
         </div>
 
-        <h2>Ingest Results</h2>
+        <div>
+            {% if "EMBARGO_START_DATE" in ingest_config and ingest_config.EMBARGO_START_DATE != ""%}
+                <p>Default embargo start date: {{ ingest_config.EMBARGO_START_DATE }}</p>
+            {% endif %}
+            {% if "EMBARGO_END_DATE" in ingest_config and ingest_config.EMBARGO_END_DATE != "" %}
+                <p>Default embargo end date: {{ ingest_config.EMBARGO_END_DATE }}</p>
+            {% endif %}
+            {% if "VISIBILITY" in ingest_config %}
+                <p>Default visibility: {{ ingest_config.VISIBILITY }}</p>
+            {% endif %}
+
+        </div>
+
         {% if user_is_admin %}
-            <h3>Log Output</h3>
+            <h2 class="logs">Log Output</h2>
             <div class="log_output">
                 {% for line in log_lines %}
                     {{ line }}
