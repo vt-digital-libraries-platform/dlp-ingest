@@ -61,7 +61,7 @@ media_types_map = {
             "item": {
                 "gltf_config": "3D/GLB/<item_identifier>.glb",
                 "env_config": "studio.env",
-                "thumbnail": "<item_identifier>_thumbnail.jpg",
+                "thumbnail": "3D/GLB/<item_identifier>_thumbnail.jpg",
             },
         },
         "extensions": ["glb", "gltf"],
