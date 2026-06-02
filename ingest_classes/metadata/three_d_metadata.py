@@ -109,6 +109,7 @@ class ThreeDMetadata(GenericMetadata):
         )
         archive_asset_path = os.path.join(collection_path, archive_dict["identifier"])
         archive_3d_asset_path = os.path.join(archive_asset_path, "3d")
+        asset_full_path = ""
         for asset in self.assets["item"]:
             adjusted_path = (
                 archive_asset_path
