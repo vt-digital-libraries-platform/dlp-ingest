@@ -19,11 +19,16 @@ logger.info("----------------------------------------")
 logger.info("Starting instance...")
 
 app_secret = os.environ.get('AUTH_SECRET')
+auth_config = {}
+auth_config['authority'] = os.environ.get('AUTH_AUTHORITY')
+auth_config['client_id'] = os.environ.get('AUTH_CLIENT_ID')
+auth_config['client_secret'] = app_secret
+auth_config['metadata_url'] = os.environ.get('AUTH_METADATA_URL')
 
 application = Flask(__name__)
 application.secret_key = app_secret
 
-oauth = auth.init(application, app_secret)
+oauth = auth.init(application, auth_config)
 
 app_src_dir = os.path.dirname(os.path.abspath(__file__))
 application.config['APP_SRC_DIR'] = app_src_dir
