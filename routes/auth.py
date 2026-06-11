@@ -4,14 +4,14 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def init(application, app_secret):
+def init(application, auth_config):
     oauth = OAuth(application)
     oauth.register(
         name='oidc',
-        authority='https://cognito-idp.us-east-1.amazonaws.com/us-east-1_wy1lPpMYt',
-        client_id='4qicbtth4a9rhq6jrat24ic3oi',
-        client_secret=app_secret,
-        server_metadata_url='https://cognito-idp.us-east-1.amazonaws.com/us-east-1_wy1lPpMYt/.well-known/openid-configuration',
+        authority=auth_config['authority'],
+        client_id=auth_config['client_id'],
+        client_secret=auth_config['client_secret'],
+        server_metadata_url=auth_config['metadata_url'],
         client_kwargs={'scope': 'email openid'}
     )
     return oauth
