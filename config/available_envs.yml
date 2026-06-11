@@ -1,11 +1,12 @@
 
-- name: vtdlpdev
-  value: dev
-  label: Development
-- name: vtdlppprd
-  value: pprd
-  label: Pre-production
+# - name: vtdlpdev
+#   value: dev
+#   label: Development
+# - name: vtdlppprd
+#   value: pprd
+#   label: Pre-production
+#   selected: true
+- name: vtdlpprod
+  value: prod
+  label: Production
   selected: true
-# - name: vtdlpprod
-#   value: prod
-#   label: Production
