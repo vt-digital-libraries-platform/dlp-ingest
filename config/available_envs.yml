@@ -6,7 +6,7 @@
 #   value: pprd
 #   label: Pre-production
 #   selected: true
-- name: vtdlpprod
-  value: prod
+- name: production
+  value: production
   label: Production
   selected: true
