@@ -686,8 +686,15 @@ async function init() {
 
     // Fetch environment defaults and set fields
     await getDefaults().then((def) => {
+        let selectedEnv = "";
         try {
-            setEnvFields(def, "pprd");
+            selectedEnv = document.querySelector('input[name="ENV_SELECTION"]:checked').value;
+        }
+        catch(error) {
+            console.error(error)
+        }
+        try {
+            setEnvFields(def, selectedEnv);
             checkAllSections();
         }
         catch(error) {
