@@ -382,8 +382,6 @@ class GenericMetadata:
         if "id" not in attr_dict:
             attr_dict["id"] = str(uuid.uuid4())
 
-        attr_dict["archived"] = True
-
         short_id = self.mint_NOID()
         if short_id:
             attr_dict["custom_key"] = os.path.join(
