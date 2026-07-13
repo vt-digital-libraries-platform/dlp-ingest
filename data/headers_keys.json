@@ -32,6 +32,7 @@
     "has_format",
     "has_part",
     "has_version",
+    "is_part_of",
     "is_format_of",
     "is_version_of",
     "language",

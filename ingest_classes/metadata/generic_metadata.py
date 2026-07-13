@@ -459,7 +459,6 @@ class GenericMetadata:
         else:
             dict = self.set_attributes_from_env(dict, item_type)
 
-
         if dict is not None:
             identifier = dict.get("identifier", None)
             # Set embargo flag only after all attributes are processed, based on embargo dates only
@@ -519,10 +518,6 @@ class GenericMetadata:
                 dict[lower_attr] = True
             else:
                 dict[lower_attr] = False
-        # elif attr == "embargo_start_date" or attr == "embargo_end_date":
-        #     self.print_index_date(dict, value, lower_attr)
-        # elif attr == "start_date" or attr == "end_date":
-        #     self.print_index_date(dict, value, lower_attr)
         elif attr == "parent_collection_identifier":
             parent = self.query_by_index(self.env["collection_table"], "Identifier", value)
 
