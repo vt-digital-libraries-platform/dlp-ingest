@@ -146,7 +146,7 @@ class ThreeDMetadata(GenericMetadata):
             else:
                 archive_assets["media_type"] = "3d-model/gltf"
 
-        archive_assets["env_config"] = "https://d21nnzi4oh5qvs.cloudfront.net/federated/3d/gltf/studio.env"
+        archive_assets["env_config"] = "https://img.cloud.lib.vt.edu/federated/3d/gltf/studio.env"
 
         # start config
         archive_config["_3d"] = {}
