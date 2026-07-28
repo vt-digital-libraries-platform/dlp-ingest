@@ -32,6 +32,7 @@ class GenericType:
             "S3_BUCKET_NAME": self.env["AWS_SRC_BUCKET"],
             "S3_PREFIX": self.env["COLLECTION_CATEGORY"]
         }
+        self.logger.info("checksum_options: {}".format(checksum_options))
         checksum_handler(checksum_options, None)
 
         self.logger.info("Ingest process completed")

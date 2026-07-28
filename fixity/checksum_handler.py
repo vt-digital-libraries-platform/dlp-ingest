@@ -171,8 +171,15 @@ def checksum_handler(event, context):
     fixity_table_name = event.get('FIXITY_TABLE_NAME') or os.getenv('FIXITY_TABLE_NAME')
     s3_bucket = event.get('S3_BUCKET_NAME') or os.getenv('S3_BUCKET_NAME')
     s3_prefix = event.get('S3_PREFIX') or os.getenv('S3_PREFIX')
+    logger.info(
+        f"checksum_handler start: collection_identifier={collection_identifier}, "
+        f"fixity_table_name={fixity_table_name}, s3_bucket={s3_bucket}, s3_prefix={s3_prefix}"
+    )
     collection_path = os.path.join(s3_prefix, collection_identifier)
     checksum_file_paths = get_checksum_file_paths(s3_bucket, collection_path)
+    logger.info(
+        f"Discovered {len(checksum_file_paths) if checksum_file_paths else 0} checksum file(s) under {collection_path}/checksum"
+    )
     ingest_job = f"{collection_identifier}-{datetime.now().strftime('%Y-%m-%dT%H:%M:%S')}"
     s3_results_path = os.path.join(collection_path, "ingest_results", ingest_job)
 
@@ -182,7 +189,9 @@ def checksum_handler(event, context):
     # Process checksum file(s)
     if checksum_file_paths is not None and len(checksum_file_paths) > 0:
         for path in checksum_file_paths:
+            logger.info(f"Processing checksum file: {path}")
             file_list = get_fileList_df(s3_bucket, path)
+            logger.info(f"Loaded {len(file_list)} row(s) from checksum file: {path}")
             total_files_listed += len(file_list)
             # Loop through checksum file and process each file listed
             for idx, record in file_list.iterrows():
@@ -256,6 +265,8 @@ def checksum_handler(event, context):
                         ingested.append(ingested_tuple)
                 except Exception as e:
                     logger.error(f"Error writing to DynamoDB for file: {filePath}: {e}")
+    else:
+        logger.warning(f"No checksum file(s) found under {collection_path}/checksum")
 
 # ================================================
 
@@ -269,6 +280,10 @@ def checksum_handler(event, context):
         write_results_to_s3(s3_bucket, s3_results_path, ingest_job, "ingested", ingested)
     
     write_summary_to_s3(s3_bucket, s3_results_path, ingest_job, total_files_listed, ingested, existing, not_found)
+    logger.info(
+        f"checksum_handler complete: listed={total_files_listed}, ingested={len(ingested)}, "
+        f"existing={len(existing)}, not_found={len(not_found)}"
+    )
     
     return {
         "statusCode": 200,
