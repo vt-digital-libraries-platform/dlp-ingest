@@ -324,11 +324,15 @@
                 
                 <fieldset class="form_section" id="metadata_section">
                     <legend>Metadata</legend>
-                    <div id="metadata_help" class="section_text">Upload your metadata file (csv)</div>
+                    <div id="metadata_help" class="section_text">Upload collection and/or item/archive metadata files (csv). Required file depends on ingest type.</div>
                     <div id="metadata_section_status" class="section_status incomplete">Incomplete</div>
                     <div>
-                        <label for="metadata_input">Metadata CSV:</label>
-                        <input type="file" id="metadata_input" class="incomplete" name="metadata_input" accept=".csv,text/csv" aria-describedby="metadata_help">
+                        <label for="collection_metadata_input">Collection Metadata CSV:</label>
+                        <input type="file" id="collection_metadata_input" class="incomplete" name="collection_metadata_input" accept=".csv,text/csv" aria-describedby="metadata_help">
+                    </div>
+                    <div>
+                        <label for="archive_metadata_input">Item/Archive Metadata CSV:</label>
+                        <input type="file" id="archive_metadata_input" class="incomplete" name="archive_metadata_input" accept=".csv,text/csv" aria-describedby="metadata_help">
                     </div>
                     <div>
                         <label for="checksum_manifest_input">Checksum Manifest File(s) (optional):</label>
