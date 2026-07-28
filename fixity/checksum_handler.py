@@ -259,6 +259,8 @@ def checksum_handler(event, context):
                 }
                     
                 try:
+                    logger.info(f"Writing file record to DynamoDB for file: {filePath}")
+                    logger.info(f"File record: {file_record}")
                     fixity_table.put_item(Item=file_record)
                     ingested_tuple = (filePath, key)
                     if ingested_tuple not in ingested:  
