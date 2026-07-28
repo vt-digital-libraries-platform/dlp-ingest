@@ -38,7 +38,8 @@ def ingest_form(application):
 
 def submit(application):
 
-    uploaded = []
+    collection_uploaded = []
+    archive_uploaded = []
     checksum_uploaded = []
     ingested_items = []
     updated_items = []
@@ -60,14 +61,24 @@ def submit(application):
 
     utils.set_environment_defaults(application)
 
-    if request.method == 'POST' and 'metadata_input' in request.files:
+    if request.method == 'POST':
+        ingest_type = (request.form.get('INGEST_TYPE') or 'archive').lower()
         try:
-            uploaded = utils.save_uploads(
+            collection_uploaded = utils.save_uploads(
                 application,
-                field_name='metadata_input',
+                field_name='collection_metadata_input',
                 allowed_extensions=application.config['ALLOWED_EXTENSIONS']
             )
-            logger.info(f"Metadata file uploaded: {uploaded}")
+            if collection_uploaded:
+                logger.info(f"Collection metadata file uploaded: {collection_uploaded}")
+
+            archive_uploaded = utils.save_uploads(
+                application,
+                field_name='archive_metadata_input',
+                allowed_extensions=application.config['ALLOWED_EXTENSIONS']
+            )
+            if archive_uploaded:
+                logger.info(f"Archive metadata file uploaded: {archive_uploaded}")
 
             checksum_uploaded = utils.save_uploads(
                 application,
@@ -80,9 +91,36 @@ def submit(application):
             err = "Error reading uploaded file"
             logger.error(err)
 
-        if uploaded:
+        selected_metadata_filename = None
+        if ingest_type == 'collection':
+            if collection_uploaded:
+                selected_metadata_filename = collection_uploaded[0]
+            else:
+                err = "Collection ingest requires a collection metadata CSV file"
+                logger.error(err)
+        else:
+            if archive_uploaded:
+                selected_metadata_filename = archive_uploaded[0]
+            else:
+                err = "Archive ingest requires an item/archive metadata CSV file"
+                logger.error(err)
+
+        if selected_metadata_filename:
             utils.set_environment_overrides()
             ingestConfig = utils.get_ingestConfig()
+
+            collection_metadata_filepath = (
+                os.path.join(application.config['UPLOADS'], collection_uploaded[0])
+                if collection_uploaded
+                else None
+            )
+            archive_metadata_filepath = (
+                os.path.join(application.config['UPLOADS'], archive_uploaded[0])
+                if archive_uploaded
+                else None
+            )
+            ingestConfig['COLLECTION_METADATA_FILEPATH'] = collection_metadata_filepath
+            ingestConfig['ARCHIVE_METADATA_FILEPATH'] = archive_metadata_filepath
 
             if checksum_uploaded:
                 checksum_filepaths = [
@@ -93,7 +131,7 @@ def submit(application):
                 logger.info(f"Checksum manifest uploaded to collection root: {checksum_locations}")
 
             # Do the ingest
-            metadata_filepath = os.path.join(application.config['UPLOADS'], uploaded[0])
+            metadata_filepath = os.path.join(application.config['UPLOADS'], selected_metadata_filename)
             logger.info(f"Config: {ingestConfig}")
             logger.info("INGEST RESULTS---------------------")
             result = dlp_ingest_main(None, None, metadata_filepath, ingestConfig)
@@ -167,7 +205,7 @@ def submit(application):
                     ingest_config=ingestConfig
                 )
         else:
-            err = "No metadata file was uploaded"
+            err = "Missing required metadata file for selected ingest type"
             logger.error(err)
     else:
         logger.info("/submit received GET. Redirecting home")

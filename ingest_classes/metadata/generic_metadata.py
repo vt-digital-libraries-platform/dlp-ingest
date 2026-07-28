@@ -56,11 +56,23 @@ class GenericMetadata:
 
 
     def ingest(self):
-        metadata_stream = self.get_metadata(self.filename)
+        ingest_type = self.env.get("INGEST_TYPE")
+        metadata_filename = self.filename
 
-        if "INGEST_TYPE" in self.env and self.env["INGEST_TYPE"] == "collection":
+        if ingest_type == "collection":
+            metadata_filename = self.env.get("COLLECTION_METADATA_FILEPATH") or self.filename
+        elif ingest_type == "archive":
+            metadata_filename = self.env.get("ARCHIVE_METADATA_FILEPATH") or self.filename
+
+        if not metadata_filename:
+            self.logger.error("No metadata file was provided for the selected ingest type")
+            return {"statusCode": 400, "body": json.dumps("No metadata file provided.")}
+
+        metadata_stream = self.get_metadata(metadata_filename)
+
+        if ingest_type == "collection":
             self.batch_import_collections(metadata_stream)
-        elif "INGEST_TYPE" in self.env and self.env["INGEST_TYPE"] == "archive":
+        elif ingest_type == "archive":
             self.batch_import_archives(metadata_stream)
         return {"statusCode": 200, "body": json.dumps("Finish metadata import.")}
 

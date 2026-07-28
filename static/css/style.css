@@ -197,7 +197,8 @@ input[type="file"] {
     border-color: #45a049;
     background-color: white;
 }
-input#metadata_input.incomplete {
+input#collection_metadata_input.incomplete,
+input#archive_metadata_input.incomplete {
     border: 2px solid #b00;
 }
 

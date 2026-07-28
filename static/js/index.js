@@ -105,6 +105,7 @@ const handleIngestTypeChange = async (event) => {
     if (event.target.value === "collection") {
         try {
             subCollectionOptions.classList.remove("hidden");
+            updateMetadataFieldRequirements();
             checkAllSections();
         }
         catch(error) {
@@ -114,11 +115,42 @@ const handleIngestTypeChange = async (event) => {
     else {
         try {
             subCollectionOptions.classList.add("hidden");
+            updateMetadataFieldRequirements();
             checkAllSections();
         }
         catch(error) {
             console.error(error)
         }
+    }
+}
+
+
+const getSelectedIngestType = () => {
+    const selectedType = document.querySelector('input[name="INGEST_TYPE"]:checked');
+    return selectedType ? selectedType.value : "archive";
+}
+
+
+const updateMetadataFieldRequirements = () => {
+    const ingestType = getSelectedIngestType();
+    const collectionInput = document.getElementById("collection_metadata_input");
+    const archiveInput = document.getElementById("archive_metadata_input");
+
+    if (!collectionInput || !archiveInput) {
+        return;
+    }
+
+    const collectionRequired = ingestType === "collection";
+    const archiveRequired = ingestType === "archive";
+
+    collectionInput.required = collectionRequired;
+    archiveInput.required = archiveRequired;
+
+    if (collectionRequired) {
+        collectionInput.classList.add("incomplete");
+    }
+    if (archiveRequired) {
+        archiveInput.classList.add("incomplete");
     }
 }
 
@@ -252,13 +284,27 @@ const addListeners = async () => {
         console.error(error)
     }
     
-    // File input
+    // Metadata file inputs
     try {
-        document.getElementById("metadata_input").addEventListener("change", function(event) {
+        document.getElementById("collection_metadata_input").addEventListener("change", function(event) {
             const fileInput = event.target;
             if(fileInput.files?.length > 0){
-                document.getElementById("metadata_input").classList.remove("incomplete");
+                document.getElementById("collection_metadata_input").classList.remove("incomplete");
             }
+            checkAllSections();
+        });
+    }
+    catch(error) {
+        console.error(error)
+    }
+
+    try {
+        document.getElementById("archive_metadata_input").addEventListener("change", function(event) {
+            const fileInput = event.target;
+            if(fileInput.files?.length > 0){
+                document.getElementById("archive_metadata_input").classList.remove("incomplete");
+            }
+            checkAllSections();
         });
     }
     catch(error) {
@@ -508,6 +554,38 @@ const fetchIdentifiers = async () => {
 
 
 const checkSection = (section) => {
+    if (section.id === "metadata_section") {
+        const status = document.getElementById(section.statusId);
+        if (!status) return false;
+
+        const ingestType = getSelectedIngestType();
+        const requiredInput = ingestType === "collection"
+            ? document.getElementById("collection_metadata_input")
+            : document.getElementById("archive_metadata_input");
+
+        const hasRequiredFile = !!(requiredInput && requiredInput.files && requiredInput.files.length > 0);
+
+        if (hasRequiredFile) {
+            status.textContent = "Complete";
+            status.classList.remove("incomplete");
+            status.classList.add("complete");
+            document.getElementById(section.id).classList.remove("closed");
+            requiredInput.classList.remove("incomplete");
+            requiredInput.classList.add("field_complete");
+            return true;
+        }
+
+        status.textContent = "Incomplete (0/1)";
+        status.classList.remove("complete");
+        status.classList.add("incomplete");
+        document.getElementById(section.id).classList.remove("closed");
+        if (requiredInput) {
+            requiredInput.classList.remove("field_complete");
+            requiredInput.classList.add("incomplete");
+        }
+        return false;
+    }
+
     let filled = 0;
     section.fields.forEach(id => {
         const el = document.getElementById(id);
@@ -675,7 +753,7 @@ const sections = [
     {
         id: "metadata_section",
         statusId: "metadata_section_status",
-        fields: ["metadata_input"]
+        fields: ["collection_metadata_input", "archive_metadata_input"]
     }
 ];
 
@@ -707,6 +785,10 @@ async function init() {
 
     // Add event listeners
     addListeners();
+
+    // Ensure metadata file requirements match selected ingest type on load
+    updateMetadataFieldRequirements();
+    checkAllSections();
 }
 
 
