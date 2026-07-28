@@ -148,9 +148,10 @@ const updateMetadataFieldRequirements = () => {
 
     if (collectionRequired) {
         collectionInput.classList.add("incomplete");
-    }
-    if (archiveRequired) {
+        archiveInput.classList.remove("incomplete");
+    } else if (archiveRequired) {
         archiveInput.classList.add("incomplete");
+        collectionInput.classList.remove("incomplete");
     }
 }
 
