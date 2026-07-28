@@ -39,6 +39,7 @@ def ingest_form(application):
 def submit(application):
 
     uploaded = []
+    checksum_uploaded = []
     ingested_items = []
     updated_items = []
     errors = []
@@ -61,18 +62,38 @@ def submit(application):
 
     if request.method == 'POST' and 'metadata_input' in request.files:
         try:
-            uploaded = utils.save_uploads(application)
+            uploaded = utils.save_uploads(
+                application,
+                field_name='metadata_input',
+                allowed_extensions=application.config['ALLOWED_EXTENSIONS']
+            )
             logger.info(f"Metadata file uploaded: {uploaded}")
+
+            checksum_uploaded = utils.save_uploads(
+                application,
+                field_name='checksum_manifest_input',
+                allowed_extensions=application.config['ALLOWED_EXTENSIONS']
+            )
+            if checksum_uploaded:
+                logger.info(f"Checksum manifest file(s) uploaded locally: {checksum_uploaded}")
         except Exception as e:
             err = "Error reading uploaded file"
             logger.error(err)
 
-        if utils.files_exist(application):
+        if uploaded:
             utils.set_environment_overrides()
+            ingestConfig = utils.get_ingestConfig()
+
+            if checksum_uploaded:
+                checksum_filepaths = [
+                    os.path.join(application.config['UPLOADS'], filename)
+                    for filename in checksum_uploaded
+                ]
+                checksum_locations = utils.upload_files_to_collection_root(checksum_filepaths, ingestConfig)
+                logger.info(f"Checksum manifest uploaded to collection root: {checksum_locations}")
 
             # Do the ingest
             metadata_filepath = os.path.join(application.config['UPLOADS'], uploaded[0])
-            ingestConfig = utils.get_ingestConfig()
             logger.info(f"Config: {ingestConfig}")
             logger.info("INGEST RESULTS---------------------")
             result = dlp_ingest_main(None, None, metadata_filepath, ingestConfig)
@@ -146,7 +167,7 @@ def submit(application):
                     ingest_config=ingestConfig
                 )
         else:
-            err = "There was an exception finding the metadata file"
+            err = "No metadata file was uploaded"
             logger.error(err)
     else:
         logger.info("/submit received GET. Redirecting home")
