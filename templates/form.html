@@ -328,8 +328,12 @@
                     <div id="metadata_section_status" class="section_status incomplete">Incomplete</div>
                     <div>
                         <label for="metadata_input">Metadata CSV:</label>
-                        <input type="file" id="metadata_input" class="incomplete" name="metadata_input" aria-describedby="metadata_help">
-                    </div>           
+                        <input type="file" id="metadata_input" class="incomplete" name="metadata_input" accept=".csv,text/csv" aria-describedby="metadata_help">
+                    </div>
+                    <div>
+                        <label for="checksum_manifest_input">Checksum Manifest File(s) (optional):</label>
+                        <input type="file" id="checksum_manifest_input" name="checksum_manifest_input" accept=".csv,text/csv" multiple aria-describedby="metadata_help">
+                    </div>
                 
                     <!-- Progress Bar -->
                     <!-- <div id="progress_container">

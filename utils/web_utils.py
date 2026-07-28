@@ -1,4 +1,5 @@
 import logging, os, shutil, sys, yaml
+import boto3
 from flask import request
 
 logger = logging.getLogger()
@@ -126,20 +127,69 @@ def get_identifier():
     return request.form.get('collection_identifier')
 
 
-def save_uploads(application):
+def save_uploads(application, field_name='metadata_input', allowed_extensions=None):
     files = []
     try:
-        for file in request.files.getlist('metadata_input'):
-            if file and file.filename.endswith(tuple(application.config['ALLOWED_EXTENSIONS'])):
-                input_filename = get_input_filename(file)
-                files.append(input_filename)
-                file.save(os.path.join(application.config['UPLOADS'], f"{input_filename}"))
+        for file in request.files.getlist(field_name):
+            if not file or not file.filename:
+                continue
+
+            filename = get_input_filename(file)
+            if allowed_extensions:
+                normalized_name = filename.lower()
+                if not normalized_name.endswith(tuple(f".{ext.lower().lstrip('.')}" for ext in allowed_extensions)):
+                    continue
+
+            files.append(filename)
+            file.save(os.path.join(application.config['UPLOADS'], filename))
     except Exception as e:
         logger.error(f"Error: uploading file. - {e}")
     return files
 
 def get_input_filename(file):
-    return str(file.filename)
+    return os.path.basename(str(file.filename))
+
+
+def upload_files_to_collection_root(filepaths, ingest_config):
+    uploaded_locations = []
+
+    collection_category = ingest_config.get("COLLECTION_CATEGORY")
+    collection_identifier = ingest_config.get("COLLECTION_IDENTIFIER")
+    src_bucket = ingest_config.get("AWS_SRC_BUCKET")
+    dest_bucket = ingest_config.get("AWS_DEST_BUCKET")
+    region = ingest_config.get("REGION")
+
+    if not collection_category or not collection_identifier:
+        logger.error("Missing COLLECTION_CATEGORY or COLLECTION_IDENTIFIER in ingest config; skipping checksum manifest upload")
+        return uploaded_locations
+
+    if not src_bucket or not dest_bucket:
+        logger.error("Missing AWS_SRC_BUCKET or AWS_DEST_BUCKET in ingest config; skipping checksum manifest upload")
+        return uploaded_locations
+
+    collection_root = os.path.join(collection_category, collection_identifier)
+    s3_client = boto3.client("s3", region_name=region) if region else boto3.client("s3")
+    dry_run = bool(ingest_config.get("DRY_RUN"))
+
+    for filepath in filepaths:
+        filename = os.path.basename(filepath)
+        if not filename:
+            continue
+        key = os.path.join(collection_root, filename).replace("\\", "/")
+
+        for bucket in [src_bucket, dest_bucket]:
+            if dry_run:
+                logger.info(f"DRYRUN: checksum manifest upload simulated for s3://{bucket}/{key}")
+                uploaded_locations.append(f"s3://{bucket}/{key}")
+                continue
+
+            try:
+                s3_client.upload_file(filepath, bucket, key)
+                uploaded_locations.append(f"s3://{bucket}/{key}")
+            except Exception as e:
+                logger.error(f"Error uploading checksum manifest {filename} to {bucket}/{key}: {e}")
+
+    return uploaded_locations
 
 
 def files_exist(application):
