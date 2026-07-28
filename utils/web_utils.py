@@ -1,5 +1,6 @@
-import logging, os, shutil, sys, yaml
+import logging, os, re, shutil, sys, yaml
 import boto3
+from datetime import datetime
 from flask import request
 
 logger = logging.getLogger()
@@ -150,7 +151,7 @@ def get_input_filename(file):
     return os.path.basename(str(file.filename))
 
 
-def upload_files_to_collection_root(filepaths, ingest_config):
+def upload_files_to_collection_root(filepaths, ingest_config, prepend_date_if_missing=False, log_label="file"):
     uploaded_locations = []
 
     collection_category = ingest_config.get("COLLECTION_CATEGORY")
@@ -170,16 +171,19 @@ def upload_files_to_collection_root(filepaths, ingest_config):
     collection_root = os.path.join(collection_category, collection_identifier)
     s3_client = boto3.client("s3", region_name=region) if region else boto3.client("s3")
     dry_run = bool(ingest_config.get("DRY_RUN"))
+    date_prefix = datetime.now().strftime("%Y%m%d")
 
     for filepath in filepaths:
         filename = os.path.basename(filepath)
         if not filename:
             continue
+        if prepend_date_if_missing and not re.match(r"^\d{8}(?:_|$)", filename):
+            filename = f"{date_prefix}_{filename}"
         key = os.path.join(collection_root, filename).replace("\\", "/")
 
         for bucket in [src_bucket, dest_bucket]:
             if dry_run:
-                logger.info(f"DRYRUN: checksum manifest upload simulated for s3://{bucket}/{key}")
+                logger.info(f"DRYRUN: {log_label} upload simulated for s3://{bucket}/{key}")
                 uploaded_locations.append(f"s3://{bucket}/{key}")
                 continue
 
@@ -187,7 +191,7 @@ def upload_files_to_collection_root(filepaths, ingest_config):
                 s3_client.upload_file(filepath, bucket, key)
                 uploaded_locations.append(f"s3://{bucket}/{key}")
             except Exception as e:
-                logger.error(f"Error uploading checksum manifest {filename} to {bucket}/{key}: {e}")
+                logger.error(f"Error uploading {log_label} {filename} to {bucket}/{key}: {e}")
 
     return uploaded_locations
 

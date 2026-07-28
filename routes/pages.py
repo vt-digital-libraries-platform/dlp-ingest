@@ -105,9 +105,24 @@ def submit(application):
                 err = "Archive ingest requires an item/archive metadata CSV file"
                 logger.error(err)
 
+        utils.set_environment_overrides()
+        ingestConfig = utils.get_ingestConfig()
+
+        metadata_filepaths = [
+            os.path.join(application.config['UPLOADS'], filename)
+            for filename in (collection_uploaded + archive_uploaded)
+        ]
+        metadata_filepaths = list(dict.fromkeys(metadata_filepaths))
+        if metadata_filepaths:
+            metadata_locations = utils.upload_files_to_collection_root(
+                metadata_filepaths,
+                ingestConfig,
+                prepend_date_if_missing=True,
+                log_label='metadata file'
+            )
+            logger.info(f"Metadata files uploaded to collection root: {metadata_locations}")
+
         if selected_metadata_filename:
-            utils.set_environment_overrides()
-            ingestConfig = utils.get_ingestConfig()
 
             collection_metadata_filepath = (
                 os.path.join(application.config['UPLOADS'], collection_uploaded[0])
@@ -127,7 +142,11 @@ def submit(application):
                     os.path.join(application.config['UPLOADS'], filename)
                     for filename in checksum_uploaded
                 ]
-                checksum_locations = utils.upload_files_to_collection_root(checksum_filepaths, ingestConfig)
+                checksum_locations = utils.upload_files_to_collection_root(
+                    checksum_filepaths,
+                    ingestConfig,
+                    log_label='checksum manifest'
+                )
                 logger.info(f"Checksum manifest uploaded to collection root: {checksum_locations}")
 
             # Do the ingest
