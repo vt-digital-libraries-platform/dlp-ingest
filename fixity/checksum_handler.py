@@ -186,13 +186,19 @@ def checksum_handler(event, context):
             total_files_listed += len(file_list)
             # Loop through checksum file and process each file listed
             for idx, record in file_list.iterrows():
-                created = record[csv_headers['created']]
-                fileExt = record[csv_headers['fileExt']]  
-                fileName = record[csv_headers['fileName']]
-                filePath = record[csv_headers['filePath']]
-                fileSize = record[csv_headers['fileSize']]
-                md5 = record[csv_headers['md5']]
-                sha1 = record[csv_headers['sha1']]
+                try:
+                    created = record[csv_headers['created']]
+                    fileExt = record[csv_headers['fileExt']]
+                    fileName = record[csv_headers['fileName']]
+                    filePath = record[csv_headers['filePath']]
+                    fileSize = record[csv_headers['fileSize']]
+                    md5 = record[csv_headers['md5']]
+                    sha1 = record[csv_headers['sha1']]
+                except KeyError as e:
+                    logger.error(
+                        f"Missing required checksum header {str(e)} in {path} at row {idx + 1}. Skipping row."
+                    )
+                    continue
 
                 # find file(s) based on collection path and filename
                 obj_keys = get_matching_s3_keys(s3_bucket, collection_path, fileName)
