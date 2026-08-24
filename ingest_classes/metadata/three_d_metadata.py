@@ -135,12 +135,7 @@ class ThreeDMetadata(GenericMetadata):
                     )
             archive_assets[asset] = asset_full_path
             
-        if "x3d_config" in archive_assets:
-            if "iiif_manifest" in archive_assets:
-                archive_assets["media_type"] = "3d_2diiif"
-            else:
-                archive_assets["media_type"] = "3d-model/x3dom"
-        elif "gltf_config" in archive_assets:
+        if "gltf_config" in archive_assets:
             if "iiif_manifest" in archive_assets:
                 archive_assets["media_type"] = "3d_2diiif"
             else:
