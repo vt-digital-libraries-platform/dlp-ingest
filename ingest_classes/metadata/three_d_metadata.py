@@ -54,6 +54,7 @@ class ThreeDMetadata(GenericMetadata):
                     # set archive options
                     archive_option_additions = self.set_archive_options(archive_dict)
                     archive_dict["archiveOptions"] = archive_option_additions
+                    archive_dict = self.set_archived_default(archive_dict)
 
                     if "thumbnail_path" not in archive_dict or archive_dict["thumbnail_path"] is None:
                         try:

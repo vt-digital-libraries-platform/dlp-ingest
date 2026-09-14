@@ -51,6 +51,7 @@ class PDFMetadata(GenericMetadata):
                         archive_dict, collection_identifier, "thumbnail"
                     )
                     self.archive_option_additions = self.set_archive_option_additions()
+                    archive_dict = self.set_archived_default(archive_dict)
 
                     existing_archive = self.query_by_index(self.env["archive_table"], "Identifier", archive_dict["identifier"])
                     if existing_archive:
