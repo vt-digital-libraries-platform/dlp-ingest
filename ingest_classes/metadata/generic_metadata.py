@@ -115,9 +115,7 @@ class GenericMetadata:
                     "representative.jpg",
                 )
 
-            # set "archived" to true for the immediate future.
-            if "archived" not in collection_dict:
-                collection_dict["archived"] = True
+            collection_dict = self.set_archived_default(collection_dict)
 
             existing_collection = self.query_by_index(self.env["collection_table"], "Identifier", collection_dict["identifier"])
             if existing_collection:
@@ -187,9 +185,7 @@ class GenericMetadata:
                         if "parent_collection_identifier" in self.env and self.env["parent_collection_identifier"] != collection["identifier"]:
                             archive_dict["parent_collection_identifier"] = self.env["parent_collection_identifier"]
 
-                    # set "archived" to true for the immediate future.
-                    if "archived" not in archive_dict:
-                        archive_dict["archived"] = True
+                    archive_dict = self.set_archived_default(archive_dict)
 
                     existing_archive = self.query_by_index(self.env["archive_table"], "Identifier", archive_dict["identifier"])
                     if existing_archive:
@@ -516,7 +512,15 @@ class GenericMetadata:
 
     def handle_options(self, dict):
         return dict
-        
+
+
+    def set_archived_default(self, item_dict):
+        # every record defaults to archived = True unless the metadata csv set it explicitly.
+        if "archived" not in item_dict or item_dict["archived"] is None:
+            item_dict["archived"] = True
+        return item_dict
+
+
 
     def set_attribute(self, dict, attr, value):
         lower_attr = attr.lower().replace(" ", "_")
@@ -530,6 +534,9 @@ class GenericMetadata:
                 dict[lower_attr] = True
             else:
                 dict[lower_attr] = False
+        elif lower_attr == "archived":
+            # archived defaults to true unless the csv explicitly says "false"/"False"
+            dict[lower_attr] = str(value).strip().lower() != "false"
         elif attr == "parent_collection_identifier":
             parent = self.query_by_index(self.env["collection_table"], "Identifier", value)
 
