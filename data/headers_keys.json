@@ -12,6 +12,7 @@
     "__typename" 
   ],
   "multi_value_headers": [
+    "alt_text",
     "alternative",
     "basis_of_record",
     "belongs_to",
@@ -56,6 +57,7 @@
     "subject",
     "tags",
     "temporal",
-    "type"
+    "type",
+    "visual_description"
   ]
 }
