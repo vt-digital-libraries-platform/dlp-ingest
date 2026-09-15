@@ -1,10 +1,12 @@
 {
   "single_value_headers": [
     "circa",
+    "create_date",
     "end_date",
     "explicit",
     "explicit_content",
     "identifier",
+    "modified_date",
     "start_date",
     "title",
     "embargo_start_date",
