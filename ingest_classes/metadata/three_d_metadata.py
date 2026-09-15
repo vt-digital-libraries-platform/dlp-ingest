@@ -1,80 +1,63 @@
-import io, json, logging, os, urllib
+import os
 from utils.s3_tools import get_matching_s3_keys
 from ingest_classes.metadata.generic_metadata import GenericMetadata
 
 
 class ThreeDMetadata(GenericMetadata):
-    def __init__(self, env, filename, bucket, assets):
-        self.assets = assets
-        self.env = env
-        self.filename = filename
-        self.bucket = bucket
-        self.logger = logging.getLogger()
-        super().__init__(self.env, self.filename, self.bucket, self.assets)
+    def log_invalid_archive_row(self, idx):
+        self.logger.error(f"Error: reading item on line {idx+1} from csv.")
 
-    def batch_import_archives(self, response):
-        df = self.csv_to_dataframe(io.BytesIO(response["Body"].read()))
-        for idx, row in df.iterrows():
-            archive_dict = self.process_metadata_and_env(row, "Archive")
-            if not archive_dict:
-                self.logger.error(f"Error: reading item on line {idx+1} from csv.")
-                continue
-            else:
-                dates_valid = self.validate_archive_dates(archive_dict)
-                if not dates_valid:
-                    self.logger.error(f"Error: Archive {archive_dict.get('identifier', 'N/A')} has invalid date formats. Skipping this record.")
-                    continue
-                collection = self.get_collection(archive_dict)
-                if not collection:
-                    self.logger.error(f"Error: Collection not found in dynamo for item at row {idx+1}.")
-                    continue
 
-                collection_identifier = collection["identifier"] if collection else self.env["COLLECTION_IDENTIFIER"]
-                if collection_identifier is None:
-                    self.logger.error(f"Error: Collection not found for Archive {idx+1}. in env.")
-                    continue
-                else:
-                    archive_dict["collection"] = collection["id"]
-                    archive_dict["parent_collection"] = [collection["id"]]
-                    archive_dict["heirarchy_path"] = collection["heirarchy_path"]
-                    
-                    # try to load iiif manifest, in case it's a 3d + iiif record
-                    if "iiif" in self.env["MEDIA_TYPE"]:
-                        archive_dict["manifest_url"] = os.path.join(
-                            self.env["APP_IMG_ROOT_PATH"],
-                            self.env["COLLECTION_CATEGORY"],
-                            collection_identifier,
-                            archive_dict["identifier"],
-                            "manifest.json",
-                        )
+    def log_archive_field_overrides(self, archive_dict):
+        pass
 
-                    archive_dict["thumbnail_path"] = self.get_thumbnail_path_for_archive(archive_dict, collection)
-                        
 
-                    # set archive options
-                    archive_option_additions = self.set_archive_options(archive_dict)
-                    archive_dict["archiveOptions"] = archive_option_additions
-                    archive_dict = self.set_archived_default(archive_dict)
+    def log_missing_collection(self, idx):
+        self.logger.error(f"Error: Collection not found in dynamo for item at row {idx+1}.")
 
-                    if "thumbnail_path" not in archive_dict or archive_dict["thumbnail_path"] is None:
-                        try:
-                            archive_dict["thumbnail_path"] = archive_option_additions["assets"]["morpho_thumb"]
-                        except Exception as e:
-                            self.logger.error(f"Unable to set thumbnail_path for archive: {archive_dict["identifier"]}")
 
-                    existing_item = self.query_by_index(
-                        self.env["archive_table"],
-                        "Identifier",
-                        archive_dict["identifier"],
-                    )
-                    if existing_item is not None:
-                        if self.env["UPDATE_METADATA"]:
-                            self.update_item_in_table(self.env["archive_table"], existing_item["id"], archive_dict, archive_dict["identifier"])
-                        
-                    else:
-                        self.create_item_in_table(self.env["archive_table"], archive_dict, "Archive")
-                            
+    def apply_collection_to_archive(self, archive_dict, collection):
+        collection_identifier = collection["identifier"]
+        archive_dict["collection"] = collection["id"]
+        archive_dict["parent_collection"] = [collection["id"]]
+        archive_dict["heirarchy_path"] = collection["heirarchy_path"]
 
+        # try to load iiif manifest, in case it's a 3d + iiif record
+        if "iiif" in self.env["MEDIA_TYPE"]:
+            archive_dict["manifest_url"] = os.path.join(
+                self.env["APP_IMG_ROOT_PATH"],
+                self.env["COLLECTION_CATEGORY"],
+                collection_identifier,
+                archive_dict["identifier"],
+                "manifest.json",
+            )
+
+        archive_dict["thumbnail_path"] = self.get_thumbnail_path_for_archive(archive_dict, collection)
+
+        # set archive options
+        archive_option_additions = self.set_archive_options(archive_dict)
+        archive_dict["archiveOptions"] = archive_option_additions
+
+        if "thumbnail_path" not in archive_dict or archive_dict["thumbnail_path"] is None:
+            try:
+                archive_dict["thumbnail_path"] = archive_option_additions["assets"]["morpho_thumb"]
+            except Exception as e:
+                self.logger.error(f"Unable to set thumbnail_path for archive: {archive_dict['identifier']}")
+
+        return True
+
+
+    def save_archive_record(self, archive_dict):
+        existing_item = self.query_by_index(
+            self.env["archive_table"],
+            "Identifier",
+            archive_dict["identifier"],
+        )
+        if existing_item is not None:
+            if self.env["UPDATE_METADATA"]:
+                self.update_item_in_table(self.env["archive_table"], existing_item["id"], archive_dict, archive_dict["identifier"])
+        else:
+            self.create_item_in_table(self.env["archive_table"], archive_dict, "Archive")
 
 
     def key_by_asset_path(self, asset_path):
@@ -135,7 +118,7 @@ class ThreeDMetadata(GenericMetadata):
                         self.env["APP_IMG_ROOT_PATH"], key
                     )
             archive_assets[asset] = asset_full_path
-            
+
         if "gltf_config" in archive_assets:
             if "iiif_manifest" in archive_assets:
                 archive_assets["media_type"] = "3d_2diiif"
@@ -176,6 +159,5 @@ class ThreeDMetadata(GenericMetadata):
                         "value": self.env["3D_OPTIONS_FLASH_CARD_OPTIONS_TEXT_FRONT"]
                     }
                 archive_config["_3d"]["addOns"].append(flash_card)
- 
-        return {"assets": archive_assets, "config": archive_config}
 
+        return {"assets": archive_assets, "config": archive_config}

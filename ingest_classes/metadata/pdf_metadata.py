@@ -1,66 +1,50 @@
-import io, logging, os
+import os
 from utils.s3_tools import get_matching_s3_keys
 from ingest_classes.metadata.generic_metadata import GenericMetadata
 
 
 class PDFMetadata(GenericMetadata):
     def __init__(self, env, filename, bucket, assets):
-        self.assets = assets
-        self.env = env
-        self.filename = filename
-        self.bucket = bucket
+        super().__init__(env, filename, bucket, assets)
         self.archive_option_additions = {}
-        self.logger = logging.getLogger()
-        super().__init__(self.env, self.filename, self.bucket, self.assets)
 
-    def batch_import_archives(self, response):
-        df = self.csv_to_dataframe(io.BytesIO(response["Body"].read()))
-        for idx, row in df.iterrows():
-            archive_dict = self.process_metadata_and_env(row, "Archive")
-            if not archive_dict:
-                self.logger.error(f"Error: Archive {idx+1} has failed to be imported.")
-                continue
-            else:
-                dates_valid = self.validate_archive_dates(archive_dict)
-                if not dates_valid:
-                    self.logger.error(f"Error: Archive {archive_dict.get('identifier', 'N/A')} has invalid date formats. Skipping this record.")
-                    continue
-                collection = self.get_collection(archive_dict)
-                if not collection:
-                    self.logger.error(f"Error: Collection not found for Archive {idx+1}.")
-                    self.logger.error("Error: Archive must belong to a collection to be ingested")
-                    continue
-                collection_identifier = (
-                    collection["identifier"]
-                    if collection
-                    else self.env["COLLECTION_IDENTIFIER"]
-                )
-                if collection_identifier is None:
-                    self.logger.error(f"Error: Collection not found for Archive {idx+1}.")
-                    self.logger.error("Error: Archive must belong to a collection to be ingested")
-                    continue
-                else:
-                    archive_dict["collection"] = collection["id"]
-                    archive_dict["parent_collection"] = [collection["id"]]
-                    archive_dict["heirarchy_path"] = collection["heirarchy_path"]
-                    archive_dict["manifest_url"] = self.asset_path(
-                        archive_dict, collection_identifier, "pdf"
-                    )
-                    self.logger.info(f"pdf: {archive_dict['manifest_url']}")
-                    archive_dict["thumbnail_path"] = self.asset_path(
-                        archive_dict, collection_identifier, "thumbnail"
-                    )
-                    self.archive_option_additions = self.set_archive_option_additions()
-                    archive_dict = self.set_archived_default(archive_dict)
 
-                    existing_archive = self.query_by_index(self.env["archive_table"], "Identifier", archive_dict["identifier"])
-                    if existing_archive:
-                        if self.env["UPDATE_METADATA"]:
-                            self.update_item_in_table(self.env["archive_table"], existing_archive["id"], archive_dict, archive_dict["identifier"])
-                        else:
-                            continue
-                    else:
-                        self.create_item_in_table(self.env["archive_table"], archive_dict, "Archive")
+    def log_invalid_archive_row(self, idx):
+        self.logger.error(f"Error: Archive {idx+1} has failed to be imported.")
+
+
+    def log_archive_field_overrides(self, archive_dict):
+        pass
+
+
+    def log_missing_collection(self, idx):
+        self.logger.error(f"Error: Collection not found for Archive {idx+1}.")
+        self.logger.error("Error: Archive must belong to a collection to be ingested")
+
+
+    def apply_collection_to_archive(self, archive_dict, collection):
+        collection_identifier = collection["identifier"]
+        archive_dict["collection"] = collection["id"]
+        archive_dict["parent_collection"] = [collection["id"]]
+        archive_dict["heirarchy_path"] = collection["heirarchy_path"]
+        archive_dict["manifest_url"] = self.asset_path(
+            archive_dict, collection_identifier, "pdf"
+        )
+        self.logger.info(f"pdf: {archive_dict['manifest_url']}")
+        archive_dict["thumbnail_path"] = self.asset_path(
+            archive_dict, collection_identifier, "thumbnail"
+        )
+        self.archive_option_additions = self.set_archive_option_additions()
+        return True
+
+
+    def save_archive_record(self, archive_dict):
+        existing_archive = self.query_by_index(self.env["archive_table"], "Identifier", archive_dict["identifier"])
+        if existing_archive:
+            if self.env["UPDATE_METADATA"]:
+                self.update_item_in_table(self.env["archive_table"], existing_archive["id"], archive_dict, archive_dict["identifier"])
+        else:
+            self.create_item_in_table(self.env["archive_table"], archive_dict, "Archive")
 
 
     def asset_path(self, archive_dict, collection_identifier, asset_type=None):

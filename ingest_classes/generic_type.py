@@ -2,21 +2,22 @@ import logging
 from fixity.checksum_handler import checksum_handler
 
 class GenericType:
+    media_class = None
+    metadata_class = None
+
     def __init__(
         self,
         env,
         filename,
         bucket,
-        media_handler,
-        metadata_handler,
         assets
     ):
         self.assets = assets
         self.env = env
         self.filename = filename
         self.bucket = bucket
-        self.media_handler = media_handler
-        self.metadata_handler = metadata_handler
+        self.media_handler = self.media_class(env, filename, bucket, assets)
+        self.metadata_handler = self.metadata_class(env, filename, bucket, assets)
         self.modified_metadata = ""
         self.logger = logging.getLogger()
 

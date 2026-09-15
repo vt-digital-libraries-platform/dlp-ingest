@@ -143,65 +143,89 @@ class GenericMetadata:
         for idx, row in df.iterrows():
             archive_dict = self.process_metadata_and_env(row, "Archive")
             if not archive_dict:
-                self.logger.error(f"Error: Archive row {idx+1} could not be parsed.")
+                self.log_invalid_archive_row(idx)
                 continue
+
+            if not self.validate_archive_dates(archive_dict):
+                self.logger.error(f"Error: Archive {archive_dict.get('identifier', 'N/A')} has invalid date formats. Skipping this record.")
+                continue
+
+            self.log_archive_field_overrides(archive_dict)
+
+            collection = self.get_collection(archive_dict)
+            if not collection:
+                self.log_missing_collection(idx)
+                continue
+
+            if not self.apply_collection_to_archive(archive_dict, collection):
+                continue
+
+            archive_dict = self.set_archived_default(archive_dict)
+            self.save_archive_record(archive_dict)
+
+
+    # Hooks below let media-type-specific subclasses (PDFMetadata, ThreeDMetadata)
+    # vary the archive import behavior without re-implementing batch_import_archives.
+
+    def log_invalid_archive_row(self, idx):
+        self.logger.error(f"Error: Archive row {idx+1} could not be parsed.")
+
+
+    def log_archive_field_overrides(self, archive_dict):
+        if "embargo_start_date" in archive_dict:
+            self.logger.info(f"Setting embargo_start_date: {archive_dict['embargo_start_date']} for record {archive_dict.get('identifier', 'N/A')}")
+        if "embargo_end_date" in archive_dict:
+            self.logger.info(f"Setting embargo_end_date: {archive_dict['embargo_end_date']} for record {archive_dict.get('identifier', 'N/A')}")
+        if "visibility" in archive_dict:
+            self.logger.info(f"Setting visibility: {archive_dict['visibility']} for record {archive_dict.get('identifier', 'N/A')}")
+
+
+    def log_missing_collection(self, idx):
+        # get_collection() already falls back to the env-configured collection,
+        # so reaching this point isn't logged as an error in the base implementation.
+        pass
+
+
+    def apply_collection_to_archive(self, archive_dict, collection):
+        archive_dict["collection"] = collection["id"]
+        archive_dict["parent_collection"] = [collection["id"]]
+        archive_dict["parent_collection_identifier"] = [collection["identifier"]]
+        archive_dict["heirarchy_path"] = collection["heirarchy_path"]
+        archive_dict["manifest_url"] = os.path.join(
+            self.env["APP_IMG_ROOT_PATH"],
+            self.env["COLLECTION_CATEGORY"],
+            collection["identifier"],
+            archive_dict["identifier"],
+            "manifest.json",
+        )
+        archive_dict["thumbnail_path"] = self.get_thumbnail_path_for_archive(archive_dict, collection)
+
+        # if you can't find the thumbnail for an iiif item, skip it, because that means the manifest couldn't be found or read
+        # Currently this includes "iiif" and "3d_iiif" media types.
+        if "iiif" in str(self.env["MEDIA_TYPE"]) and ("thumbnail_path" not in archive_dict or not archive_dict["thumbnail_path"]):
+            self.logger.warning(f"Could not find or read the manifest for Item {archive_dict['identifier']}")
+            self.logger.warning(f"Looked here for the manifest: {archive_dict['manifest_url']}")
+            self.logger.warning(f"Skipping this record.")
+            return False
+
+        return True
+
+
+    def save_archive_record(self, archive_dict):
+        existing_archive = self.query_by_index(self.env["archive_table"], "Identifier", archive_dict["identifier"])
+        if existing_archive:
+            if self.env["UPDATE_METADATA"]:
+                self.logger.info(f"Item with identifier {archive_dict['identifier']} already exists. Updating existing record.")
+                self.update_item_in_table(self.env["archive_table"], existing_archive["id"], archive_dict, archive_dict["identifier"])
             else:
-                dates_valid = self.validate_archive_dates(archive_dict)
-                if not dates_valid:
-                    self.logger.error(f"Error: Archive {archive_dict.get('identifier', 'N/A')} has invalid date formats. Skipping this record.")
-                    continue
-                else:
-                    if "embargo_start_date" in archive_dict:
-                        self.logger.info(f"Setting embargo_start_date: {archive_dict['embargo_start_date']} for record {archive_dict.get('identifier', 'N/A')}")
-                    if "embargo_end_date" in archive_dict:
-                        self.logger.info(f"Setting embargo_end_date: {archive_dict['embargo_end_date']} for record {archive_dict.get('identifier', 'N/A')}")
-                    if "visibility" in archive_dict:
-                        self.logger.info(f"Setting visibility: {archive_dict['visibility']} for record {archive_dict.get('identifier', 'N/A')}")
-                
-                collection = self.get_collection(archive_dict)
-                if collection:
-                    archive_dict["collection"] = collection["id"]
-                    archive_dict["parent_collection"] = [collection["id"]]
-                    archive_dict["parent_collection_identifier"] = [collection["identifier"]]
-                    archive_dict["heirarchy_path"] = collection["heirarchy_path"]
-                    archive_dict["manifest_url"] = os.path.join(
-                        self.env["APP_IMG_ROOT_PATH"],
-                        self.env["COLLECTION_CATEGORY"],
-                        collection["identifier"],
-                        archive_dict["identifier"],
-                        "manifest.json",
-                    )
-                    archive_dict["thumbnail_path"] = self.get_thumbnail_path_for_archive(archive_dict, collection)
-                    
-                    # if you can't find the thumbnail for an iiif item, skip it, because that means the manifest couldn't be found or read
-                    # Currently this includes "iiif" and "3d_iiif" media types.
-                    if "iiif" in str(self.env["MEDIA_TYPE"]) and ("thumbnail_path" not in archive_dict or not archive_dict["thumbnail_path"]):
-                        self.logger.warning(f"Could not find or read the manifest for Item {archive_dict['identifier']}")
-                        self.logger.warning(f"Looked here for the manifest: {archive_dict['manifest_url']}")
-                        self.logger.warning(f"Skipping this record.")
-                        continue
+                self.logger.warning(f"Item with identifier {archive_dict['identifier']} already exists. Select the UPDATE_METADATA option to update existing records.")
+                self.logger.warning("Skipping this record...")
+        else:
+            self.logger.info(f"Creating Item with identifier {archive_dict['identifier']}.")
+            self.create_item_in_table(self.env["archive_table"], archive_dict, "Archive")
 
-                    if "parent_collection_identifier" not in archive_dict or not archive_dict["parent_collection_identifier"]:
-                        if "parent_collection_identifier" in self.env and self.env["parent_collection_identifier"] != collection["identifier"]:
-                            archive_dict["parent_collection_identifier"] = self.env["parent_collection_identifier"]
 
-                    archive_dict = self.set_archived_default(archive_dict)
 
-                    existing_archive = self.query_by_index(self.env["archive_table"], "Identifier", archive_dict["identifier"])
-                    if existing_archive:
-                        if self.env["UPDATE_METADATA"]:
-                            self.logger.info(f"Item with identifier {archive_dict['identifier']} already exists. Updating existing record.")
-                            self.update_item_in_table(self.env["archive_table"], existing_archive["id"], archive_dict, archive_dict["identifier"])
-                        else:
-                            self.logger.warning(f"Item with identifier {archive_dict['identifier']} already exists. Select the UPDATE_METADATA option to update existing records.")
-                            self.logger.warning("Skipping this record...")
-                            continue
-                    else:
-                        self.logger.info(f"Creating Item with identifier {archive_dict['identifier']}.")
-                        self.create_item_in_table(self.env["archive_table"], archive_dict, "Archive")
-                
-
-    
     def archive_exists(self, table, identifier):
         items = self.query_by_index(table, "Identifier", identifier)
         return items and len(items) >= 1

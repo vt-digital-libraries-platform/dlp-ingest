@@ -6,7 +6,7 @@ from ingest_classes.metadata.generic_metadata import GenericMetadata
 
 
 class GenericDigitalObject:
-    def __init__(self, env, filename, bucket, assets, s3_client, s3_resource):
+    def __init__(self, env, filename, bucket, assets, s3_client=None, s3_resource=None):
         self.assets = assets
         self.env = env
         self.filename = filename

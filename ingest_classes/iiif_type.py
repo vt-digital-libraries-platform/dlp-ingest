@@ -4,11 +4,5 @@ from ingest_classes.metadata.iiif_metadata import IIIFMetadata
 
 
 class IIIFType(GenericType):
-    def __init__(self, env, filename, bucket, assets):
-        self.env = env
-        self.filename = filename
-        self.bucket = bucket
-        self.assets = assets
-        self.media = IIIFDigitalObject(env, filename, bucket, assets)
-        self.metadata = IIIFMetadata(env, filename, bucket, assets)
-        super().__init__(env, filename, bucket, self.media, self.metadata, assets)
+    media_class = IIIFDigitalObject
+    metadata_class = IIIFMetadata
