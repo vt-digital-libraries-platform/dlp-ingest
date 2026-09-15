@@ -1,6 +1,6 @@
 import sys
 import time
-import boto3, http, io, json, logging, os, uuid, urllib.request
+import boto3, http, io, json, logging, os, uuid
 import pandas as pd
 from datetime import datetime, timezone
 from dateutil.parser import parse
@@ -187,28 +187,7 @@ class GenericMetadata:
 
 
     def apply_collection_to_archive(self, archive_dict, collection):
-        archive_dict["collection"] = collection["id"]
-        archive_dict["parent_collection"] = [collection["id"]]
-        archive_dict["parent_collection_identifier"] = [collection["identifier"]]
-        archive_dict["heirarchy_path"] = collection["heirarchy_path"]
-        archive_dict["manifest_url"] = os.path.join(
-            self.env["APP_IMG_ROOT_PATH"],
-            self.env["COLLECTION_CATEGORY"],
-            collection["identifier"],
-            archive_dict["identifier"],
-            "manifest.json",
-        )
-        archive_dict["thumbnail_path"] = self.get_thumbnail_path_for_archive(archive_dict, collection)
-
-        # if you can't find the thumbnail for an iiif item, skip it, because that means the manifest couldn't be found or read
-        # Currently this includes "iiif" and "3d_iiif" media types.
-        if "iiif" in str(self.env["MEDIA_TYPE"]) and ("thumbnail_path" not in archive_dict or not archive_dict["thumbnail_path"]):
-            self.logger.warning(f"Could not find or read the manifest for Item {archive_dict['identifier']}")
-            self.logger.warning(f"Looked here for the manifest: {archive_dict['manifest_url']}")
-            self.logger.warning(f"Skipping this record.")
-            return False
-
-        return True
+        raise NotImplementedError("Subclasses of GenericMetadata must implement apply_collection_to_archive")
 
 
     def save_archive_record(self, archive_dict):
@@ -272,58 +251,8 @@ class GenericMetadata:
         return all_valid
 
 
-    def get_thumbnail_path_for_archive(self, archive_dict, collection):
-        match self.env["MEDIA_TYPE"]:
-            case "iiif":
-                return self.get_thumbnail_path_for_iiif(archive_dict)
-            case "3d_2diiif":
-                thumb = None
-                thumb = self.get_thumbnail_path_for_iiif(archive_dict)
-                if not thumb:
-                    # This is expected. Most 3ds don't have a manifest, so get rid of it
-                    # Have to check though because some also have iiif materials
-                    del archive_dict["manifest_url"]
-
-                    thumb = os.path.join(
-                        self.env["APP_IMG_ROOT_PATH"],
-                        self.env["COLLECTION_CATEGORY"],
-                        collection["identifier"],
-                        archive_dict["identifier"],
-                        "3d",
-                        f"{archive_dict['identifier']}_thumbnail.jpg",
-                    )
-                return thumb
-            case "3d":
-                return os.path.join(
-                    self.env["APP_IMG_ROOT_PATH"],
-                    self.env["COLLECTION_CATEGORY"],
-                    collection["identifier"],
-                    archive_dict["identifier"],
-                    "3d",
-                    f"{archive_dict['identifier']}_thumbnail.jpg",
-                )
-            case _:
-                return os.path.join(
-                    self.env["APP_IMG_ROOT_PATH"],
-                    self.env["COLLECTION_CATEGORY"],
-                    collection["identifier"],
-                    archive_dict["identifier"],
-                    f"{archive_dict['identifier']}_thumbnail.jpg",
-                )
-
-
-    def get_thumbnail_path_for_iiif(self, archive_dict):
-        try:
-            json_url = urllib.request.urlopen(archive_dict["manifest_url"])            
-            if json_url:
-                return json.loads(json_url.read())["thumbnail"]["@id"]
-        except Exception as e:
-            self.logger.error(f"Error fetching thumbnail for IIIF archive {archive_dict['identifier']}: {str(e)}")
-            return None
-
-
     def get_table_name(self, table_name):
-        return f"{table_name}-{self.env['DYNAMODB_TABLE_SUFFIX']}" 
+        return f"{table_name}-{self.env['DYNAMODB_TABLE_SUFFIX']}"
 
 
     def update_item_in_table(self, table, item_id, attr_dict, identifier):

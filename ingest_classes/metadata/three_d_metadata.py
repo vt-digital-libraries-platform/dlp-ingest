@@ -1,9 +1,10 @@
 import os
 from utils.s3_tools import get_matching_s3_keys
 from ingest_classes.metadata.generic_metadata import GenericMetadata
+from ingest_classes.metadata.iiif_manifest_mixin import IIIFManifestMixin
 
 
-class ThreeDMetadata(GenericMetadata):
+class ThreeDMetadata(IIIFManifestMixin, GenericMetadata):
     def log_invalid_archive_row(self, idx):
         self.logger.error(f"Error: reading item on line {idx+1} from csv.")
 
@@ -31,8 +32,17 @@ class ThreeDMetadata(GenericMetadata):
                 archive_dict["identifier"],
                 "manifest.json",
             )
-
-        archive_dict["thumbnail_path"] = self.get_thumbnail_path_for_archive(archive_dict, collection)
+            thumb = self.get_thumbnail_path_for_iiif(archive_dict)
+            if not thumb:
+                # 3d_2diiif requires a valid manifest.json to render the combined viewer,
+                # so a failed fetch means the manifest is missing or malformed.
+                self.logger.error(f"Could not find or read the manifest for Item {archive_dict['identifier']}")
+                self.logger.error(f"Looked here for the manifest: {archive_dict['manifest_url']}")
+                self.logger.error(f"Skipping this record.")
+                return False
+            archive_dict["thumbnail_path"] = thumb
+        else:
+            archive_dict["thumbnail_path"] = self.resolve_thumbnail_path(archive_dict, collection)
 
         # set archive options
         archive_option_additions = self.set_archive_options(archive_dict)
@@ -45,6 +55,17 @@ class ThreeDMetadata(GenericMetadata):
                 self.logger.error(f"Unable to set thumbnail_path for archive: {archive_dict['identifier']}")
 
         return True
+
+
+    def resolve_thumbnail_path(self, archive_dict, collection):
+        return os.path.join(
+            self.env["APP_IMG_ROOT_PATH"],
+            self.env["COLLECTION_CATEGORY"],
+            collection["identifier"],
+            archive_dict["identifier"],
+            "3d",
+            f"{archive_dict['identifier']}_thumbnail.jpg",
+        )
 
 
     def save_archive_record(self, archive_dict):
