@@ -19,6 +19,7 @@ class GenericMetadata:
         self.bucket = bucket
         self.single_value_headers = None
         self.multi_value_headers = None
+        self.ignored_headers = None
         self.results = []
         self.logger = logging.getLogger()
 
@@ -50,6 +51,10 @@ class GenericMetadata:
                 headers_keys = json.load(f)
                 self.single_value_headers = headers_keys["single_value_headers"]
                 self.multi_value_headers = headers_keys["multi_value_headers"]
+                self.ignored_headers = {
+                    header.lower().replace(" ", "_")
+                    for header in headers_keys.get("ignored_headers", [])
+                }
         except Exception as e:
             self.logger.error(f"An error occurred reading headers_keys.json: {str(e)}")
             raise e
@@ -459,7 +464,13 @@ class GenericMetadata:
         items = data_row.items()
         identifier = None
         for key, value in items:
-            if(self.valid_key(key) and self.valid_value(value)):
+            if not self.valid_key(key):
+                continue
+            normalized_key = key.strip().lower().replace(" ", "_")
+            if normalized_key in self.ignored_headers:
+                self.logger.debug(f"Ignoring generated/system column '{key}' found in metadata CSV.")
+                continue
+            if self.valid_value(value):
                 dict = self.set_attribute(dict, key.strip(), str(value).strip().strip("\"").strip())
 
         if ("identifier" not in dict.keys()) or ("title" not in dict.keys()):
@@ -545,13 +556,6 @@ class GenericMetadata:
                 parent_collection_id = parent["id"]
                 dict["parent_collection"] = [parent_collection_id]
                 dict["parent_collection_identifier"] = [value]
-        elif attr == "thumbnail_path":
-            dict[lower_attr] = os.path.join(
-                self.env["APP_IMG_ROOT_PATH"],
-                self.env["COLLECTION_CATEGORY"],
-                value,
-                "representative.jpg",
-            )
         elif attr == "filename":
             if value.endswith(".pdf") or value.endswith(".jpg"):
                 dict["thumbnail_path"] = os.path.join(
@@ -578,8 +582,14 @@ class GenericMetadata:
                 dict["manifest_url"] = value
         else:
             extracted_value = self.extract_attribute(attr, value)
-            # Always set the attribute, even if extracted_value is falsy (empty string, empty list, etc.)
-            dict[lower_attr] = extracted_value
+            if extracted_value is None:
+                # Column isn't in single_value_headers or multi_value_headers, so its
+                # meaning is unknown. Skip it rather than passing a null value through to DynamoDB.
+                self.logger.warning(f"Ignoring unrecognized metadata column '{attr}' (not defined in headers_keys.json).")
+            else:
+                # Set the attribute even if extracted_value is falsy (empty string, empty list, etc.)
+                # so it can be picked up for removal by update_item_in_table.
+                dict[lower_attr] = extracted_value
 
         return dict
 

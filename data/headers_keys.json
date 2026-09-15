@@ -1,4 +1,18 @@
 {
+  "ignored_headers": [
+    "id",
+    "custom_key",
+    "__typename",
+    "createdAt",
+    "updatedAt",
+    "collection",
+    "parent_collection",
+    "heirarchy_path",
+    "manifest_url",
+    "thumbnail_path",
+    "item_category",
+    "collection_category"
+  ],
   "single_value_headers": [
     "circa",
     "create_date",
@@ -11,7 +25,7 @@
     "title",
     "embargo_start_date",
     "embargo_end_date",
-    "__typename" 
+    "rights_statement"
   ],
   "multi_value_headers": [
     "alt_text",
