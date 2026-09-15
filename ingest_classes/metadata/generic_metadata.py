@@ -459,6 +459,36 @@ class GenericMetadata:
         )
 
 
+    def unwrap_dynamodb_value(self, value):
+        """
+        DynamoDB CSV exports encode List-type attributes as a JSON list of
+        single-key typed maps, e.g. [{"S":"foo"}] or
+        [{"S":"foo"},{"S":"bar"}]. Detect that shape and return the plain
+        value(s) instead ("||"-joined for multiple entries), matching the
+        format a normal source CSV uses so downstream parsing is unchanged.
+        Anything that isn't this exact shape is returned untouched.
+        """
+        if not (value.startswith("[{") and value.endswith("}]")):
+            return value
+        try:
+            parsed = json.loads(value)
+        except (json.JSONDecodeError, TypeError):
+            return value
+        if not isinstance(parsed, list) or not parsed:
+            return value
+
+        extracted = []
+        for item in parsed:
+            if not isinstance(item, dict) or len(item) != 1:
+                return value
+            dynamo_value = next(iter(item.values()))
+            if isinstance(dynamo_value, (dict, list)):
+                return value
+            extracted.append(str(dynamo_value))
+
+        return "||".join(extracted)
+
+
     def process_metadata_and_env(self, data_row, item_type):
         dict = {}
         items = data_row.items()
@@ -471,7 +501,9 @@ class GenericMetadata:
                 self.logger.debug(f"Ignoring generated/system column '{key}' found in metadata CSV.")
                 continue
             if self.valid_value(value):
-                dict = self.set_attribute(dict, key.strip(), str(value).strip().strip("\"").strip())
+                cleaned_value = str(value).strip().strip("\"").strip()
+                cleaned_value = self.unwrap_dynamodb_value(cleaned_value)
+                dict = self.set_attribute(dict, key.strip(), cleaned_value)
 
         if ("identifier" not in dict.keys()) or ("title" not in dict.keys()):
             dict = None
