@@ -44,6 +44,7 @@
     "download_link",
     "embargo_note",
     "extent",
+    "extracted_text",
     "format",
     "format_physical",
     "has_format",
@@ -73,6 +74,8 @@
     "subject",
     "tags",
     "temporal",
+    "title_template",
+    "taxonomy",
     "type",
     "visual_description"
   ]
