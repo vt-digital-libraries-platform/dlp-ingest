@@ -1,6 +1,6 @@
 import sys
 import time
-import boto3, http, io, json, logging, os, uuid, urllib.request
+import boto3, http, io, json, logging, os, uuid
 import pandas as pd
 from datetime import datetime, timezone
 from dateutil.parser import parse
@@ -290,9 +290,10 @@ class GenericMetadata:
 
     def get_thumbnail_path_for_iiif(self, archive_dict):
         try:
-            json_url = urllib.request.urlopen(archive_dict["manifest_url"])            
-            if json_url:
-                return json.loads(json_url.read())["thumbnail"]["@id"]
+            key = archive_dict["manifest_url"].replace(self.env["APP_IMG_ROOT_PATH"], "").lstrip("/")
+            response = self.env["s3_client"].get_object(Bucket=self.env["AWS_DEST_BUCKET"], Key=key)
+            manifest = json.loads(response["Body"].read())
+            return manifest["thumbnail"]["@id"]
         except Exception as e:
             self.logger.error(f"Error fetching thumbnail for IIIF archive {archive_dict['identifier']}: {str(e)}")
             return None
